@@ -1,5 +1,4 @@
 build/
-autom4te.cache/
 *.o
 *.a
 *.so
@@ -9,3 +8,4 @@ autom4te.cache/
 *.s
 *.pyc
 cscope.*
+autom4te.cache
