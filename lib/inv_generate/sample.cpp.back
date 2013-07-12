@@ -1,0 +1,38 @@
+//===- Hello.cpp - Example code from "Writing an LLVM Pass" ---------------===//
+//
+//                     The LLVM Compiler Infrastructure
+//
+// This file is distributed under the University of Illinois Open Source
+// License. See LICENSE.TXT for details.
+//
+//===----------------------------------------------------------------------===//
+//
+// This file implements two versions of the LLVM "Hello World" pass described
+// in docs/WritingAnLLVMPass.html
+//
+//===----------------------------------------------------------------------===//
+
+#define DEBUG_TYPE "hello"
+#include "llvm/Pass.h"
+#include "llvm/Function.h"
+#include "llvm/ADT/StringExtras.h"
+#include "llvm/Support/Streams.h"
+#include "llvm/ADT/Statistic.h"
+#include "sample.h"
+#include <iostream>
+using namespace llvm;
+
+STATISTIC(HelloCounter, "Counts number of functions greeted");
+
+  // Hello - The first implementation, without getAnalysisUsage.
+
+bool Hello :: runOnFunction(Function &F) {
+      HelloCounter++;
+      std::string fname = F.getName();
+      EscapeString(fname);
+      std::cerr << "Hello: " << fname << "\n";
+      return false;
+    }
+
+char Hello::ID = 0;
+static RegisterPass<Hello> X("hello", "Hello World Pass");
