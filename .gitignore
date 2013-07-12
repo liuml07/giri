@@ -1,0 +1,11 @@
+build/
+autom4te.cache/
+*.o
+*.a
+*.so
+*.swp
+*.ll
+*.bc
+*.s
+*.pyc
+cscope.*
