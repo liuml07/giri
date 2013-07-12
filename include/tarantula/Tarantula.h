@@ -20,7 +20,7 @@ namespace dg {
 	class Tarantula : public ModulePass {
 		public:
 			static char ID;
-			Tarantula() : ModulePass((intptr_t) &ID) {}
+			Tarantula() : ModulePass(ID) {}
 			virtual bool runOnModule( Module & module );
 			virtual void getAnalysisUsage( AnalysisUsage & au ) const {
 				// need to query basic block numbers
