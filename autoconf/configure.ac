@@ -1,7 +1,7 @@
 dnl **************************************************************************
 dnl * Initialize
 dnl **************************************************************************
-AC_INIT([[[SAFECode]]],[[[1.00]]],[ssahoo2@illinois.edu])
+AC_INIT([[[Giri]]],[[[1.00]]],[ssahoo2@illinois.edu])
 
 dnl Identify where LLVM source tree is
 LLVM_SRC_ROOT="`(cd $srcdir/../..; pwd)`"
