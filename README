@@ -1,0 +1,19 @@
+Welcome to Automated Bug Diagnosis!
+
+Structure of the Code:
+======================
+
+The code is comprised of several components:
+
+o lib/Utility: The utility library
+
+This library contains utility code that is used by the other passes.  Of note
+are the basic block numbering passes.  There is one pass which adds meta-data
+to the code that gives each basic block a unique ID, one pass which other
+passes use to query this information, and a final pass that removes the
+numbering meta-data.
+
+o lib/Giri: The dynamic slicing library
+
+The name says it all; the Giri library implements dynamic slicing.
+

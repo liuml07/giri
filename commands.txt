@@ -1,0 +1,383 @@
+bh
+===
+
+/home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/bin/tracer -trace -t Output/bbrecord -stats -info-output-file=/home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/test-suite/MultiSource/Benchmarks/Olden/bh/Output/bh.trace.bc.info Output/bh.llvm.bc -f -o Output/bh.trace.bc 2>&1 >> Output/bh.trace.bc.out
+
+/home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/Debug/bin/llc -asm-verbose=false -O3 -f Output/bh.trace.bc -o Output/bh.trace.s
+
+/home/vadve/criswell/box/x86/llvm-gcc4/bin/llvm-gcc -g -O2 -fno-strict-aliasing Output/bh.trace.s  -lm /home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/librtgiri.a  -lm   -o Output/bh.trace -static -lstdc++
+
+/home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/test-suite/../../../src/projects/test-suite/RunSafely.sh 3600 0 /dev/null Output/bh.trace.out-llc Output/bh.trace 40000 30
+
+/home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/bin/tracer -tf Output/bbrecord -stats -info-output-file=/home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/test-suite/MultiSource/Benchmarks/Olden/bh/Output/bh.trace.bc.info Output/bh.llvm.bc -f -o Output/bh.llvm.sc.bc 
+
+apache
+=======
+
+/home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/Debug/bin/llc -asm-verbose=false -O3 -f src/ld-temp.o.bc -o src/ld-temp.o.s
+
+llvm-gcc -use-gold-plugin  -DLINUX=2 -DUSE_HSREGEX -DUSE_EXPAT -I./lib/expat-lite -DNO_DL_NEEDED -O4 `./apaci`  /home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/runtime/giri/Debug/Tracing.o                -o httpd ld-temp.o.s   -lm -lcrypt 
+
+/home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/bin/tracer -tf /home/vadve/ssahoo2/research/sw-bug-diagnosis/bugs/local/apache/apache_1.3.12/bbrecord  -stats -info-output-file=httpd.trace.bc.info /home/vadve/ssahoo2/research/sw-bug-diagnosis/bugs/apache/apache_1.3.12/src/ld-temp.o1.bc  -f -o httpd.llvm.bc > OUTPUT
+
+-----
+
+opt -load /home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libdgutility.so -load /home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libgiri.so -load /home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libinv_generate.so  -mergereturn -bbnum -lsnum -trace-giri -t bbrecord -inv-gen -remove-bbnum -remove-lsnum -stats /home/vadve/ssahoo2/research/sw-bug-diagnosis/bugs/apache/apache_1.3.12/src/ld-temp.o1.bc -f -o apache.inv.bc
+
+/home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/Debug/bin/llc -asm-verbose=false -O1 -f apache.inv.bc -o apache.inv.s
+
+llvm-gcc -DLINUX=2 -DUSE_HSREGEX -DUSE_EXPAT -I./lib/expat-lite -DNO_DL_NEEDED -O1 `./apaci`  /home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/runtime/ddg/Debug/libddgtrace_debug.o /home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/runtime/giri/Debug/Tracing.o -o httpd_inv apache.inv.s -lm -lcrypt
+
+------
+
+opt -load /home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libdgutility.so -load /home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libgiri.so -load /home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libinv_generate.so  -mergereturn -bbnum -lsnum -trace-giri -t bbrecord -inv-insert -remove-bbnum -remove-lsnum -stats /home/vadve/ssahoo2/research/sw-bug-diagnosis/bugs/apache/apache_1.3.12/src/ld-temp.o1.bc -f -o apache.trace.bc
+
+/home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/Debug/bin/llc -asm-verbose=false -O1 -f apache.trace.bc -o apache.trace.s
+
+llvm-gcc -DLINUX=2 -DUSE_HSREGEX -DUSE_EXPAT -I./lib/expat-lite -DNO_DL_NEEDED -O1 `./apaci`  /home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/runtime/ddg/Debug/libddgtrace_debug.o /home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/runtime/giri/Debug/Tracing.o -o httpd_trace apache.trace.s -lm -lcrypt
+
+-----
+
+opt -load /home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libdgutility.so -load /home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libgiri.so -load /home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libinv_generate.so -mergereturn -bbnum -lsnum -dgiri -tf bbrecord -dfs=false -trace-cd=true -remove-bbnum -remove-lsnum -stats ld-temp.o1.bc  -f -o  /dev/null
+
+
+
+squid
+=====
+
+opt -load /home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libinv_generate.so -inv-gen /home/vadve/ssahoo2/research/sw-bug-diagnosis/bugs/squid/squid-2.3.STABLE5/src/ld-temp.o2.bc -f -o squid.inv.bc
+
+opt -load /home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libinv_generate.so -inv-gen /home/vadve/ssahoo2/research/sw-bug-diagnosis/bugs/squid/squid-2.3.STABLE5/src/ld-temp.o1.bc -f -o squid.inv.bc
+
+/home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/Debug/bin/llc -asm-verbose=false -O3 squid.inv.bc -f -o squid.inv.s
+
+/home/vadve/criswell/box/x86/llvm-gcc4/bin/llvm-gcc -g -O2 -fno-strict-aliasing   squid.inv.s /home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/librtinv.a /home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/librtgiri.a -lm  -static -lstdc++ -L /home/vadve/ssahoo2/research/sw-bug-diagnosis/bugs/squid/squid-2.3.STABLE5/lib/ -lcrypt    -lmiscutil -lm -lresolv -lbsd -lnsl  -o squid
+
+/home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/bin/tracer -tf /home/vadve/ssahoo2/research/sw-bug-diagnosis/bugs/local/squid/squid-2.3.STABLE5/bbrecord  -stats -info-output-file=squid.trace.bc.info /home/vadve/ssahoo2/research/sw-bug-diagnosis/bugs/squid/squid-2.3.STABLE5/src/ld-temp.o1.bc  -f -o squid.llvm.bc > OUTPUT 
+
+opt -load /home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libdgutility.so -load /home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libinv_generate.so -bbnum -lsnum -inv-gen -remove-bbnum -remove-lsnum /home/vadve/ssahoo2/research/sw-bug-diagnosis/bugs/squid/squid-2.3.STABLE5/src/ld-temp.o1.bc -f -o squid.inv.bc
+
+cd src;
+llvm-gcc -use-gold-plugin -fno-inline -o squid /home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/runtime/giri/Debug/Tracing.o /home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/runtime/ddg/Debug/libddgtrace_debug.o access_log.o acl.o asn.o authenticate.o cache_cf.o CacheDigest.o cache_manager.o carp.o cbdata.o client_db.o client_side.o comm.o comm_select.o debug.o disk.o dns.o dns_internal.o errorpage.o ETag.o event.o fd.o filemap.o forward.o fqdncache.o ftp.o globals.o gopher.o helper.o http.o HttpStatusLine.o HttpHdrCc.o HttpHdrRange.o HttpHdrContRange.o HttpHeader.o HttpHeaderTools.o HttpBody.o HttpMsg.o HttpReply.o HttpRequest.o icmp.o icp_v2.o icp_v3.o ident.o internal.o ipc.o ipcache.o main.o mem.o MemPool.o MemBuf.o mime.o multicast.o neighbors.o net_db.o Packer.o pconn.o peer_digest.o peer_select.o pump.o redirect.o refresh.o send-announce.o ssl.o stat.o StatHist.o String.o stmem.o store.o store_io.o store_io_ufs.o store_client.o store_digest.o store_dir.o store_dir_ufs.o store_key_md5.o store_log.o store_rebuild.o store_swapin.o store_swapmeta.o store_swapout.o string_arrays.o tools.o unlinkd.o url.o urn.o useragent.o wais.o wccp.o whois.o  -L../lib -lcrypt    -lmiscutil -lm -lresolv -lbsd -lnsl
+
+opt -load /home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libdgutility.so -load /home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libgiri.so -load /home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libinv_generate.so -bbnum -lsnum -trace-giri -t bbrecord -remove-bbnum -remove-lsnum /home/vadve/ssahoo2/research/sw-bug-diagnosis/bugs/squid/squid-2.3.STABLE5/src/ld-temp.o1.bc -f -o squid.trace.bc
+
+/home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/Debug/bin/llc -asm-verbose=false -O1 squid.trace.bc -f -o squid.trace.s
+
+/home/vadve/criswell/box/x86/llvm-gcc4/bin/llvm-gcc -g -O2 -fno-strict-aliasing   squid.trace.s /home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/librtinv.a /home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/librtgiri.a -lm  -static -lstdc++ -L /home/vadve/ssahoo2/research/sw-bug-diagnosis/bugs/squid/squid-2.3.STABLE5/lib/ -lcrypt    -lmiscutil -lm -lresolv -lbsd -lnsl  -o squid
+
+
+
+
+memset
+memcpy
+strcat
+strcpy
+strlen
+tolower
+tupper
+
+fscanf
+fgets
+fread
+sscanf
+sprintf
+calloc
+itoa
+asctime
+ctime
+
+
+a.c b.c
+=======
+
+llvm-gcc -flto -c a.c
+llvm-gcc -flto -c b.c
+llvm-link a.o b.o -f -o ab.o
+opt -load /home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libdgutility.so -load /home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libinv_generate.so -inv-gen ab.o -o ab.inv.bc
+/home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/Debug/bin/llc -asm-verbose=false -O3 -f ab.inv.bc -o ab.inv.s
+/home/vadve/criswell/box/x86/llvm-gcc4/bin/llvm-gcc -g -O2 -fno-strict-aliasing ab.inv.s  /home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/librtinv.a /home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/librtgiri.a -lm  -static -lstdc++ -L /home/vadve/ssahoo2/research/sw-bug-diagnosis/bugs/squid/squid-2.3.STABLE5/lib/ -lcrypt    -lmiscutil -lm -lresolv -lbsd -lnsl
+
+
+mysqld
+======
+
+opt -load /home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libdgutility.so  -load /home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libinv_generate.so -bbnum -lsnum -inv-gen -remove-bbnum -remove-lsnum /home/vadve/ssahoo2/research/sw-bug-diagnosis/bugs/mysql/mysql-5.1.30/sql/ld-temp.o1.bc  -f -o mysqld.inv.bc
+
+/home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/Debug/bin/llc -asm-verbose=false  mysqld.inv.bc -f -o  mysqld.inv.s 
+
+/home/vadve/criswell/box/x86/llvm-gcc4/bin/llvm-gcc  -fno-inline -O3 -fno-implicit-templates -fno-exceptions -fno-rtti mysqld.inv.s /home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/librtinv.a /home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/librtgiri.a -rdynamic  ./.libs/libndb.a -lpthread -lpthread -lpthread -lpthread /home/vadve/criswell/box/x86/llvm-gcc4/lib/../lib64/libstdc++.so -L/localhome/criswell/gccobj42/x86_64-unknown-linux-gnu/libstdc++-v3/src -L/localhome/criswell/gccobj42/x86_64-unknown-linux-gnu/libstdc++-v3/src/.libs -lm -lm -lm -L/localhome/criswell/gccobj42/./gcc -L/lib/../lib64 -L/usr/lib/../lib64 -L/home/vadve/criswell/box/x86/llvm-gcc4/lib/gcc/.. -lgcc_s -lc -lgcc_s -lm -lgcc_s -lc -lgcc_s ../storage/csv/libcsv.a ../storage/heap/libheap.a ../storage/myisam/libmyisam.a ../storage/myisammrg/libmyisammrg.a ../vio/libvio.a ../mysys/libmysys.a ../dbug/libdbug.a ../regex/libregex.a ../strings/libmystrings.a -lz -ldl -lpthread -lcrypt -lnsl -lm -lpthread   -Wl,--rpath -Wl,/home/vadve/criswell/box/x86/llvm-gcc4/lib/../lib64 -Wl,--rpath -Wl,/home/vadve/criswell/box/x86/llvm-gcc4/lib/../lib64  -o mysqld
+
+--------------------
+for timing measurement:
+
+opt -load /home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libdgutility.so  -load /home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libinv_generate.so -bbnum -remove-bbnum -stats -time-passes -debug-pass=Arguments /home/vadve/ssahoo2/research/sw-bug-diagnosis/bugs/mysql/mysql-5.1.31/sql/ld-temp.o1.bc  -f -o mysqld.inv.bc
+--------------------
+
+(with shared stdc++ library)
+llvm-g++ -use-gold-plugin -fno-inline -O1 -flto -fno-implicit-templates -fno-exceptions -fno-rtti /home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/runtime/giri/Debug/Tracing.o /home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/runtime/ddg/Debug/libddgtrace_debug.o -rdynamic -o mysqld sql_lex.o sql_handler.o sql_partition.o item.o item_sum.o item_buff.o item_func.o item_cmpfunc.o item_strfunc.o item_timefunc.o thr_malloc.o item_create.o item_subselect.o item_row.o item_geofunc.o item_xmlfunc.o field.o strfunc.o key.o sql_class.o sql_list.o net_serv.o protocol.o sql_state.o lock.o my_lock.o sql_string.o sql_manager.o sql_map.o mysqld.o password.o hash_filo.o hostname.o sql_connect.o scheduler.o sql_parse.o set_var.o sql_yacc.o sql_base.o table.o sql_select.o sql_insert.o sql_profile.o sql_prepare.o sql_error.o sql_locale.o sql_update.o sql_delete.o uniques.o sql_do.o procedure.o sql_test.o log.o init.o derror.o sql_acl.o unireg.o des_key_file.o log_event.o rpl_record.o log_event_old.o rpl_record_old.o discover.o time.o opt_range.o opt_sum.o records.o filesort.o handler.o ha_partition.o sql_db.o sql_table.o sql_rename.o sql_crypt.o sql_load.o mf_iocache.o field_conv.o sql_show.o sql_udf.o sql_analyse.o sql_cache.o slave.o sql_repl.o rpl_filter.o rpl_tblmap.o rpl_utility.o rpl_injector.o rpl_rli.o rpl_mi.o rpl_reporting.o sql_union.o sql_derived.o sql_client.o repl_failsafe.o sql_olap.o sql_view.o gstream.o spatial.o sql_help.o sql_cursor.o tztime.o my_decimal.o sp_head.o sp_pcontext.o sp_rcontext.o sp.o sp_cache.o parse_file.o sql_trigger.o event_scheduler.o event_data_objects.o event_queue.o event_db_repository.o events.o sql_plugin.o sql_binlog.o sql_builtin.o sql_tablespace.o partition_info.o sql_servers.o event_parse_data.o mini_client_errors.o pack.o client.o my_time.o my_user.o  ./.libs/libndb.a -lpthread -lpthread -lpthread -lpthread /home/vadve/criswell/box/x86/llvm-gcc4/lib/../lib64/libstdc++.so -L/localhome/criswell/gccobj42/x86_64-unknown-linux-gnu/libstdc++-v3/src -L/localhome/criswell/gccobj42/x86_64-unknown-linux-gnu/libstdc++-v3/src/.libs -lm -lm -lm -L/localhome/criswell/gccobj42/./gcc -L/lib/../lib64 -L/usr/lib/../lib64 -L/home/vadve/criswell/box/x86/llvm-gcc4/lib/gcc/.. -lgcc_s -lc -lgcc_s -lm -lgcc_s -lc -lgcc_s ../storage/csv/libcsv.a ../storage/heap/libheap.a ../storage/myisam/libmyisam.a ../storage/myisammrg/libmyisammrg.a ../vio/libvio.a ../mysys/libmysys.a ../dbug/libdbug.a ../regex/libregex.a ../strings/libmystrings.a -lz -ldl -lpthread -lcrypt -lnsl -lm -lpthread   -Wl,--rpath -Wl,/home/vadve/criswell/box/x86/llvm-gcc4/lib/../lib64 -Wl,--rpath -Wl,/home/vadve/criswell/box/x86/llvm-gcc4/lib/../lib64
+
+(with static stdc++ library)
+llvm-g++ -use-gold-plugin -fno-inline -O1 -flto -fno-implicit-templates -fno-exceptions -fno-rtti /home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/runtime/giri/Debug/Tracing.o /home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/runtime/ddg/Debug/libddgtrace_debug.o -rdynamic -o mysqld sql_lex.o sql_handler.o sql_partition.o item.o item_sum.o item_buff.o item_func.o item_cmpfunc.o item_strfunc.o item_timefunc.o thr_malloc.o item_create.o item_subselect.o item_row.o item_geofunc.o item_xmlfunc.o field.o strfunc.o key.o sql_class.o sql_list.o net_serv.o protocol.o sql_state.o lock.o my_lock.o sql_string.o sql_manager.o sql_map.o mysqld.o password.o hash_filo.o hostname.o sql_connect.o scheduler.o sql_parse.o set_var.o sql_yacc.o sql_base.o table.o sql_select.o sql_insert.o sql_profile.o sql_prepare.o sql_error.o sql_locale.o sql_update.o sql_delete.o uniques.o sql_do.o procedure.o sql_test.o log.o init.o derror.o sql_acl.o unireg.o des_key_file.o log_event.o rpl_record.o log_event_old.o rpl_record_old.o discover.o time.o opt_range.o opt_sum.o records.o filesort.o handler.o ha_partition.o sql_db.o sql_table.o sql_rename.o sql_crypt.o sql_load.o mf_iocache.o field_conv.o sql_show.o sql_udf.o sql_analyse.o sql_cache.o slave.o sql_repl.o rpl_filter.o rpl_tblmap.o rpl_utility.o rpl_injector.o rpl_rli.o rpl_mi.o rpl_reporting.o sql_union.o sql_derived.o sql_client.o repl_failsafe.o sql_olap.o sql_view.o gstream.o spatial.o sql_help.o sql_cursor.o tztime.o my_decimal.o sp_head.o sp_pcontext.o sp_rcontext.o sp.o sp_cache.o parse_file.o sql_trigger.o event_scheduler.o event_data_objects.o event_queue.o event_db_repository.o events.o sql_plugin.o sql_binlog.o sql_builtin.o sql_tablespace.o partition_info.o sql_servers.o event_parse_data.o mini_client_errors.o pack.o client.o my_time.o my_user.o /home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-gcc4.2-2.6/obj/x86_64-unknown-linux-gnu/libstdc++-v3/src/.libs/libstdc++.bc ./.libs/libndb.a -lpthread -lpthread -lpthread -lpthread -L/localhome/criswell/gccobj42/x86_64-unknown-linux-gnu/libstdc++-v3/src -L/localhome/criswell/gccobj42/x86_64-unknown-linux-gnu/libstdc++-v3/src/.libs -lm -lm -lm -L/localhome/criswell/gccobj42/./gcc -L/lib/../lib64 -L/usr/lib/../lib64 -L/home/vadve/criswell/box/x86/llvm-gcc4/lib/gcc/.. -lgcc_s -lc -lgcc_s -lm -lgcc_s -lc -lgcc_s ../storage/csv/libcsv.a ../storage/heap/libheap.a ../storage/myisam/libmyisam.a ../storage/myisammrg/libmyisammrg.a ../vio/libvio.a ../mysys/libmysys.a ../dbug/libdbug.a ../regex/libregex.a ../strings/libmystrings.a -lz -ldl -lpthread -lcrypt -lnsl -lm -lpthread   -Wl,--rpath -Wl,/home/vadve/criswell/box/x86/llvm-gcc4/lib/../lib64 -Wl,--rpath -Wl,/home/vadve/criswell/box/x86/llvm-gcc4/lib/../lib64
+
+   
+
+
+libstdc++:
+==========
+
+../src/configure --prefix=/home/ssahoo2/research/sw-bug-diagnosis/llvm-gcc4.2-2.6/install/ --program-prefix=llvm- --enable-llvm=/home/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/ --enable-languages=c,c++ --disable-multilib --enable-checking
+../src/configure --prefix=/home/ssahoo2/research/sw-bug-diagnosis/llvm-gcc-4.2-2.9/install/ --program-prefix=llvm- --enable-llvm=/home/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/ --enable-languages=c,c++ --disable-multilib --enable-checking
+export BUILDOPTION="LLVM_VERSION_INFO=2.6"
+make $BUILDOPTIONS
+make install
+
+../src/configure --prefix=/home/ssahoo2/research/sw-bug-diagnosis/gcc4.7.1/install/ --enable-languages=c,c++ --disable-multilib --enable-checking --disable-bootstrap
+make  2>&1 | tee gnumake.out
+Change CC,CPP,C(PP)FLAGS, CXX, CXXCPP etc in ./Makefile ./src/Makefile ./src/c++98/Makefile ./src/c++11/Makefile ./python/Makefile ./libsupc++/Makefile ./po/Makefile in obj/x86_64-unknown-linux-gnu/libstdc++-v3
+make (inside x86_64-unknown-linux-gnu/libstdc++-v3 again)
+
+Add /obj/gcc/include/ /obj/gcc/include-fixed to INCLUDES variable..
+Edit src/libstdc++-v3/src/c++98/hash-long-double-tr1-aux.cc , src/c++11/hash_c++0x.cc
+// hack to compile with clang 
+#  define __SIZE_MAX__		(18446744073709551615UL)
+Added " && !defined(__clang__)" to line 255 of libstdc++-v3/include/type_traits
+Change line1749 of libstdc++-v3/include/type_traits to { typedef typename decay<decltype(true ? declval<_Tp>() : declval<_Up>())>::type type; };
+Added to c++11/future.cc, src/c++11/system_error.cc default constructor for future_error_category,....
+Use -std=c++98 option to compile libsupc++/eh_ptr.cc (This compiles, but doesn't work, so again compile with xgcc  -std=gnu++0x to produce and use in object code format as below) 
+
+/home/ssahoo2/research/sw-bug-diagnosis/gcc4.7.1/obj/./gcc/xgcc -shared-libgcc -B/home/ssahoo2/research/sw-bug-diagnosis/gcc4.7.1/obj/./gcc -nostdinc++ -L/home/ssahoo2/research/sw-bug-diagnosis/gcc4.7.1/obj/x86_64-unknown-linux-gnu/libstdc++-v3/src -L/home/ssahoo2/research/sw-bug-diagnosis/gcc4.7.1/obj/x86_64-unknown-linux-gnu/libstdc++-v3/src/.libs -B/home/ssahoo2/research/sw-bug-diagnosis/gcc4.7.1/install/x86_64-unknown-linux-gnu/bin/ -B/home/ssahoo2/research/sw-bug-diagnosis/gcc4.7.1/install/x86_64-unknown-linux-gnu/lib/ -isystem /home/ssahoo2/research/sw-bug-diagnosis/gcc4.7.1/install/x86_64-unknown-linux-gnu/include -isystem /home/ssahoo2/research/sw-bug-diagnosis/gcc4.7.1/install/x86_64-unknown-linux-gnu/sys-include -I/home/ssahoo2/research/sw-bug-diagnosis/gcc4.7.1/src/libstdc++-v3/../libgcc -I/home/ssahoo2/research/sw-bug-diagnosis/gcc4.7.1/obj/x86_64-unknown-linux-gnu/libstdc++-v3/include/x86_64-unknown-linux-gnu -I/home/ssahoo2/research/sw-bug-diagnosis/gcc4.7.1/obj/x86_64-unknown-linux-gnu/libstdc++-v3/include -I/home/ssahoo2/research/sw-bug-diagnosis/gcc4.7.1/src/libstdc++-v3/libsupc++ -I/home/ssahoo2/research/sw-bug-diagnosis/gcc4.7.1/obj/gcc/include/ -I/home/ssahoo2/research/sw-bug-diagnosis/gcc4.7.1/obj/./gcc/include-fixed -emit-llvm -Wall -Wextra -Wwrite-strings -Wcast-qual -Wabi -fdiagnostics-show-location=once -ffunction-sections -fdata-sections -frandom-seed=eh_ptr.lo -emit-llvm -D_GNU_SOURCE -std=gnu++0x -c ../../../../src/libstdc++-v3/libsupc++/eh_ptr.cc  -fPIC -DPIC -o eh_ptr_objectcode.o
+
+New libstdc++4.7.
+=================
+clang -v -emit-llvm -shared-libgcc -B/home/ssahoo2/research/sw-bug-diagnosis/gcc4.7.1/obj/./gcc -nostdinc++ -L/home/ssahoo2/research/sw-bug-diagnosis/gcc4.7.1/obj/x86_64-unknown-linux-gnu/libstdc++-v3/src -L/home/ssahoo2/research/sw-bug-diagnosis/gcc4.7.1/obj/x86_64-unknown-linux-gnu/libstdc++-v3/src/.libs -B/home/ssahoo2/research/sw-bug-diagnosis/gcc4.7.1/install/x86_64-unknown-linux-gnu/bin/ -B/home/ssahoo2/research/sw-bug-diagnosis/gcc4.7.1/install/x86_64-unknown-linux-gnu/lib/ -isystem /home/ssahoo2/research/sw-bug-diagnosis/gcc4.7.1/install/x86_64-unknown-linux-gnu/include -isystem /home/ssahoo2/research/sw-bug-diagnosis/gcc4.7.1/install/x86_64-unknown-linux-gnu/sys-include    -shared -nostdlib /usr/lib/../lib64/crti.o /home/ssahoo2/research/sw-bug-diagnosis/gcc4.7.1/obj/./gcc/crtbeginS.o  .libs/compatibility.o .libs/compatibility-debug_list.o .libs/compatibility-debug_list-2.o .libs/compatibility-list.o .libs/compatibility-list-2.o .libs/compatibility-parallel_list.o .libs/compatibility-parallel_list-2.o .libs/compatibility-c++0x.o .libs/compatibility-atomic-c++0x.o .libs/compatibility-thread-c++0x.o  -Wl,--whole-archive ../libsupc++/.libs/libsupc++convenience.a ../src/c++98/.libs/libc++98convenience.a ../src/c++11/.libs/libc++11convenience.a -Wl,--no-whole-archive  -L/home/ssahoo2/research/sw-bug-diagnosis/gcc4.7.1/obj/x86_64-unknown-linux-gnu/libstdc++-v3/src -L/home/ssahoo2/research/sw-bug-diagnosis/gcc4.7.1/obj/x86_64-unknown-linux-gnu/libstdc++-v3/src/.libs -lm -L/home/ssahoo2/research/sw-bug-diagnosis/gcc4.7.1/obj/./gcc -L/lib/../lib64 -L/usr/lib/../lib64 -lc -lgcc_s /home/ssahoo2/research/sw-bug-diagnosis/gcc4.7.1/obj/./gcc/crtendS.o /usr/lib/../lib64/crtn.o  -Wl,-O1 -Wl,-z -Wl,relro -Wl,--gc-sections -Wl,--version-script=libstdc++-symbols.ver   -Wl,-soname -Wl,libstdc++.so.6 -o .libs/libstdc++.so.6.0.17  ===> Not working due to some version error
+
+llvm-ld -link-as-library (below mentioned files in ar command) -o .libs/libstdc++.bc
+
+ar rc .libs/libstdc++.a  compatibility.o compatibility-debug_list.o compatibility-debug_list-2.o compatibility-list.o compatibility-list-2.o compatibility-parallel_list.o compatibility-parallel_list-2.o compatibility-c++0x.o compatibility-atomic-c++0x.o compatibility-thread-c++0x.o  .libs/libstdc++.lax/libsupc++convenience.a/eh_terminate.o .libs/libstdc++.lax/libsupc++convenience.a/cp-demangle.o .libs/libstdc++.lax/libsupc++convenience.a/pmem_type_info.o .libs/libstdc++.lax/libsupc++convenience.a/pure.o .libs/libstdc++.lax/libsupc++convenience.a/del_opvnt.o .libs/libstdc++.lax/libsupc++convenience.a/eh_globals.o .libs/libstdc++.lax/libsupc++convenience.a/fundamental_type_info.o .libs/libstdc++.lax/libsupc++convenience.a/eh_personality.o .libs/libstdc++.lax/libsupc++convenience.a/pointer_type_info.o .libs/libstdc++.lax/libsupc++convenience.a/function_type_info.o .libs/libstdc++.lax/libsupc++convenience.a/bad_cast.o .libs/libstdc++.lax/libsupc++convenience.a/guard_error.o .libs/libstdc++.lax/libsupc++convenience.a/eh_call.o .libs/libstdc++.lax/libsupc++convenience.a/enum_type_info.o .libs/libstdc++.lax/libsupc++convenience.a/nested_exception.o .libs/libstdc++.lax/libsupc++convenience.a/atexit_arm.o .libs/libstdc++.lax/libsupc++convenience.a/eh_throw.o .libs/libstdc++.lax/libsupc++convenience.a/guard.o .libs/libstdc++.lax/libsupc++convenience.a/bad_typeid.o .libs/libstdc++.lax/libsupc++convenience.a/dyncast.o .libs/libstdc++.lax/libsupc++convenience.a/vterminate.o .libs/libstdc++.lax/libsupc++convenience.a/pbase_type_info.o .libs/libstdc++.lax/libsupc++convenience.a/eh_ptr.o .libs/libstdc++.lax/libsupc++convenience.a/new_opv.o .libs/libstdc++.lax/libsupc++convenience.a/eh_tm.o .libs/libstdc++.lax/libsupc++convenience.a/si_class_type_info.o .libs/libstdc++.lax/libsupc++convenience.a/tinfo.o .libs/libstdc++.lax/libsupc++convenience.a/new_handler.o .libs/libstdc++.lax/libsupc++convenience.a/eh_aux_runtime.o .libs/libstdc++.lax/libsupc++convenience.a/vec.o .libs/libstdc++.lax/libsupc++convenience.a/eh_type.o .libs/libstdc++.lax/libsupc++convenience.a/del_op.o .libs/libstdc++.lax/libsupc++convenience.a/tinfo2.o .libs/libstdc++.lax/libsupc++convenience.a/eh_catch.o .libs/libstdc++.lax/libsupc++convenience.a/new_opnt.o .libs/libstdc++.lax/libsupc++convenience.a/vmi_class_type_info.o .libs/libstdc++.lax/libsupc++convenience.a/eh_arm.o .libs/libstdc++.lax/libsupc++convenience.a/array_type_info.o .libs/libstdc++.lax/libsupc++convenience.a/del_opv.o .libs/libstdc++.lax/libsupc++convenience.a/new_op.o .libs/libstdc++.lax/libsupc++convenience.a/eh_term_handler.o .libs/libstdc++.lax/libsupc++convenience.a/eh_unex_handler.o .libs/libstdc++.lax/libsupc++convenience.a/hash_bytes.o .libs/libstdc++.lax/libsupc++convenience.a/class_type_info.o .libs/libstdc++.lax/libsupc++convenience.a/new_opvnt.o .libs/libstdc++.lax/libsupc++convenience.a/eh_alloc.o .libs/libstdc++.lax/libsupc++convenience.a/bad_alloc.o .libs/libstdc++.lax/libsupc++convenience.a/eh_exception.o .libs/libstdc++.lax/libsupc++convenience.a/del_opnt.o  .libs/libstdc++.lax/libc++98convenience.a/ctype_configure_char.o .libs/libstdc++.lax/libc++98convenience.a/mt_allocator.o .libs/libstdc++.lax/libc++98convenience.a/ios_failure.o .libs/libstdc++.lax/libc++98convenience.a/codecvt_members.o .libs/libstdc++.lax/libc++98convenience.a/parallel_settings.o .libs/libstdc++.lax/libc++98convenience.a/locale.o .libs/libstdc++.lax/libc++98convenience.a/ctype_members.o .libs/libstdc++.lax/libc++98convenience.a/bitmap_allocator.o .libs/libstdc++.lax/libc++98convenience.a/pool_allocator.o .libs/libstdc++.lax/libc++98convenience.a/ios-inst.o .libs/libstdc++.lax/libc++98convenience.a/messages_members.o .libs/libstdc++.lax/libc++98convenience.a/strstream.o .libs/libstdc++.lax/libc++98convenience.a/ios.o .libs/libstdc++.lax/libc++98convenience.a/globals_io.o .libs/libstdc++.lax/libc++98convenience.a/basic_file.o .libs/libstdc++.lax/libc++98convenience.a/math_stubs_long_double.o .libs/libstdc++.lax/libc++98convenience.a/monetary_members.o .libs/libstdc++.lax/libc++98convenience.a/hash_tr1.o .libs/libstdc++.lax/libc++98convenience.a/list.o .libs/libstdc++.lax/libc++98convenience.a/codecvt.o .libs/libstdc++.lax/libc++98convenience.a/streambuf-inst.o .libs/libstdc++.lax/libc++98convenience.a/ios_init.o .libs/libstdc++.lax/libc++98convenience.a/streambuf.o .libs/libstdc++.lax/libc++98convenience.a/sstream-inst.o .libs/libstdc++.lax/libc++98convenience.a/istream.o .libs/libstdc++.lax/libc++98convenience.a/numeric_members.o .libs/libstdc++.lax/libc++98convenience.a/concept-inst.o .libs/libstdc++.lax/libc++98convenience.a/valarray.o .libs/libstdc++.lax/libc++98convenience.a/complex_io.o .libs/libstdc++.lax/libc++98convenience.a/localename.o .libs/libstdc++.lax/libc++98convenience.a/ext-inst.o .libs/libstdc++.lax/libc++98convenience.a/time_members.o .libs/libstdc++.lax/libc++98convenience.a/iostream-inst.o .libs/libstdc++.lax/libc++98convenience.a/stdexcept.o .libs/libstdc++.lax/libc++98convenience.a/ctype.o .libs/libstdc++.lax/libc++98convenience.a/hashtable_tr1.o .libs/libstdc++.lax/libc++98convenience.a/atomicity.o .libs/libstdc++.lax/libc++98convenience.a/locale-inst.o .libs/libstdc++.lax/libc++98convenience.a/istream-inst.o .libs/libstdc++.lax/libc++98convenience.a/c++locale.o .libs/libstdc++.lax/libc++98convenience.a/locale_facets.o .libs/libstdc++.lax/libc++98convenience.a/ios_locale.o .libs/libstdc++.lax/libc++98convenience.a/wlocale-inst.o .libs/libstdc++.lax/libc++98convenience.a/allocator-inst.o .libs/libstdc++.lax/libc++98convenience.a/tree.o .libs/libstdc++.lax/libc++98convenience.a/locale_init.o .libs/libstdc++.lax/libc++98convenience.a/math_stubs_float.o .libs/libstdc++.lax/libc++98convenience.a/collate_members.o .libs/libstdc++.lax/libc++98convenience.a/ostream-inst.o .libs/libstdc++.lax/libc++98convenience.a/misc-inst.o  .libs/libstdc++.lax/libc++11convenience.a/string-inst.o .libs/libstdc++.lax/libc++11convenience.a/wstring-inst.o .libs/libstdc++.lax/libc++11convenience.a/debug.o .libs/libstdc++.lax/libc++11convenience.a/fstream-inst.o .libs/libstdc++.lax/libc++11convenience.a/mutex.o .libs/libstdc++.lax/libc++11convenience.a/limits.o .libs/libstdc++.lax/libc++11convenience.a/functional.o .libs/libstdc++.lax/libc++11convenience.a/future.o .libs/libstdc++.lax/libc++11convenience.a/functexcept.o .libs/libstdc++.lax/libc++11convenience.a/regex.o .libs/libstdc++.lax/libc++11convenience.a/shared_ptr.o .libs/libstdc++.lax/libc++11convenience.a/thread.o .libs/libstdc++.lax/libc++11convenience.a/system_error.o .libs/libstdc++.lax/libc++11convenience.a/chrono.o .libs/libstdc++.lax/libc++11convenience.a/hash_c++0x.o .libs/libstdc++.lax/libc++11convenience.a/placeholders.o .libs/libstdc++.lax/libc++11convenience.a/condition_variable.o .libs/libstdc++.lax/libc++11convenience.a/hashtable_c++0x.o 
+
+llvm-ld -link-as-library  .libs/libstdc++.a -o .libs/libstdc++.bc
+
+old libstdc++
+=============
+ar rc .libs/libstdc++.a  bitmap_allocator.o pool_allocator.o mt_allocator.o codecvt.o compatibility.o complex_io.o ctype.o debug.o debug_list.o functexcept.o globals_io.o ios.o ios_failure.o ios_locale.o limits.o list.o locale.o locale_init.o locale_facets.o localename.o stdexcept.o tree.o allocator-inst.o concept-inst.o fstream-inst.o ext-inst.o ios-inst.o iostream-inst.o istream-inst.o istream.o locale-inst.o misc-inst.o ostream-inst.o sstream-inst.o streambuf-inst.o streambuf.o string-inst.o valarray-inst.o wlocale-inst.o wstring-inst.o atomicity.o codecvt_members.o collate_members.o ctype_members.o messages_members.o monetary_members.o numeric_members.o time_members.o basic_file.o c++locale.o .libs/libstdc++.lax/libmath.a/stubs.o  .libs/libstdc++.lax/libsupc++convenience.a/tinfo2.o .libs/libstdc++.lax/libsupc++convenience.a/eh_aux_runtime.o .libs/libstdc++.lax/libsupc++convenience.a/new_opnt.o .libs/libstdc++.lax/libsupc++convenience.a/guard.o .libs/libstdc++.lax/libsupc++convenience.a/vec.o .libs/libstdc++.lax/libsupc++convenience.a/new_opvnt.o .libs/libstdc++.lax/libsupc++convenience.a/eh_arm.o .libs/libstdc++.lax/libsupc++convenience.a/eh_unex_handler.o .libs/libstdc++.lax/libsupc++convenience.a/vterminate.o .libs/libstdc++.lax/libsupc++convenience.a/tinfo.o .libs/libstdc++.lax/libsupc++convenience.a/eh_throw.o .libs/libstdc++.lax/libsupc++convenience.a/eh_type.o .libs/libstdc++.lax/libsupc++convenience.a/eh_globals.o .libs/libstdc++.lax/libsupc++convenience.a/eh_term_handler.o .libs/libstdc++.lax/libsupc++convenience.a/del_opvnt.o .libs/libstdc++.lax/libsupc++convenience.a/eh_call.o .libs/libstdc++.lax/libsupc++convenience.a/eh_catch.o .libs/libstdc++.lax/libsupc++convenience.a/eh_personality.o .libs/libstdc++.lax/libsupc++convenience.a/new_opv.o .libs/libstdc++.lax/libsupc++convenience.a/eh_exception.o .libs/libstdc++.lax/libsupc++convenience.a/eh_alloc.o .libs/libstdc++.lax/libsupc++convenience.a/cp-demangle.o .libs/libstdc++.lax/libsupc++convenience.a/pure.o .libs/libstdc++.lax/libsupc++convenience.a/del_opv.o .libs/libstdc++.lax/libsupc++convenience.a/del_opnt.o .libs/libstdc++.lax/libsupc++convenience.a/del_op.o .libs/libstdc++.lax/libsupc++convenience.a/new_handler.o .libs/libstdc++.lax/libsupc++convenience.a/new_op.o .libs/libstdc++.lax/libsupc++convenience.a/eh_terminate.o strstream.o ios_init.o
+
+../../../../install/bin/llvm-gcc -use-gold-plugin -shared-libgcc -B/home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-gcc4.2-2.6/obj/./gcc -nostdinc++ -L/home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-gcc4.2-2.6/obj/x86_64-unknown-linux-gnu/libstdc++-v3/src -L/home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-gcc4.2-2.6/obj/x86_64-unknown-linux-gnu/libstdc++-v3/src/.libs -B/home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-gcc4.2-2.6/install//x86_64-unknown-linux-gnu/bin/ -B/home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-gcc4.2-2.6/install//x86_64-unknown-linux-gnu/lib/ -isystem /home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-gcc4.2-2.6/install//x86_64-unknown-linux-gnu/include -isystem /home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-gcc4.2-2.6/install//x86_64-unknown-linux-gnu/sys-include -shared -nostdlib /usr/lib/../lib64/crti.o /home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-gcc4.2-2.6/obj/./gcc/crtbeginS.o  .libs/bitmap_allocator.o .libs/pool_allocator.o .libs/mt_allocator.o .libs/codecvt.o .libs/compatibility.o .libs/complex_io.o .libs/ctype.o .libs/debug.o .libs/debug_list.o .libs/functexcept.o .libs/globals_io.o .libs/ios.o .libs/ios_failure.o .libs/ios_locale.o .libs/limits.o .libs/list.o .libs/locale.o .libs/locale_init.o .libs/locale_facets.o .libs/localename.o .libs/stdexcept.o .libs/tree.o .libs/allocator-inst.o .libs/concept-inst.o .libs/fstream-inst.o .libs/ext-inst.o .libs/ios-inst.o .libs/iostream-inst.o .libs/istream-inst.o .libs/istream.o .libs/locale-inst.o .libs/misc-inst.o .libs/ostream-inst.o .libs/sstream-inst.o .libs/streambuf-inst.o .libs/streambuf.o .libs/string-inst.o .libs/valarray-inst.o .libs/wlocale-inst.o .libs/wstring-inst.o .libs/atomicity.o .libs/codecvt_members.o .libs/collate_members.o .libs/ctype_members.o .libs/messages_members.o .libs/monetary_members.o .libs/numeric_members.o .libs/time_members.o .libs/basic_file.o .libs/c++locale.o .libs/strstream.o .libs/ios_init.o -Wl,--whole-archive ../libmath/.libs/libmath.a ../libsupc++/.libs/libsupc++convenience.a -Wl,--no-whole-archive  -L/home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-gcc4.2-2.6/obj/x86_64-unknown-linux-gnu/libstdc++-v3/src -L/home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-gcc4.2-2.6/obj/x86_64-unknown-linux-gnu/libstdc++-v3/src/.libs -lm ../libmath/.libs/libmath.a -lm ../libsupc++/.libs/libsupc++convenience.a -lm -L/home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-gcc4.2-2.6/obj/./gcc -L/home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-gcc4.2-2.6/install//lib/gcc/x86_64-unknown-linux-gnu/4.2.1 -L/home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-gcc4.2-2.6/install//lib/gcc/x86_64-unknown-linux-gnu/4.2.1/../../../../lib64 -L/lib/../lib64 -L/usr/lib/../lib64 -L/home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-gcc4.2-2.6/install//lib/gcc/x86_64-unknown-linux-gnu/4.2.1/../../.. -lgcc_s -lc -lgcc_s -lm -lgcc_s -lc -lgcc_s   /home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-gcc4.2-2.6/obj/./gcc/crtendS.o /usr/lib/../lib64/crtn.o  -Wl,-O1 -Wl,-soname -Wl,libstdc++.so.6 -o .libs/libstdc++.so.6.0.9
+
+llvm-ld  -shared -nostdlib /usr/lib/../lib64/crti.o /home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-gcc4.2-2.6/obj/./gcc/crtbeginS.o  .libs/bitmap_allocator.o .libs/pool_allocator.o .libs/mt_allocator.o .libs/codecvt.o .libs/compatibility.o .libs/complex_io.o .libs/ctype.o .libs/debug.o .libs/debug_list.o .libs/functexcept.o .libs/globals_io.o .libs/ios.o .libs/ios_failure.o .libs/ios_locale.o .libs/limits.o .libs/list.o .libs/locale.o .libs/locale_init.o .libs/locale_facets.o .libs/localename.o .libs/stdexcept.o .libs/tree.o .libs/allocator-inst.o .libs/concept-inst.o .libs/fstream-inst.o .libs/ext-inst.o .libs/ios-inst.o .libs/iostream-inst.o .libs/istream-inst.o .libs/istream.o .libs/locale-inst.o .libs/misc-inst.o .libs/ostream-inst.o .libs/sstream-inst.o .libs/streambuf-inst.o .libs/streambuf.o .libs/string-inst.o .libs/valarray-inst.o .libs/wlocale-inst.o .libs/wstring-inst.o .libs/atomicity.o .libs/codecvt_members.o .libs/collate_members.o .libs/ctype_members.o .libs/messages_members.o .libs/monetary_members.o .libs/numeric_members.o .libs/time_members.o .libs/basic_file.o .libs/c++locale.o .libs/strstream.o .libs/ios_init.o ../libmath/.libs/libmath.a ../libsupc++/.libs/libsupc++convenience.a  -o .libs/libstdc++.so.6.0.9
+
+llvm-ld -v .libs/ios_init.o   .libs/strstream.o -disable-opt -time-passes -debug-pass=Arguments -o .libs/libstdc++.so.6 
+
+llvm-ld -link-as-library bitmap_allocator.o pool_allocator.o mt_allocator.o codecvt.o compatibility.o complex_io.o ctype.o debug.o debug_list.o functexcept.o globals_io.o ios.o ios_failure.o ios_locale.o limits.o list.o locale.o locale_init.o locale_facets.o localename.o stdexcept.o tree.o allocator-inst.o concept-inst.o fstream-inst.o ext-inst.o ios-inst.o iostream-inst.o istream-inst.o istream.o locale-inst.o misc-inst.o ostream-inst.o sstream-inst.o streambuf-inst.o streambuf.o string-inst.o valarray-inst.o wlocale-inst.o wstring-inst.o atomicity.o codecvt_members.o collate_members.o ctype_members.o messages_members.o monetary_members.o numeric_members.o time_members.o basic_file.o c++locale.o .libs/libstdc++.lax/libmath.a/stubs.o  .libs/libstdc++.lax/libsupc++convenience.a/tinfo2.o .libs/libstdc++.lax/libsupc++convenience.a/eh_aux_runtime.o .libs/libstdc++.lax/libsupc++convenience.a/new_opnt.o .libs/libstdc++.lax/libsupc++convenience.a/guard.o .libs/libstdc++.lax/libsupc++convenience.a/vec.o .libs/libstdc++.lax/libsupc++convenience.a/new_opvnt.o .libs/libstdc++.lax/libsupc++convenience.a/eh_arm.o .libs/libstdc++.lax/libsupc++convenience.a/eh_unex_handler.o .libs/libstdc++.lax/libsupc++convenience.a/vterminate.o .libs/libstdc++.lax/libsupc++convenience.a/tinfo.o .libs/libstdc++.lax/libsupc++convenience.a/eh_throw.o .libs/libstdc++.lax/libsupc++convenience.a/eh_type.o .libs/libstdc++.lax/libsupc++convenience.a/eh_globals.o .libs/libstdc++.lax/libsupc++convenience.a/eh_term_handler.o .libs/libstdc++.lax/libsupc++convenience.a/del_opvnt.o .libs/libstdc++.lax/libsupc++convenience.a/eh_call.o .libs/libstdc++.lax/libsupc++convenience.a/eh_catch.o .libs/libstdc++.lax/libsupc++convenience.a/eh_personality.o .libs/libstdc++.lax/libsupc++convenience.a/new_opv.o .libs/libstdc++.lax/libsupc++convenience.a/eh_exception.o .libs/libstdc++.lax/libsupc++convenience.a/eh_alloc.o .libs/libstdc++.lax/libsupc++convenience.a/cp-demangle.o .libs/libstdc++.lax/libsupc++convenience.a/pure.o .libs/libstdc++.lax/libsupc++convenience.a/del_opv.o .libs/libstdc++.lax/libsupc++convenience.a/del_opnt.o .libs/libstdc++.lax/libsupc++convenience.a/del_op.o .libs/libstdc++.lax/libsupc++convenience.a/new_handler.o .libs/libstdc++.lax/libsupc++convenience.a/new_op.o .libs/libstdc++.lax/libsupc++convenience.a/eh_terminate.o strstream.o ios_init.o -o .libs/libstdc++.bc
+
+
+libc:
+=====
+
+Optimization options:
+====================
+
+opt -load /home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libdgutility.so -load /home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libgiri.so -load /home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libinv_generate.so  -stats ld-temp.o1.bc  -f -o  /dev/null  -mem2reg -loop-deletion -instcombine -memcpyopt -sccp -instcombine -condprop -dse -adce -simplifycfg -strip-dead-prototypes -deadtypeelim -constmerge -condprop -mergereturn -SrcLineMapping
+
+***selected optimizations***:
+
+ -simplifycfg -mem2reg -scalarrepl -instcombine -raiseallocs -simplifycfg -mem2reg -globalopt -globaldce -ipsccp -deadargelim -instcombine -simplifycfg -prune-eh -functionattrs -argpromotion -simplify-libcalls -jump-threading -simplifycfg -scalarrepl -instcombine -condprop -tailcallelim -simplifycfg -reassociate -loop-rotate -loop-unswitch -instcombine -loop-deletion -instcombine -memcpyopt -sccp -instcombine -condprop -dse -adce -simplifycfg -strip-dead-prototypes -deadtypeelim -constmerge -condprop -dse -globaldce -instcombine -ipsccp -mergereturn -SrcLineMapping
+
+original optimizations:
+
+ -simplifycfg -mem2reg -scalarrepl -instcombine -raiseallocs -simplifycfg -mem2reg -globalopt -globaldce -ipsccp -deadargelim -instcombine -simplifycfg -prune-eh -functionattrs -argpromotion -simplify-libcalls -jump-threading -simplifycfg -scalarrepl -instcombine -condprop -tailcallelim -simplifycfg -reassociate -loop-rotate -loop-unswitch -instcombine -indvars -loop-deletion -loop-unroll -instcombine -gvn -memcpyopt -sccp -instcombine -condprop -dse -adce -simplifycfg -strip-dead-prototypes -deadtypeelim -constmerge -condprop -dse -globaldce -gvn -instcombine -ipsccp
+
+
+bad optimizations:
+
+-licm
+-gvn
+-gvnpre
+-indvars
+-loop-unroll
+
+
+
+
+time llvm-ld -disable-opt           -o ld-temp.o2          sql_lex.o sql_handler.o sql_partition.o item.o item_sum.o item_buff.o item_func.o item_cmpfunc.o item_strfunc.o item_timefunc.o thr_malloc.o item_create.o item_subselect.o item_row.o item_geofunc.o item_xmlfunc.o field.o strfunc.o key.o sql_class.o sql_list.o net_serv.o protocol.o sql_state.o lock.o my_lock.o sql_string.o sql_manager.o sql_map.o mysqld.o password.o hash_filo.o hostname.o sql_connect.o scheduler.o sql_parse.o set_var.o sql_yacc.o sql_base.o table.o sql_select.o sql_insert.o sql_profile.o sql_prepare.o sql_error.o sql_locale.o sql_update.o sql_delete.o uniques.o sql_do.o procedure.o sql_test.o log.o init.o derror.o sql_acl.o unireg.o des_key_file.o log_event.o rpl_record.o log_event_old.o rpl_record_old.o discover.o time.o opt_range.o opt_sum.o records.o filesort.o handler.o ha_partition.o sql_db.o sql_table.o sql_rename.o sql_crypt.o sql_load.o mf_iocache.o field_conv.o sql_show.o sql_udf.o sql_analyse.o sql_cache.o slave.o sql_repl.o rpl_filter.o rpl_tblmap.o rpl_utility.o rpl_injector.o rpl_rli.o rpl_mi.o rpl_reporting.o sql_union.o sql_derived.o sql_client.o repl_failsafe.o sql_olap.o sql_view.o gstream.o spatial.o sql_help.o sql_cursor.o tztime.o my_decimal.o sp_head.o sp_pcontext.o sp_rcontext.o sp.o sp_cache.o parse_file.o sql_trigger.o event_scheduler.o event_data_objects.o event_queue.o event_db_repository.o events.o sql_plugin.o sql_binlog.o sql_builtin.o sql_tablespace.o partition_info.o sql_servers.o event_parse_data.o mini_client_errors.o pack.o client.o my_time.o my_user.o  ./.libs/libndb.a ../storage/csv/libcsv.a ../storage/heap/libheap.a ../storage/myisam/libmyisam.a ../storage/myisammrg/libmyisammrg.a ../vio/libvio.a ../mysys/libmysys.a ../dbug/libdbug.a ../regex/libregex.a ../strings/libmystrings.a
+
+
+time /home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/Debug/bin/llc -asm-verbose=false ld-temp.o2.bc -o ld-temp.o2.s
+
+
+time llvm-g++ -g -fno-inline -emit-llvm -fno-implicit-templates -fno-exceptions -fno-rtti /home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/runtime/giri/Debug/Tracing.o /home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/runtime/ddg/Debug/libddgtrace_debug.o -rdynamic -o mysqld        ld-temp.o2.s             -lpthread -lpthread -lpthread -lpthread /home/vadve/criswell/box/x86/llvm-gcc4/lib/../lib64/libstdc++.so -L/localhome/criswell/gccobj42/x86_64-unknown-linux-gnu/libstdc++-v3/src -L/localhome/criswell/gccobj42/x86_64-unknown-linux-gnu/libstdc++-v3/src/.libs -lm -lm -lm -L/localhome/criswell/gccobj42/./gcc -L/lib/../lib64 -L/usr/lib/../lib64 -L/home/vadve/criswell/box/x86/llvm-gcc4/lib/gcc/.. -lgcc_s -lc -lgcc_s -lm -lgcc_s -lc -lgcc_s -lz -ldl -lpthread -lcrypt -lnsl -lm -lpthread   -Wl,--rpath -Wl,/home/vadve/criswell/box/x86/llvm-gcc4/lib/../lib64 -Wl,--rpath -Wl,/home/vadve/criswell/box/x86/llvm-gcc4/lib/../lib64
+
+*** NOT WORKING ***
+time llvm-g++ -use-gold-plugin -g -fno-inline -emit-llvm -fno-implicit-templates -fno-exceptions -fno-rtti /home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/runtime/giri/Debug/Tracing.o /home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/runtime/ddg/Debug/libddgtrace_debug.o -rdynamic -o mysqld       ld-temp.o2.bc.bc          -lpthread -lpthread -lpthread -lpthread /home/vadve/criswell/box/x86/llvm-gcc4/lib/../lib64/libstdc++.so -L/localhome/criswell/gccobj42/x86_64-unknown-linux-gnu/libstdc++-v3/src -L/localhome/criswell/gccobj42/x86_64-unknown-linux-gnu/libstdc++-v3/src/.libs -lm -lm -lm -L/localhome/criswell/gccobj42/./gcc -L/lib/../lib64 -L/usr/lib/../lib64 -L/home/vadve/criswell/box/x86/llvm-gcc4/lib/gcc/.. -lgcc_s -lc -lgcc_s -lm -lgcc_s -lc -lgcc_s -lz -ldl -lpthread -lcrypt -lnsl -lm -lpthread   -Wl,--rpath -Wl,/home/vadve/criswell/box/x86/llvm-gcc4/lib/../lib64 -Wl,--rpath -Wl,/home/vadve/criswell/box/x86/llvm-gcc4/lib/../lib64
+
+mysql final commands
+====================
+
+time llvm-ld -disable-opt           -o ld-temp.o3          sql_lex.o sql_handler.o sql_partition.o item.o item_sum.o item_buff.o item_func.o item_cmpfunc.o item_strfunc.o item_timefunc.o thr_malloc.o item_create.o item_subselect.o item_row.o item_geofunc.o item_xmlfunc.o field.o strfunc.o key.o sql_class.o sql_list.o net_serv.o protocol.o sql_state.o lock.o my_lock.o sql_string.o sql_manager.o sql_map.o mysqld.o password.o hash_filo.o hostname.o sql_connect.o scheduler.o sql_parse.o set_var.o sql_yacc.o sql_base.o table.o sql_select.o sql_insert.o sql_profile.o sql_prepare.o sql_error.o sql_locale.o sql_update.o sql_delete.o uniques.o sql_do.o procedure.o sql_test.o log.o init.o derror.o sql_acl.o unireg.o des_key_file.o log_event.o rpl_record.o log_event_old.o rpl_record_old.o discover.o time.o opt_range.o opt_sum.o records.o filesort.o handler.o ha_partition.o sql_db.o sql_table.o sql_rename.o sql_crypt.o sql_load.o mf_iocache.o field_conv.o sql_show.o sql_udf.o sql_analyse.o sql_cache.o slave.o sql_repl.o rpl_filter.o rpl_tblmap.o rpl_utility.o rpl_injector.o rpl_rli.o rpl_mi.o rpl_reporting.o sql_union.o sql_derived.o sql_client.o repl_failsafe.o sql_olap.o sql_view.o gstream.o spatial.o sql_help.o sql_cursor.o tztime.o my_decimal.o sp_head.o sp_pcontext.o sp_rcontext.o sp.o sp_cache.o parse_file.o sql_trigger.o event_scheduler.o event_data_objects.o event_queue.o event_db_repository.o events.o sql_plugin.o sql_binlog.o sql_builtin.o sql_tablespace.o partition_info.o sql_servers.o event_parse_data.o mini_client_errors.o pack.o client.o my_time.o my_user.o          /home/ssahoo2/research/sw-bug-diagnosis/llvm-gcc4.2-2.6/obj/x86_64-unknown-linux-gnu/libstdc++-v3/src/.libs/libstdc++.bc              ./.libs/libndb.a ../storage/csv/libcsv.a ../storage/heap/libheap.a ../storage/myisam/libmyisam.a ../storage/myisammrg/libmyisammrg.a ../vio/libvio.a ../mysys/libmysys.a ../dbug/libdbug.a ../regex/libregex.a ../strings/libmystrings.a
+
+time opt -load /home/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libdgutility.so -load /home/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libgiri.so -load /home/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libinv_generate.so  -stats           ld-temp.o3.bc           -f -o  ld-temp.o2.bc         -simplifycfg -mem2reg -scalarrepl -instcombine -raiseallocs -simplifycfg -mem2reg -globalopt -globaldce -ipsccp -deadargelim -instcombine -simplifycfg -prune-eh -functionattrs -argpromotion -simplify-libcalls -jump-threading -simplifycfg -scalarrepl -instcombine -condprop -tailcallelim -simplifycfg -reassociate -loop-rotate -loop-unswitch -instcombine -loop-deletion -instcombine -memcpyopt -sccp -instcombine -condprop -dse -adce -simplifycfg -strip-dead-prototypes -deadtypeelim -constmerge -condprop -dse -globaldce -instcombine -ipsccp -mergereturn (-SrcLineMapping -CompleteFile) >& temp.txt
+
+
+
+
+
+time opt -load /home/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libdgutility.so -load /home/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libgiri.so -load /home/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libinv_generate.so -bbnum -lsnum -trace-giri -t bbrecord -inv-gen -remove-bbnum -remove-lsnum -stats       ld-temp.o2.bc        -f -o mysql.inv.bc
+
+time /home/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/Debug/bin/llc -asm-verbose=false  -disable-fp-elim  -regalloc=local    mysql.inv.bc      -f -o mysql.inv.s
+
+
+time llvm-g++ -g -fno-inline -emit-llvm -fno-implicit-templates -fno-exceptions -fno-rtti /home/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/runtime/giri/Debug/Tracing.o /home/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/runtime/ddg/Debug/libddgtrace_debug.o -rdynamic          -o mysqld_inv                mysql.inv.s     -lpthread -lpthread -lpthread -lpthread /home/criswell/box/x86/llvm-gcc4/lib/../lib64/libstdc++.so -L/localhome/criswell/gccobj42/x86_64-unknown-linux-gnu/libstdc++-v3/src -L/localhome/criswell/gccobj42/x86_64-unknown-linux-gnu/libstdc++-v3/src/.libs -lm -lm -lm -L/localhome/criswell/gccobj42/./gcc -L/lib/../lib64 -L/usr/lib/../lib64 -L/home/criswell/box/x86/llvm-gcc4/lib/gcc/.. -lgcc_s -lc -lgcc_s -lm -lgcc_s -lc -lgcc_s -lz -ldl -lpthread -lcrypt -lnsl -lm -lpthread   -Wl,--rpath -Wl,/home/criswell/box/x86/llvm-gcc4/lib/../lib64 -Wl,--rpath -Wl,/home/criswell/box/x86/llvm-gcc4/lib/../lib64
+
+
+
+     bin/mysql -u root 
+
+du bbrecord
+
+ulimit -Sm 6291456 -Sv 6291456
+
+cp Invariants-combined.txt Invariants.txt
+
+time opt -load /home/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libdgutility.so -load /home/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libgiri.so -load /home/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libinv_generate.so -bbnum -lsnum -trace-giri -t bbrecord -inv-insert -remove-bbnum -remove-lsnum -stats       ld-temp.o2.bc        -f -o mysql.trace.bc
+
+time /home/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/Debug/bin/llc -asm-verbose=false  -disable-fp-elim  -regalloc=local    mysql.trace.bc      -f -o mysql.trace.s
+
+
+time llvm-g++ -g -fno-inline -emit-llvm -fno-implicit-templates -fno-exceptions -fno-rtti /home/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/runtime/giri/Debug/Tracing.o /home/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/runtime/ddg/Debug/libddgtrace_debug.o -rdynamic          -o mysqld_trace                mysql.trace.s     -lpthread -lpthread -lpthread -lpthread /home/criswell/box/x86/llvm-gcc4/lib/../lib64/libstdc++.so -L/localhome/criswell/gccobj42/x86_64-unknown-linux-gnu/libstdc++-v3/src -L/localhome/criswell/gccobj42/x86_64-unknown-linux-gnu/libstdc++-v3/src/.libs -lm -lm -lm -L/localhome/criswell/gccobj42/./gcc -L/lib/../lib64 -L/usr/lib/../lib64 -L/home/criswell/box/x86/llvm-gcc4/lib/gcc/.. -lgcc_s -lc -lgcc_s -lm -lgcc_s -lc -lgcc_s -lz -ldl -lpthread -lcrypt -lnsl -lm -lpthread   -Wl,--rpath -Wl,/home/criswell/box/x86/llvm-gcc4/lib/../lib64 -Wl,--rpath -Wl,/home/criswell/box/x86/llvm-gcc4/lib/../lib64
+
+
+
+/home/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/bin/prtrace temp/bbrecord > temp.trace
+grep -i "fail" temp.trace > temp/temp.txt
+cat temp/temp.txt | cut -d":" -f3 | sort -n | uniq | wc
+
+llvm-extract -func=_Z11mysql_parseP3THDPKcjPS2_ ld-temp.o2.bc > temp.bc  
+
+time opt -load /home/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libdgutility.so  -SrcLineMapping -OneFunction temp.bc -f -o /dev/null -debug > temp1.txt
+
+time opt -load /home/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libdgutility.so -load /home/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libgiri.so -load /home/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libinv_generate.so -bbnum -lsnum -dgiri -tf bbrecord -dfs=true -inv-filter -trace-cd=true -remove-bbnum -remove-lsnum -stats ld-temp.o2.bc  -f -o  /dev/null  >& mysql.slice.txt
+
+time opt -load /home/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libdgutility.so -load /home/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libgiri.so -load /home/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libinv_generate.so -bbnum -lsnum -dgiri -tf bbrecord -expr-tree  -inv-rc-file inv-rootcauses.txt -trace-cd=true -remove-bbnum -remove-lsnum -stats ld-temp.o2.bc  -f -o  /dev/null
+
+
+Squid final commands
+====================
+(USE gold plugin to get a single bitcode file, or USE llvm-ld ... - llvm-ld produces smaller code)
+
+time llvm-ld -disable-opt           -o ld-temp.o3        access_log.o acl.o asn.o authenticate.o cache_cf.o CacheDigest.o cache_manager.o carp.o cbdata.o client_db.o client_side.o comm.o comm_select.o debug.o disk.o dns.o dns_internal.o errorpage.o ETag.o event.o fd.o filemap.o forward.o fqdncache.o ftp.o globals.o gopher.o helper.o http.o HttpStatusLine.o HttpHdrCc.o HttpHdrRange.o HttpHdrContRange.o HttpHeader.o HttpHeaderTools.o HttpBody.o HttpMsg.o HttpReply.o HttpRequest.o icmp.o icp_v2.o icp_v3.o ident.o internal.o ipc.o ipcache.o main.o mem.o MemPool.o MemBuf.o mime.o multicast.o neighbors.o net_db.o Packer.o pconn.o peer_digest.o peer_select.o pump.o redirect.o refresh.o send-announce.o ssl.o stat.o StatHist.o String.o stmem.o store.o store_io.o store_io_ufs.o store_client.o store_digest.o store_dir.o store_dir_ufs.o store_key_md5.o store_log.o store_rebuild.o store_swapin.o store_swapmeta.o store_swapout.o string_arrays.o tools.o unlinkd.o url.o urn.o useragent.o wais.o wccp.o whois.o ../lib/libmiscutil.a
+
+time opt -load /home/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libdgutility.so -load /home/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libgiri.so -load /home/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libinv_generate.so  -stats           ld-temp.o3.bc           -f -o  ld-temp.o2.bc         -simplifycfg -mem2reg -scalarrepl -instcombine -raiseallocs -simplifycfg -mem2reg -globalopt -globaldce -ipsccp -deadargelim -instcombine -simplifycfg -prune-eh -functionattrs -argpromotion -simplify-libcalls -jump-threading -simplifycfg -scalarrepl -instcombine -condprop -tailcallelim -simplifycfg -reassociate -loop-rotate -loop-unswitch -instcombine -loop-deletion -instcombine -memcpyopt -sccp -instcombine -condprop -dse -adce -simplifycfg -strip-dead-prototypes -deadtypeelim -constmerge -condprop -dse -globaldce -instcombine -ipsccp -mergereturn >& temp.txt (-SrcLineMapping -CompleteFile)
+
+
+
+time opt -load /home/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libdgutility.so -load /home/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libgiri.so -load /home/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libinv_generate.so -bbnum -lsnum -trace-giri -t bbrecord -inv-gen -remove-bbnum -remove-lsnum -stats       ld-temp.o2.bc        -f -o squid.inv.bc
+
+time /home/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/Debug/bin/llc -asm-verbose=false  -disable-fp-elim  -regalloc=local      squid.inv.bc      -f -o squid.inv.s
+
+time llvm-gcc -g -fno-inline  -o squid_inv           squid.inv.s       /home/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/runtime/giri/Debug/Tracing.o /home/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/runtime/ddg/Debug/libddgtrace_debug.o  -lm -lresolv -lbsd -lnsl (-L../lib -lcrypt    -lmiscutil )
+
+
+cp temp/Invariants-combined.txt Invariants.txt
+
+time opt -load /home/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libdgutility.so -load /home/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libgiri.so -load /home/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libinv_generate.so -bbnum -lsnum -trace-giri -t bbrecord -inv-insert -remove-bbnum -remove-lsnum -stats       ld-temp.o2.bc        -f -o squid.trace.bc
+
+time /home/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/Debug/bin/llc -asm-verbose=false  -disable-fp-elim  -regalloc=local      squid.trace.bc      -f -o squid.trace.s
+
+time llvm-gcc -g -fno-inline  -o squid_trace           squid.trace.s       /home/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/runtime/giri/Debug/Tracing.o /home/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/runtime/ddg/Debug/libddgtrace_debug.o  -lm -lresolv -lbsd -lnsl
+
+
+/home/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/bin/prtrace temp/bbrecord > temp.trace
+grep -i "fail" temp.trace > temp/temp.txt
+cat temp/temp.txt | cut -d":" -f3 | sort -n | uniq | wc
+
+llvm-extract -func= ftpBuildTitleUrl ld-temp.o2.bc > temp.bc
+
+time opt -load /home/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libdgutility.so  -SrcLineMapping -OneFunction temp.bc -f -o /dev/null -debug > temp1.txt
+
+time opt -load /home/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libdgutility.so -load /home/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libgiri.so -load /home/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libinv_generate.so -bbnum -lsnum -dgiri -tf bbrecord -dfs=true -inv-filter -trace-cd=true -remove-bbnum -remove-lsnum -stats ld-temp.o2.bc  -f -o  /dev/null  >& squid.slice.txt
+
+time opt -load /home/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libdgutility.so -load /home/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libgiri.so -load /home/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libinv_generate.so -bbnum -lsnum -dgiri -tf bbrecord -expr-tree  -inv-rc-file inv-rootcauses.txt -trace-cd=true -remove-bbnum -remove-lsnum -stats ld-temp.o2.bc  -f -o  /dev/null
+
+
+
+Apache final commands
+=====================
+
+(USE gold plugin to get a single bitcode file, or USE llvm-ld ... - gold plugin produces smaller code)
+
+time llvm-ld -disable-opt           -o ld-temp.o3         buildmark.o modules.o modules/standard/libstandard.a modules/extra/libextra.a main/libmain.a ./os/unix/libos.a ap/libap.a regex/libregex.a lib/expat-lite/libexpat.a
+
+time opt -load /home/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libdgutility.so -load /home/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libgiri.so -load /home/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libinv_generate.so  -stats           ld-temp.o1.bc           -f -o  ld-temp.o2.bc         -simplifycfg -mem2reg -scalarrepl -instcombine -raiseallocs -simplifycfg -mem2reg -globalopt -globaldce -ipsccp -deadargelim -instcombine -simplifycfg -prune-eh -functionattrs -argpromotion -simplify-libcalls -jump-threading -simplifycfg -scalarrepl -instcombine -condprop -tailcallelim -simplifycfg -reassociate -loop-rotate -loop-unswitch -instcombine -loop-deletion -instcombine -memcpyopt -sccp -instcombine -condprop -dse -adce -simplifycfg -strip-dead-prototypes -deadtypeelim -constmerge -condprop -dse -globaldce -instcombine -ipsccp -mergereturn -SrcLineMapping -CompleteFile >& temp.txt
+
+
+
+time opt -load /home/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libdgutility.so -load /home/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libgiri.so -load /home/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libinv_generate.so -bbnum -lsnum -trace-giri -t bbrecord -inv-gen -remove-bbnum -remove-lsnum -stats       ld-temp.o2.bc        -f -o apache.inv.bc
+
+time /home/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/Debug/bin/llc -asm-verbose=false      apache.inv.bc      -f -o apache.inv.s
+
+time llvm-gcc -g -fno-inline  -DLINUX=2 -DUSE_HSREGEX -DUSE_EXPAT -I./lib/expat-lite -DNO_DL_NEEDED -emit-llvm `./apaci`    \
+  -o httpd_inv           apache.inv.s       /home/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/runtime/giri/Debug/Tracing.o /home/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/runtime/ddg/Debug/libddgtrace_debug.o  -lm -lcrypt
+
+cp httpd_inv /home/ssahoo2/research/sw-bug-diagnosis/bugs/local/apache/apache_1.3.12/bin/
+
+
+
+../run-good-inputs.sh (inside bug-1 directory)
+
+
+
+cp /home/ssahoo2/research/sw-bug-diagnosis/bugs/local/apache/apache_1.3.12/bug-1/Invariants-combined.txt Invariants.txt
+
+time opt -load /home/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libdgutility.so -load /home/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libgiri.so -load /home/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libinv_generate.so -bbnum -lsnum -trace-giri -t bbrecord -inv-insert -remove-bbnum -remove-lsnum -stats        ld-temp.o2.bc          -f -o apache.trace.bc
+
+time /home/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/Debug/bin/llc -asm-verbose=false      apache.trace.bc      -f -o apache.trace.s
+
+time llvm-gcc -g -fno-inline  -DLINUX=2 -DUSE_HSREGEX -DUSE_EXPAT -I./lib/expat-lite -DNO_DL_NEEDED -emit-llvm `./apaci`    \
+  -o httpd_trace           apache.trace.s       /home/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/runtime/giri/Debug/Tracing.o /home/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/runtime/ddg/Debug/libddgtrace_debug.o  -lm -lcrypt
+
+cp httpd_trace /home/ssahoo2/research/sw-bug-diagnosis/bugs/local/apache/apache_1.3.12/bin/
+
+
+
+../bin/httpd_trace -X & ; sleep 1 ; httpreq bad 0 (inside bug-1 directory)
+
+
+
+ulimit -Sm 6291456 -Sv 6291456
+
+time opt -load /home/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libdgutility.so  -SrcLineMapping -OneFunction ld-temp.o2.bc -f -o /dev/null -debug > temp1.txt
+
+time opt -load /home/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libdgutility.so -load /home/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libgiri.so -load /home/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libinv_generate.so -bbnum -lsnum -dgiri -tf /home/ssahoo2/research/sw-bug-diagnosis/bugs/local/apache/apache_1.3.12/bug-1/bbrecord -dfs=false -trace-cd=true -remove-bbnum -remove-lsnum -stats ld-temp.o2.bc  -f -o  /dev/null  >& apache.slice.txt
+
+time opt -load /home/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libdgutility.so -load /home/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libgiri.so -load /home/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libinv_generate.so -bbnum -lsnum -dgiri -tf /home/ssahoo2/research/sw-bug-diagnosis/bugs/local/apache/apache_1.3.12/bug-1/bbrecord -dfs=true -inv-filter -trace-cd=true -remove-bbnum -remove-lsnum -stats ld-temp.o2.bc  -f -o  /dev/null  >& apache.slice.txt
+
+
+
+Apache 2.2.4 final commands
+===========================
+
+llvm-gcc -use-gold-plugin -g -fno-inline -pthread -emit-llvm /home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/runtime/giri/Debug/Tracing.o /home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/runtime/ddg/Debug/libddgtrace_debug.o -o .libs/httpd .libs/modules.o buildmark.o -Wl,--export-dynamic -L/home/vadve/ssahoo2/research/sw-bug-diagnosis/bugs/apache/httpd-2.2.4/srclib/apr-util/xml/expat/lib server/.libs/libmain.a modules/aaa/.libs/libmod_authn_file.a modules/aaa/.libs/libmod_authn_default.a modules/aaa/.libs/libmod_authz_host.a modules/aaa/.libs/libmod_authz_groupfile.a modules/aaa/.libs/libmod_authz_user.a modules/aaa/.libs/libmod_authz_default.a modules/aaa/.libs/libmod_auth_basic.a modules/filters/.libs/libmod_include.a modules/filters/.libs/libmod_filter.a modules/loggers/.libs/libmod_log_config.a modules/metadata/.libs/libmod_env.a modules/metadata/.libs/libmod_setenvif.a modules/http/.libs/libmod_http.a modules/http/.libs/libmod_mime.a modules/generators/.libs/libmod_status.a modules/generators/.libs/libmod_autoindex.a modules/generators/.libs/libmod_asis.a modules/generators/.libs/libmod_cgi.a modules/mappers/.libs/libmod_negotiation.a modules/mappers/.libs/libmod_dir.a modules/mappers/.libs/libmod_actions.a modules/mappers/.libs/libmod_userdir.a modules/mappers/.libs/libmod_alias.a modules/mappers/.libs/libmod_so.a server/mpm/prefork/.libs/libprefork.a os/unix/.libs/libos.a -lm /home/vadve/ssahoo2/research/sw-bug-diagnosis/bugs/apache/httpd-2.2.4/srclib/pcre/.libs/libpcre.a /home/vadve/ssahoo2/research/sw-bug-diagnosis/bugs/apache/httpd-2.2.4/srclib/apr-util/.libs/libaprutil-1.so -lsqlite3 /home/vadve/ssahoo2/research/sw-bug-diagnosis/bugs/apache/httpd-2.2.4/srclib/apr-util/xml/expat/lib/.libs/libexpat.so /home/vadve/ssahoo2/research/sw-bug-diagnosis/bugs/apache/httpd-2.2.4/srclib/apr/.libs/libapr-1.so -luuid -lrt -lcrypt -lpthread -ldl -Wl,--rpath -Wl,/home/vadve/ssahoo2/research/sw-bug-diagnosis/bugs/local/apache/httpd-2.2.4/lib
+
+time llvm-ld -disable-opt           -o ld-temp.o3        .libs/modules.o buildmark.o -L/home/vadve/ssahoo2/research/sw-bug-diagnosis/bugs/apache/httpd-2.2.4/srclib/apr-util/xml/expat/lib server/.libs/libmain.a modules/aaa/.libs/libmod_authn_file.a modules/aaa/.libs/libmod_authn_default.a modules/aaa/.libs/libmod_authz_host.a modules/aaa/.libs/libmod_authz_groupfile.a modules/aaa/.libs/libmod_authz_user.a modules/aaa/.libs/libmod_authz_default.a modules/aaa/.libs/libmod_auth_basic.a modules/filters/.libs/libmod_include.a modules/filters/.libs/libmod_filter.a modules/loggers/.libs/libmod_log_config.a modules/metadata/.libs/libmod_env.a modules/metadata/.libs/libmod_setenvif.a modules/http/.libs/libmod_http.a modules/http/.libs/libmod_mime.a modules/generators/.libs/libmod_status.a modules/generators/.libs/libmod_autoindex.a modules/generators/.libs/libmod_asis.a modules/generators/.libs/libmod_cgi.a modules/mappers/.libs/libmod_negotiation.a modules/mappers/.libs/libmod_dir.a modules/mappers/.libs/libmod_actions.a modules/mappers/.libs/libmod_userdir.a modules/mappers/.libs/libmod_alias.a modules/mappers/.libs/libmod_so.a server/mpm/prefork/.libs/libprefork.a os/unix/.libs/libos.a -lm /home/vadve/ssahoo2/research/sw-bug-diagnosis/bugs/apache/httpd-2.2.4/srclib/pcre/.libs/libpcre.a /home/vadve/ssahoo2/research/sw-bug-diagnosis/bugs/apache/httpd-2.2.4/srclib/apr-util/.libs/libaprutil-1.a /home/vadve/ssahoo2/research/sw-bug-diagnosis/bugs/apache/httpd-2.2.4/srclib/apr-util/xml/expat/lib/.libs/libexpat.a /home/vadve/ssahoo2/research/sw-bug-diagnosis/bugs/apache/httpd-2.2.4/srclib/apr/.libs/libapr-1.a
+
+time opt -load /home/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libdgutility.so -load /home/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libgiri.so -load /home/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libinv_generate.so  -stats           ld-temp.o3.bc           -f -o  ld-temp.o2.bc         -simplifycfg -mem2reg -scalarrepl -instcombine -raiseallocs -simplifycfg -mem2reg -globalopt -globaldce -ipsccp -deadargelim -instcombine -simplifycfg -prune-eh -functionattrs -argpromotion -simplify-libcalls -jump-threading -simplifycfg -scalarrepl -instcombine -condprop -tailcallelim -simplifycfg -reassociate -loop-rotate -loop-unswitch -instcombine -loop-deletion -instcombine -memcpyopt -sccp -instcombine -condprop -dse -adce -simplifycfg -strip-dead-prototypes -deadtypeelim -constmerge -condprop -dse -globaldce -instcombine -ipsccp -mergereturn (-SrcLineMapping -CompleteFile) >& temp.txt
+
+time opt -load /home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libdgutility.so -load /home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libgiri.so -load /home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libinv_generate.so -bbnum -lsnum -trace-giri -t bbrecord -inv-gen -remove-bbnum -remove-lsnum -stats       ld-temp.o2.bc        -f -o apache.inv.bc
+
+time /home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/Debug/bin/llc -asm-verbose=false      apache.inv.bc      -f -o apache.inv.s
+
+time llvm-gcc -g -fno-inline -pthread  -emit-llvm -Wl,--export-dynamic  -L/home/vadve/ssahoo2/research/sw-bug-diagnosis/bugs/apache/httpd-2.2.4/srclib/apr-util/xml/expat/lib  /home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/runtime/giri/Debug/Tracing.o /home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/runtime/ddg/Debug/libddgtrace_debug.o -o httpd   -lm  -lsqlite3  -luuid -lrt -lcrypt -lpthread -ldl   -o httpd_inv           apache.inv.s -Wl,--rpath -Wl,/home/vadve/ssahoo2/research/sw-bug-diagnosis/bugs/local/apache/httpd-2.2.4/lib -l /home/vadve/ssahoo2/research/sw-bug-diagnosis/bugs/apache/httpd-2.2.4/srclib/apr-util/xml/expat/lib/.libs/libexpat.so.0
+(****Due to some reason libexpat bitcode archive is not getting linked, so I had to link the libexpat dynamic library
+***** May be because we modified expat Makefile to remove LD_FLAGS to remove linker errors)
+
+time opt -load /home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libdgutility.so -load /home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libgiri.so -load /home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/Debug/lib/libinv_generate.so -bbnum -lsnum -trace-giri -t temp/bbrecord -inv-insert -remove-bbnum -remove-lsnum -stats       ld-temp.o2.bc        -f -o apache.trace.bc
+
+time /home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/Debug/bin/llc -asm-verbose=false      apache.trace.bc -f -o apache.trace.s
+
+time llvm-gcc -g -fno-inline -pthread  -emit-llvm -Wl,--export-dynamic  -L/home/vadve/ssahoo2/research/sw-bug-diagnosis/bugs/apache/httpd-2.2.4/srclib/apr-util/xml/expat/lib  /home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/runtime/giri/Debug/Tracing.o /home/vadve/ssahoo2/research/sw-bug-diagnosis/llvm-2.6/obj/projects/diagnosis/runtime/ddg/Debug/libddgtrace_debug.o -o httpd   -lm  -lsqlite3  -luuid -lrt -lcrypt -lpthread -ldl   -o httpd_trace           apache.trace.s -Wl,--rpath -Wl,/home/vadve/ssahoo2/research/sw-bug-diagnosis/bugs/local/apache/httpd-2.2.4/lib -l /home/vadve/ssahoo2/research/sw-bug-diagnosis/bugs/apache/httpd-2.2.4/srclib/apr-util/xml/expat/lib/.libs/libexpat.so.0
+
+ 
+
+
+
+ 

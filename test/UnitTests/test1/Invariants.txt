@@ -1,0 +1,18 @@
+2 1 long 1 0 0 int store
+2 main 3 3 
+18 1 long 1 0 0 int load
+18 main 100 100 
+21 1 long 1 0 0 int load
+21 main 50 50 
+22 1 long 1 0 0 int load
+22 main 3 3 
+25 1 long 1 0 0 int load
+25 main 100 100 
+29 1 long 1 0 0 int load
+29 main 100 100 
+49 1 long 1 0 0 int fncall
+49 main 45 45 
+52 1 long 1 0 0 int fncall
+52 main 22 22 
+54 1 long 1 0 0 long fncall
+54 main 45 45 
