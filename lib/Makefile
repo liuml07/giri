@@ -8,6 +8,6 @@ LEVEL=..
 #
 # List all of the subdirectories that we will compile.
 #
-PARALLEL_DIRS=inv_generate Giri Utility Tarantula
+PARALLEL_DIRS=Giri Utility
 
 include $(LEVEL)/Makefile.common

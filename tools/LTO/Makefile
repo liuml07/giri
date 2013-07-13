@@ -24,7 +24,7 @@ endif
 
 LINK_COMPONENTS := $(TARGETS_TO_BUILD) ipo scalaropts linker bitreader bitwriter
 
-USEDLIBS := giri.a dgutility.a inv_generate.a
+USEDLIBS := giri.a dgutility.a
 
 # Include this here so we can get the configuration of the targets
 # that have been configured for construction. We have to do this 
