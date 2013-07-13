@@ -28,6 +28,7 @@
 #include <fcntl.h>
 #include <iostream>
 #include <fstream>
+#include <unistd.h>
 
 using namespace llvm;
 
