@@ -1,6 +1,6 @@
 LEVEL = ..
 
-DIRS = PrintTrace Tracer Tarantula
+DIRS = PrintTrace Tracer
 
 #
 # Build libLTO on all platforms except Cygwin and MingW
