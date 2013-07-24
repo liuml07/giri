@@ -158,9 +158,7 @@ void cleanup_only_tracing(int signum)
   exit(signum);
 }
 
-
-void
-entryCache::openFD (int FD) {
+void entryCache::openFD (int FD) {
   //
   // Save the file descriptor of the file that we'll use.
   //
@@ -195,8 +193,7 @@ entryCache::openFD (int FD) {
   assert (cache != MAP_FAILED);
 }
 
-void
-entryCache::flushCache (void) {
+void entryCache::flushCache (void) {
   //
   // Unmap the data.  This should force it to be written to disk.
   //
@@ -232,8 +229,7 @@ entryCache::flushCache (void) {
   return;
 }
 
-static inline void
-addToEntryCache (const Entry & entry) {
+static inline void addToEntryCache (const Entry & entry) {
   //
   // Flush the cache if necessary.
   //
@@ -269,8 +265,7 @@ addToEntryCache (const Entry & entry) {
   return;
 }
 
-void
-flushEntryCache (void) {
+void flushEntryCache (void) {
   //
   // Flush the in-memory cache to disk.
   //
@@ -278,8 +273,7 @@ flushEntryCache (void) {
   return;
 }
 
-void
-closeCacheFile (void) {
+void closeCacheFile (void) {
   fprintf(stderr, "Writing cache data to trace file and closing\n");
   //
   // Create basic block termination entries for each basic block on the stack.
@@ -318,8 +312,7 @@ closeCacheFile (void) {
   return;
 }
 
-void
-recordInit  (const char * name) {
+void recordInit  (const char * name) {
   //
   // First assert that the size of an entry evenly divides the cache entry
   // buffer size.  The run-time will not work if this is not true.
@@ -380,8 +373,7 @@ recordInit  (const char * name) {
 //  block termination if the program terminates before the basic blocks
 //  complete execution.
 //
-void
-recordStartBB (unsigned id, unsigned char * fp) {
+void recordStartBB (unsigned id, unsigned char * fp) {
  
   // Don't record, if it is not the main thread or connection handler thread
   if( checkForNonHandlerThread() )
@@ -425,8 +417,7 @@ recordStartBB (unsigned id, unsigned char * fp) {
 //  id - The ID of the basic block that has finished execution.
 //  fp - The pointer to the function in which the basic block belongs.
 //
-void
-recordBB (unsigned id, unsigned char * fp, unsigned lastBB) {
+void recordBB (unsigned id, unsigned char * fp, unsigned lastBB) {
 
   // Don't record, if it is not the main thread or connection handler thread
   if( checkForNonHandlerThread() )
@@ -477,15 +468,13 @@ recordBB (unsigned id, unsigned char * fp, unsigned lastBB) {
   return;
 }
 
-
 // (**Not needed anymore as we don't add external function call records**)
 // Function: recordExtCallRet()
 //
 // Description:
 //  Record that a external function has finished execution by updating function call stack.
 //
-void
-recordExtCallRet (unsigned callID, unsigned char * fp) {
+void recordExtCallRet (unsigned callID, unsigned char * fp) {
 
   // Don't record, if it is not the main thread or connection handler thread
   if( checkForNonHandlerThread() )
@@ -504,8 +493,7 @@ recordExtCallRet (unsigned callID, unsigned char * fp) {
   return;
 }
 
-void
-recordLoad (unsigned id, unsigned char * p, uintptr_t length) {
+void recordLoad (unsigned id, unsigned char * p, uintptr_t length) {
 
   // Don't record, if it is not the main thread or connection handler thread
   if( checkForNonHandlerThread() )
@@ -531,8 +519,7 @@ recordLoad (unsigned id, unsigned char * p, uintptr_t length) {
 //  p      - The starting address of the store.
 //  length - The length, in bytes, of the stored data.
 //
-void
-recordStore (unsigned id, unsigned char * p, uintptr_t length) {
+void recordStore (unsigned id, unsigned char * p, uintptr_t length) {
 
   // Don't record, if it is not the main thread or connection handler thread
   if( checkForNonHandlerThread() )
@@ -553,8 +540,7 @@ recordStore (unsigned id, unsigned char * p, uintptr_t length) {
 // Description:
 //  Record that a string has been read.
 //
-void
-recordStrLoad (unsigned id, char * p) {
+void recordStrLoad (unsigned id, char * p) {
 
   // Don't record, if it is not the main thread or connection handler thread
   if( checkForNonHandlerThread() )
@@ -585,8 +571,7 @@ recordStrLoad (unsigned id, char * p) {
 //  id - The ID of the instruction that wrote to the string.
 //  p  - A pointer to the string.
 //
-void
-recordStrStore (unsigned id, char * p) {
+void recordStrStore (unsigned id, char * p) {
 
   // Don't record, if it is not the main thread or connection handler thread
   if( checkForNonHandlerThread() )
@@ -618,8 +603,7 @@ recordStrStore (unsigned id, char * p) {
 //  id - The ID of the instruction that wrote to the string.
 //  p  - A pointer to the string.
 //
-void
-recordStrcatStore (unsigned id, char * p, char * s) {
+void recordStrcatStore (unsigned id, char * p, char * s) {
 
   // Don't record, if it is not the main thread or connection handler thread
   if( checkForNonHandlerThread() )
@@ -654,8 +638,7 @@ recordStrcatStore (unsigned id, char * p, char * s) {
 //  id - The ID of the call instruction.
 //  fp - The address of the function that was called.
 //
-void
-recordCall (unsigned id, unsigned char * fp) {
+void recordCall (unsigned id, unsigned char * fp) {
 
   // Don't record, if it is not the main thread or connection handler thread
   if( checkForNonHandlerThread() )
@@ -697,8 +680,7 @@ recordCall (unsigned id, unsigned char * fp) {
 //  id - The ID of the call instruction.
 //  fp - The address of the function that was called.
 //
-void
-recordExtCall (unsigned id, unsigned char * fp) {
+void recordExtCall (unsigned id, unsigned char * fp) {
 
   // Don't record, if it is not the main thread or connection handler thread
   if( checkForNonHandlerThread() )
@@ -721,8 +703,7 @@ recordExtCall (unsigned id, unsigned char * fp) {
 // Description:
 //  Record that a function has finished execution by adding a return trace entry.
 //
-void
-recordReturn (unsigned id, unsigned char * fp) {
+void recordReturn (unsigned id, unsigned char * fp) {
 
   // Don't record, if it is not the main thread or connection handler thread
   if( checkForNonHandlerThread() )
@@ -737,7 +718,6 @@ recordReturn (unsigned id, unsigned char * fp) {
   return;
 }
 
-
 //
 // Function: recordInvFailure
 //
@@ -747,8 +727,7 @@ recordReturn (unsigned id, unsigned char * fp) {
 // Inputs:
 //  id     - The ID assigned to the corresponding instruction in the LLVM IR.
 //
-void
-recordInvFailure (unsigned id) {
+void recordInvFailure (unsigned id) {
 
   // Don't record, if it is not the main thread or connection handler thread
   if( checkForNonHandlerThread() )
@@ -774,8 +753,7 @@ recordInvFailure (unsigned id) {
 //  flag   - The boolean value (true or false) used to determine the select
 //           instruction's output.
 //
-void
-recordSelect  (unsigned id, unsigned char flag) {
+void recordSelect  (unsigned id, unsigned char flag) {
 
   // Don't record, if it is not the main thread or connection handler thread
   if( checkForNonHandlerThread() )
@@ -809,7 +787,6 @@ void recordHandlerThreadID (const char * name) {
 
 }
 
-
 #if 0
 
 // Not needed now as we have split special calls into loads and stores
@@ -842,4 +819,3 @@ recordExtFun (unsigned id, unsigned char * p, unsigned char * s, unsigned length
 }
 
 #endif
-

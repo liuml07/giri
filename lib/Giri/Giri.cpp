@@ -29,9 +29,7 @@
 
 using namespace llvm;
 
-//
 // Command line arguments.
-//
 static cl::opt<std::string>
 TraceFilename ("tf", cl::desc("Trace filename"), cl::init("bbrecord"));
 
@@ -97,8 +95,7 @@ namespace {
 //  false - This value is not a source.  Its label is the join of the labels
 //          of its input operands.
 //
-static inline bool
-isASource (const Value * V) {
+static inline bool isASource (const Value * V) {
   //
   // Call instructions are sources *unless* they are inline assembly.
   //
@@ -177,8 +174,7 @@ FindFlows::addSource (const Value * V, const Function * F) {
 //          called (i.e., the specified basic block is control-dependent on
 //          the entry block if the entry block is in bbNums).
 //
-bool
-giri::DynamicGiri::findExecForcers (BasicBlock * BB,
+bool giri::DynamicGiri::findExecForcers (BasicBlock * BB,
                                     std::set<unsigned> & bbNums) {
   //
   // Get the parent function containing this basic block.  We'll need it for
@@ -268,8 +264,7 @@ giri::DynamicGiri::findExecForcers (BasicBlock * BB,
 // Output: true, if both belong to same function, 
 //         so that we can keep the expr tree within a function
 
-bool 
-giri::DynamicGiri::checkForSameFunction (DynValue *DV, DynValue & Initial) {
+bool giri::DynamicGiri::checkForSameFunction (DynValue *DV, DynValue & Initial) {
   
   }
 
@@ -291,8 +286,7 @@ giri::DynamicGiri::checkForSameFunction (DynValue *DV, DynValue & Initial) {
 //  executions depending on the result of the basic block's terminating
 //  instruction. 
 //
-void
-giri::DynamicGiri::findSlice (DynValue & Initial,
+void giri::DynamicGiri::findSlice (DynValue & Initial,
                               std::tr1::unordered_set<DynValue> & Slice,
                               std::set<DynValue *> & DataFlowGraph) {
   // Worklist
@@ -472,8 +466,7 @@ giri::DynamicGiri::findSlice (DynValue & Initial,
 //  DV - The starting dynamic value.
 //  counter - distance (intervening invariant successes) from the previous 
 //            invariant failure.
-void 
-giri::DynamicGiri::updateInvCounters (DynValue *DV, int counter) {
+void giri::DynamicGiri::updateInvCounters (DynValue *DV, int counter) {
 
 
 }
@@ -771,8 +764,7 @@ FindFlows::findArgSources (Argument * Arg,
 //  This method prints all of the values that are in the backwards slice of
 //  the specified instruction.
 //
-void
-giri::DynamicGiri::printBackwardsSlice (std::set<Value *> & Slice,  
+void giri::DynamicGiri::printBackwardsSlice (std::set<Value *> & Slice,  
                                         std::tr1::unordered_set<DynValue> & dynamicSlice,
                                         std::set<DynValue *> & DataFlowGraph) {
 
@@ -854,8 +846,7 @@ giri::DynamicGiri::printBackwardsSlice (std::set<Value *> & Slice,
 //  This method returns all of the values that are in the backwards slice of
 //  the specified instruction.
 //
-void
-giri::DynamicGiri::getBackwardsSlice (Instruction * I,
+void giri::DynamicGiri::getBackwardsSlice (Instruction * I,
                                       std::set<Value *> & Slice,  
                                       std::tr1::unordered_set<DynValue > & dynamicSlice,
                                       std::set<DynValue *> & DataFlowGraph) {
@@ -891,8 +882,7 @@ giri::DynamicGiri::getBackwardsSlice (Instruction * I,
 //   Start building expression tree from root cause and count the mapped
 //   source lines 
 //
-void
-giri::DynamicGiri::getExprTree ( std::set<Value *> & Slice,  
+void giri::DynamicGiri::getExprTree ( std::set<Value *> & Slice,  
                                       std::tr1::unordered_set<DynValue > & dynamicSlice,
                                       std::set<DynValue *> & DataFlowGraph) {
 
@@ -908,8 +898,7 @@ giri::DynamicGiri::getExprTree ( std::set<Value *> & Slice,
 //
 // Inputs:
 //  M - The module to analyze.
-void 
-giri::DynamicGiri::initialize (Module & M)
+void giri::DynamicGiri::initialize (Module & M)
 {
   /*** Create the type variables ***/
   ////////////////////  Right now treat all unsigned values as signed
@@ -995,8 +984,7 @@ bool giri::DynamicGiri::checkForInvariantInst(Value *V)
 // Return value:
 //  false - The module was not modified.
 //
-bool
-giri::DynamicGiri::runOnModule (Module & M) {
+bool giri::DynamicGiri::runOnModule (Module & M) {
 
   std::set<Value *> mySliceOfLife;
   std::tr1::unordered_set<DynValue> myDynSliceOfLife;
@@ -1135,6 +1123,3 @@ giri::DynamicGiri::runOnModule (Module & M) {
   //
   return false;
 }
-
-
-

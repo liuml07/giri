@@ -22,21 +22,17 @@
 #include <cassert>
 #include <vector>
 #include <iostream>
-
 #include <fcntl.h>
 #include <unistd.h>
-
 #include <sys/mman.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-
 
 // Pass Statistics
 namespace {
   STATISTIC (StaticBuggyValuesCount, "Number of Possible static values which are possibly missing matching entries in trace");
   STATISTIC (DynBuggyValuesCount, "Number of Possible dynamic values which are possibly missing matching entries in trace");
 }
-
 
 //
 // Method: constructor
@@ -103,8 +99,7 @@ giri::TraceFile::TraceFile (std::string Filename,
 // can possibly be different This algorithm should be n*c where n
 // is the number of elements in the trace.
 //
-void
-giri::TraceFile::buildTraceFunAddrMap (void) {
+void giri::TraceFile::buildTraceFunAddrMap (void) {
 
   Function *calledFun = NULL;
   CallInst *CI; 
@@ -165,8 +160,7 @@ struct EntryCompare {
 //  This algorithm should be n*log(n) where n is the number of elements in the
 //  trace.
 //
-void
-giri::TraceFile::fixupLostLoads (void) {
+void giri::TraceFile::fixupLostLoads (void) {
   // Set of written memory locations
   std::set<Entry,EntryCompare> Stores;
 
@@ -233,8 +227,7 @@ giri::TraceFile::fixupLostLoads (void) {
 //  Given an LLVM instruction, return a DynValue object that describes
 //  the last dynamic execution of the instruction within the trace.
 //
-giri::DynValue *
-giri::TraceFile::getLastDynValue (Value * V) {
+giri::DynValue* giri::TraceFile::getLastDynValue (Value * V) {
   //
   // Determine if this is an instruction.  If not, then it is some other value
   // that doesn't belong to a specific basic block within the trace.
@@ -280,8 +273,7 @@ giri::TraceFile::getLastDynValue (Value * V) {
 //  Parent -  One of the Parent node of new node DV in the Data flow graph.
 // Return value:
 //  The index in the trace of entry with the specified type and ID is returned.
-void 
-giri::TraceFile::addToWorklist (DynValue & DV,  Worklist_t & Sources, /* insert_iterator & Sources, */
+void giri::TraceFile::addToWorklist (DynValue & DV,  Worklist_t & Sources, /* insert_iterator & Sources, */
 				DynValue & Parent) {
   // Allocate a new DynValue which can stay till deallocated
   DynValue *temp = new DynValue (DV);
@@ -293,14 +285,11 @@ giri::TraceFile::addToWorklist (DynValue & DV,  Worklist_t & Sources, /* insert_
 
 
 // Just public wrapper function to call addToWorklist
-void 
-giri::TraceFile::addCtrDepToWorklist (DynValue & DV, Worklist_t & Sources, /* insert_iterator  & Sources, */
+void giri::TraceFile::addCtrDepToWorklist (DynValue & DV, Worklist_t & Sources, /* insert_iterator  & Sources, */
 				DynValue & Parent) {
   // Simply call the addToWorklist
   addToWorklist (DV, Sources, Parent);
 }
-
-
 
 //
 // Method: findPrevious()
@@ -322,8 +311,7 @@ giri::TraceFile::addCtrDepToWorklist (DynValue & DV, Worklist_t & Sources, /* in
 //  type.  Asserts in the code will ensure that this is true when this code is
 //  compiled with assertions enabled.
 //
-unsigned long
-giri::TraceFile::findPrevious (unsigned long start_index,
+unsigned long giri::TraceFile::findPrevious (unsigned long start_index,
                                const unsigned char type) {
   //
   // Start searching from the specified index and continue until we find an
@@ -368,8 +356,7 @@ giri::TraceFile::findPrevious (unsigned long start_index,
 //  The index in the trace of entry with the specified type and ID is returned.
 //  If no such entry is found, then the end entry is returned.
 //
-unsigned long
-giri::TraceFile::findPreviousID (unsigned long start_index,
+unsigned long giri::TraceFile::findPreviousID (unsigned long start_index,
                                  const unsigned char type,
                                  const std::set<unsigned> & ids) {
   //
@@ -421,8 +408,7 @@ giri::TraceFile::findPreviousID (unsigned long start_index,
 // Return value:
 //  The index in the trace of entry with the specified type and ID is returned.
 //
-unsigned long
-giri::TraceFile::findPreviousID (unsigned long start_index,
+unsigned long giri::TraceFile::findPreviousID (unsigned long start_index,
                                  const unsigned char type,
                                  const unsigned id) {
   //
@@ -476,8 +462,7 @@ giri::TraceFile::findPreviousID (unsigned long start_index,
 //  id          - The ID of the entry for which we are looking.
 //  nestedID    - The ID of the basic block to use to find nesting levels.
 //
-unsigned long
-giri::TraceFile::findPreviousNestedID (unsigned long start_index,
+unsigned long giri::TraceFile::findPreviousNestedID (unsigned long start_index,
                                        const unsigned char type,
                                        const unsigned id,
                                        const unsigned nestedID) {
@@ -567,8 +552,7 @@ giri::TraceFile::findPreviousNestedID (unsigned long start_index,
 //  type and ID criteria.  Asserts in the code will ensure that this is true
 //  when this code is compiled with assertions enabled.
 //
-unsigned long
-giri::TraceFile::findNextID (unsigned long start_index,
+unsigned long giri::TraceFile::findNextID (unsigned long start_index,
                              const unsigned char type,
                              const unsigned id) {
   //
@@ -619,8 +603,7 @@ giri::TraceFile::findNextID (unsigned long start_index,
 //  type and address criteria.  Asserts in the code will ensure that this is
 //  true when this code is compiled with assertions enabled.
 //
-unsigned long
-giri::TraceFile::findNextAddress (unsigned long start_index,
+unsigned long giri::TraceFile::findNextAddress (unsigned long start_index,
                                   const unsigned char type,
                                   const uintptr_t address) {
   //
@@ -663,8 +646,7 @@ giri::TraceFile::findNextAddress (unsigned long start_index,
 //  This method finds the next entry in the trace file that has the specified
 //  type and ID.  However, it also handles nesting.
 //
-unsigned long
-giri::TraceFile::findNextNestedID (unsigned long start_index,
+unsigned long giri::TraceFile::findNextNestedID (unsigned long start_index,
                                    const unsigned char type,
                                    const unsigned id,
                                    const unsigned nestID) {
@@ -738,8 +720,7 @@ giri::TraceFile::findNextNestedID (unsigned long start_index,
 //  The index in the trace of entry with the specified type and ID is returned.
 //  If it can't find a matching entry it'll return maxIndex as error code
 //
-unsigned long
-giri::TraceFile::findPreviousIDWithRecursion (Function *fun, 
+unsigned long giri::TraceFile::findPreviousIDWithRecursion (Function *fun, 
                                  unsigned long start_index,  
                                  const unsigned char type, 
                                  const unsigned id) {
@@ -865,8 +846,7 @@ giri::TraceFile::findPreviousIDWithRecursion (Function *fun,
 //  The index in the trace of entry with the specified type and ID is returned.
 //  If it can't find a matching entry it'll return maxIndex as error code
 //
-unsigned long
-giri::TraceFile::findPreviousIDWithRecursion (Function *fun, 
+unsigned long giri::TraceFile::findPreviousIDWithRecursion (Function *fun, 
                                  unsigned long start_index,  
                                  const unsigned char type, 
                                  const std::set<unsigned> & ids) {
@@ -979,8 +959,7 @@ giri::TraceFile::findPreviousIDWithRecursion (Function *fun,
 //  Normalize a dynamic basic block.  This means that we search for its entry
 //  within the dynamic trace and update its index.
 //
-long
-giri::TraceFile::normalize (DynBasicBlock & DBB) {
+long giri::TraceFile::normalize (DynBasicBlock & DBB) {
    
   if (BuggyValues.find (DBB.BB) != BuggyValues.end()) {
     DynBuggyValuesCount++;
@@ -1032,8 +1011,7 @@ giri::TraceFile::normalize (DynBasicBlock & DBB) {
 //  We don't need to take into account nesting struction due to recursive calls
 //  as except stores, all values are propagated through SSA values.
 //  For store, we already point to BB end accounting for recursion.
-long
-giri::TraceFile::normalize (DynValue & DV) {
+long giri::TraceFile::normalize (DynValue & DV) {
 #if 0
   //
   // If we're already at the end record, assume that we're normalized.
@@ -1108,8 +1086,7 @@ giri::TraceFile::normalize (DynValue & DV) {
 // failed, if the corresponding invariant failure is found in the
 // trace.
 //
-void
-giri::TraceFile::markInvFailure (DynValue & DV) {
+void giri::TraceFile::markInvFailure (DynValue & DV) {
 
    
 
@@ -1132,8 +1109,7 @@ giri::TraceFile::markInvFailure (DynValue & DV) {
 //            of the phi-node will be inserted into a container using this
 //            iterator.
 //
-void
-giri::TraceFile::getSourcesForPHI (DynValue & DV, Worklist_t &  Sources) {
+void giri::TraceFile::getSourcesForPHI (DynValue & DV, Worklist_t &  Sources) {
   //
   // Get the PHI instruction.
   //
@@ -1203,8 +1179,7 @@ giri::TraceFile::getSourcesForPHI (DynValue & DV, Worklist_t &  Sources) {
 // Return:
 //  Corresponding call instruction.
 //
-Instruction *
-giri::TraceFile::getCallInstForFormalArg(DynValue & DV) {
+Instruction* giri::TraceFile::getCallInstForFormalArg(DynValue & DV) {
   //
   // Get the argument from the dynamic instruction instance.
   //
@@ -1270,8 +1245,7 @@ giri::TraceFile::getCallInstForFormalArg(DynValue & DV) {
 //  Sources - The dynamic value representing the actual argument is added to
 //            a container using this insertion iterator.
 //
-void
-giri::TraceFile::getSourcesForArg(DynValue & DV, Worklist_t &  Sources) {
+void giri::TraceFile::getSourcesForArg(DynValue & DV, Worklist_t &  Sources) {
   //
   // Get the argument from the dynamic instruction instance.
   //
@@ -1450,8 +1424,7 @@ giri::TraceFile::getSourcesForArg(DynValue & DV, Worklist_t &  Sources) {
 //  true  - The objects have some memory locations in common.
 //  false - The objects have no common memory locations.
 //
-static inline bool
-overlaps (Entry first, Entry second) {
+static inline bool overlaps (Entry first, Entry second) {
   //
   // Case 1: The objects do not overlap and the first object is located at a
   //         lower address in the address space.
@@ -1480,8 +1453,7 @@ overlaps (Entry first, Entry second) {
 // Description:
 //  This method, given a dynamic value that reads from memory, will find the
 //  dynamic value(s) that stores into the same memory.
-void
-giri::TraceFile::findAllStoresForLoad (DynValue & DV,
+void giri::TraceFile::findAllStoresForLoad (DynValue & DV,
                                        Worklist_t &  Sources,
                                        long store_index, 
                                        Entry load_entry) {
@@ -1599,8 +1571,7 @@ giri::TraceFile::findAllStoresForLoad (DynValue & DV,
 //  Sources - The dynamic value written to the memory location is added to
 //            a container using this insertion iterator.
 //
-void
-giri::TraceFile::getSourcesForLoad (DynValue & DV,
+void giri::TraceFile::getSourcesForLoad (DynValue & DV,
                                     Worklist_t &  Sources,
                                     unsigned count) {
   //
@@ -1780,8 +1751,7 @@ giri::TraceFile::getSourcesForLoad (DynValue & DV,
 //  true  - This is a call to a special function.
 //  false - This is not a call to a special function.
 //
-bool
-giri::TraceFile::getSourcesForSpecialCall (DynValue & DV,
+bool giri::TraceFile::getSourcesForSpecialCall (DynValue & DV,
                                            Worklist_t &  Sources) {
   //
   // Get the call instruction of the dynamic value.  If it's not a call
@@ -1945,8 +1915,7 @@ giri::TraceFile::getSourcesForSpecialCall (DynValue & DV,
 //  The index in the trace of entry with the specified type and ID is returned.
 //  If no such entry is found, then the end entry is returned.
 //
-unsigned long
-giri::TraceFile::matchReturnWithCall (unsigned long start_index,
+unsigned long giri::TraceFile::matchReturnWithCall (unsigned long start_index,
                                  const unsigned bbID,
                                  const unsigned callID) {
 
@@ -2022,8 +1991,7 @@ giri::TraceFile::mapCallsToReturns( DynValue & DV, Worklist_t &  Sources ) {
   getSourcesForCall ( DV, Sources );
 }
 
-void
-giri::TraceFile::getSourcesForCall (DynValue & DV, Worklist_t &  Sources) {
+void giri::TraceFile::getSourcesForCall (DynValue & DV, Worklist_t &  Sources) {
   //
   // Get the Call instruction.
   //
@@ -2202,8 +2170,7 @@ giri::TraceFile::getSourcesForCall (DynValue & DV, Worklist_t &  Sources) {
 //  Examine the trace file to determine which input of a select instruction was
 //  used during dynamic execution.
 //
-void
-giri::TraceFile::getSourceForSelect (DynValue & DV, Worklist_t &  Sources) {
+void giri::TraceFile::getSourceForSelect (DynValue & DV, Worklist_t &  Sources) {
   //
   // Get the select instruction.
   //
@@ -2274,8 +2241,7 @@ giri::TraceFile::getSourceForSelect (DynValue & DV, Worklist_t &  Sources) {
 //  inter-procedural tracing, tracing of data through memory, and for tracing
 //  *only* when a subset of the inputs to a value are used (e.g., phi-nodes).
 //
-void
-giri::TraceFile::getSourcesFor (DynValue & DInst, Worklist_t &  si) {
+void giri::TraceFile::getSourcesFor (DynValue & DInst, Worklist_t &  si) {
   //
   // If this is a conditional branch or switch instruction, add the conditional
   // value to to set of sources to backtrace.  If it is an unconditional
@@ -2412,5 +2378,3 @@ giri::TraceFile::getExecForcer (DynBasicBlock DBB,
 
   return DynBasicBlock (bbNumPass->getBlock (trace[index].id), index);
 }
-
-
