@@ -17,7 +17,6 @@
 
 #include "Giri/Runtime.h"
 
-//#include <iostream>
 #include <cstdio>
 #include <cassert>
 #include <cstdlib>

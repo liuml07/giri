@@ -14,8 +14,8 @@
 #ifndef GIRI_TRACEFILE_H
 #define GIRI_TRACEFILE_H
 
-#include "diagnosis/BasicBlockNumbering.h"
-#include "diagnosis/LoadStoreNumbering.h"
+#include "Utility/BasicBlockNumbering.h"
+#include "Utility/LoadStoreNumbering.h"
 #include "Giri/Runtime.h"
 
 #include "llvm/Value.h"

@@ -13,8 +13,8 @@
 
 #define DEBUG_TYPE "postdomfrontier"
 
-//#include "llvm/Analysis/PostDominators.h"
-#include "diagnosis/PostDominanceFrontier.h"
+#include "Utility/PostDominanceFrontier.h"
+
 #include "llvm/Instructions.h"
 #include "llvm/Support/CFG.h"
 #include "llvm/Support/Debug.h"

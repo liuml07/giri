@@ -14,13 +14,13 @@
 #ifndef GIRI_GIRI_H
 #define GIRI_GIRI_H
 
-#include "diagnosis/BasicBlockNumbering.h"
-#include "diagnosis/LoadStoreNumbering.h"
 #include "Giri/TraceFile.h"
+#include "Utility/BasicBlockNumbering.h"
+#include "Utility/LoadStoreNumbering.h"
+#include "Utility/PostDominanceFrontier.h"
 
 #include "llvm/Analysis/PostDominators.h"
 #include "llvm/Analysis/Dominators.h"
-#include "diagnosis/PostDominanceFrontier.h"
 #include "llvm/Pass.h"
 #include "llvm/Support/InstVisitor.h"
 #include "llvm/Target/TargetData.h"

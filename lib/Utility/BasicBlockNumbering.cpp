@@ -13,7 +13,7 @@
 
 #define DEBUG_TYPE "BasicBlockNumbering"
 
-#include "diagnosis/BasicBlockNumbering.h"
+#include "Utility/BasicBlockNumbering.h"
 
 #include "llvm/Constants.h"
 #include "llvm/Instructions.h"

@@ -13,8 +13,8 @@
 
 #define DEBUG_TYPE "LoadStoreNumbering"
 
-#include "diagnosis/LoadStoreNumbering.h"
-#include "diagnosis/Utils.h"
+#include "Utility/LoadStoreNumbering.h"
+#include "Utility/Utils.h"
 
 #include "llvm/Constants.h"
 #include "llvm/Instructions.h"
