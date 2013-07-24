@@ -43,8 +43,7 @@ Z ("remove-bbnum", "Remove Unique Identifiers of Basic Blocks");
 //  This function modifies the specified basic block so that it has the
 //  specified ID.
 //
-MDNode *
-dg::BasicBlockNumberPass::assignIDToBlock (BasicBlock * BB, unsigned id) {
+MDNode* dg::BasicBlockNumberPass::assignIDToBlock (BasicBlock * BB, unsigned id) {
   //
   // Fetch the context in which the enclosing module was defined.  We'll need
   // it for creating practically everything.
@@ -71,8 +70,7 @@ dg::BasicBlockNumberPass::assignIDToBlock (BasicBlock * BB, unsigned id) {
 // Return value:
 //  true - The module was modified.
 //
-bool
-dg::BasicBlockNumberPass::runOnModule (Module & M) {
+bool dg::BasicBlockNumberPass::runOnModule (Module & M) {
   //
   // Now create a named metadata node that links all of this metadata together.
   //
@@ -130,8 +128,7 @@ dg::BasicBlockNumberPass::runOnModule (Module & M) {
 // Return value:
 //  false - The module is never modified because this is an analysis pass.
 //
-bool
-dg::QueryBasicBlockNumbers::runOnModule (Module & M) {
+bool dg::QueryBasicBlockNumbers::runOnModule (Module & M) {
   //std::cout << "Inside QueryBasicBlockNumbers " << M.getModuleIdentifier() << std::endl;
   //
   // Get the basic block metadata.  If there isn't any metadata, then no basic
@@ -184,8 +181,7 @@ dg::QueryBasicBlockNumbers::runOnModule (Module & M) {
 //  false - The module was not modified.
 //  true  - The module was modified.
 //
-bool
-dg::RemoveBasicBlockNumbers::runOnModule (Module & M) {
+bool dg::RemoveBasicBlockNumbers::runOnModule (Module & M) {
   //
   // Get the basic block metadata.  If there isn't any metadata, then no basic
   // blocks have been numbered.

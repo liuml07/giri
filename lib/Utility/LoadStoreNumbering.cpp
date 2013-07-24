@@ -65,26 +65,22 @@ dg::LoadStoreNumberPass::assignID (Instruction * I, unsigned id) {
   return MD;
 }
 
-void
-dg::LoadStoreNumberPass::visitLoadInst (LoadInst &I) {
+void dg::LoadStoreNumberPass::visitLoadInst (LoadInst &I) {
   //MDNodes.push_back (assignID (&I, ++count));
   MD->addOperand( (assignID (&I, ++count)) ); 
 }
 
-void
-dg::LoadStoreNumberPass::visitStoreInst (StoreInst &I) {
+void dg::LoadStoreNumberPass::visitStoreInst (StoreInst &I) {
   //MDNodes.push_back (assignID (&I, ++count));
   MD->addOperand( (assignID (&I, ++count)) );
 }
 
-void
-dg::LoadStoreNumberPass::visitSelectInst (SelectInst &SI) {
+void dg::LoadStoreNumberPass::visitSelectInst (SelectInst &SI) {
   //MDNodes.push_back (assignID (&SI, ++count));
     MD->addOperand( (assignID (&SI, ++count)) ); 
 }
 
-void
-dg::LoadStoreNumberPass::visitCallInst (CallInst &CI) {
+void dg::LoadStoreNumberPass::visitCallInst (CallInst &CI) {
   //
   // Do not add an identifier for this call instruction if it is a run-time
   // function.
@@ -112,8 +108,7 @@ dg::LoadStoreNumberPass::visitCallInst (CallInst &CI) {
 // Return value:
 //  true - The module was modified.
 //
-bool
-dg::LoadStoreNumberPass::runOnModule (Module & M) {
+bool dg::LoadStoreNumberPass::runOnModule (Module & M) {
   //
   // Now create a named metadata node that links all of this metadata together.
   //
@@ -172,8 +167,7 @@ dg::LoadStoreNumberPass::runOnModule (Module & M) {
 // Return value:
 //  false - The module is never modified because this is an analysis pass.
 //
-bool
-dg::QueryLoadStoreNumbers::runOnModule (Module & M) {
+bool dg::QueryLoadStoreNumbers::runOnModule (Module & M) {
   //std::cout << "Inside QueryLoadStoreNumbers " << M.getModuleIdentifier() << std::endl;
   //
   // Get the basic block metadata.  If there isn't any metadata, then no basic
@@ -226,8 +220,7 @@ dg::QueryLoadStoreNumbers::runOnModule (Module & M) {
 //  false - The module was not modified.
 //  true  - The module was modified.
 //
-bool
-dg::RemoveLoadStoreNumbers::runOnModule (Module & M) {
+bool dg::RemoveLoadStoreNumbers::runOnModule (Module & M) {
   //
   // Get the basic block metadata.  If there isn't any metadata, then no basic
   // blocks have been numbered.
@@ -245,4 +238,3 @@ dg::RemoveLoadStoreNumbers::runOnModule (Module & M) {
   //
   return true;
 }
-

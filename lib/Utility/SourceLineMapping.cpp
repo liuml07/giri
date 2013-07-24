@@ -59,8 +59,7 @@ namespace {
   STATISTIC (QueriedSrcInfo, "Number of Source Information Locations Queried Including Ignored LLVM Insts");
 }
 
-std::string
-dg::SourceLineMappingPass::locateSrcInfo (Instruction *I) {
+std::string dg::SourceLineMappingPass::locateSrcInfo (Instruction *I) {
 
   //
   // Update the number of source locations queried.
@@ -154,9 +153,7 @@ dg::SourceLineMappingPass::locateSrcInfo (Instruction *I) {
 
 }
 
-
-void
-dg::SourceLineMappingPass::locateSrcInfoForCheckingOptimizations (Instruction *I) {
+void dg::SourceLineMappingPass::locateSrcInfoForCheckingOptimizations (Instruction *I) {
 
   //
   // Update the number of source locations queried.
@@ -246,14 +243,12 @@ dg::SourceLineMappingPass::locateSrcInfoForCheckingOptimizations (Instruction *I
 
 }
 
-
 //
 // Method: mapCompleteFile()
 //
 // Description:
 //  Map all instruction in Module M to source lines
-void 
-dg::SourceLineMappingPass::mapCompleteFile(Module & M) {
+void dg::SourceLineMappingPass::mapCompleteFile(Module & M) {
 
   //
   // Read in the set of violated invariants from a file and determine if they
@@ -279,8 +274,7 @@ dg::SourceLineMappingPass::mapCompleteFile(Module & M) {
 //
 // Description:
 //  Map all instruction in one function Module M to source lines
-void 
-dg::SourceLineMappingPass::mapOneFunction(Module & M) {
+void dg::SourceLineMappingPass::mapOneFunction(Module & M) {
 
   int instCount = 0, bbCount = 0, lastInst;
   std::string startFunction;
@@ -317,8 +311,6 @@ dg::SourceLineMappingPass::mapOneFunction(Module & M) {
 
 }
 
-
-
 //
 // Method: runOnModule()
 //
@@ -332,8 +324,7 @@ dg::SourceLineMappingPass::mapOneFunction(Module & M) {
 // Return value:
 //  false - The module was not modified.
 //
-bool
-dg::SourceLineMappingPass::runOnModule (Module & M) {
+bool dg::SourceLineMappingPass::runOnModule (Module & M) {
 
 
   if ( CompleteFile ) 
@@ -346,4 +337,3 @@ dg::SourceLineMappingPass::runOnModule (Module & M) {
   //
   return false;
 }
-

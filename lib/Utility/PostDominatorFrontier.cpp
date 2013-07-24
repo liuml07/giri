@@ -41,7 +41,7 @@ INITIALIZE_PASS_END(PostDominanceFrontier, "postdomfrontier",
 static RegisterPass<PostDominanceFrontier>
       H("postdomfrontier", "Post-Dominance Frontier Construction", true, true);
 
-const DominanceFrontier::DomSetType &
+const DominanceFrontier::DomSetType&
 PostDominanceFrontier::calculate(const PostDominatorTree &DT,
                                  const DomTreeNode *Node) {
   // Loop over CFG successors to calculate DFlocal[Node]

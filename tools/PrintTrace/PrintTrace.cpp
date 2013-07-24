@@ -28,8 +28,7 @@
 static cl::opt<std::string>
 InputFilename(cl::Positional, cl::desc("<input trace file>"), cl::init("-"));
 
-int
-main (int argc, char ** argv) {
+int main (int argc, char ** argv) {
   //
   // Parse the command line options.
   //
@@ -115,4 +114,3 @@ main (int argc, char ** argv) {
 
   return 0;
 }
-

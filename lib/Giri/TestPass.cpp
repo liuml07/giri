@@ -100,8 +100,7 @@ namespace giri {
 //  Entry point for this pass.  Find the instruction specified by the user and
 //  find the backwards slice of it.
 //
-bool
-giri::TestGiri::runOnModule (Module & M) {
+bool giri::TestGiri::runOnModule (Module & M) {
   //
   // Get a reference to the function specified by the user.
   //
@@ -132,10 +131,6 @@ giri::TestGiri::runOnModule (Module & M) {
 // ID Variable to identify the pass
 char giri::TestGiri::ID = 0;
 
-//
 // Pass registration
-//
 static RegisterPass<giri::TestGiri>
 X ("test-giri", "Dynamic Backwards Slice Testing Pass");
-
-
