@@ -18,7 +18,7 @@
 #define DEBUG_TYPE "giri"
 
 #include "diagnosis/Utils.h"
-#include "giri/Giri.h"
+#include "Giri/Giri.h"
 #include "diagnosis/VectorExtras.h"
 
 #include "llvm/ADT/Statistic.h"

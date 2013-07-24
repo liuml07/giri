@@ -11,7 +11,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "giri/TraceFile.h"
+#include "Giri/TraceFile.h"
 
 #include "llvm/Instructions.h"
 #include "llvm/IntrinsicInst.h"

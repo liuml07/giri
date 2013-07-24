@@ -16,7 +16,7 @@
 
 #include "diagnosis/BasicBlockNumbering.h"
 #include "diagnosis/LoadStoreNumbering.h"
-#include "giri/TraceFile.h"
+#include "Giri/TraceFile.h"
 #include "inv/inv_utils.h"
 
 #include "llvm/Analysis/PostDominators.h"

@@ -16,7 +16,7 @@
 
 #include "diagnosis/BasicBlockNumbering.h"
 #include "diagnosis/LoadStoreNumbering.h"
-#include "giri/Runtime.h"
+#include "Giri/Runtime.h"
 
 #include "llvm/Value.h"
 #include "llvm/Support/raw_os_ostream.h"

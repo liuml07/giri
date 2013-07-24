@@ -15,7 +15,7 @@
 
 #define DEBUG_TYPE "giri"
 
-#include "giri/Giri.h"
+#include "Giri/Giri.h"
 #include "inv/inv_utils.h"
 #include "diagnosis/Utils.h"
 #include "diagnosis/SourceLineMapping.h"

@@ -15,7 +15,7 @@
 
 #define DEBUG_TYPE "test-giri"
 
-#include "giri/Giri.h"
+#include "Giri/Giri.h"
 
 #include "llvm/Support/CommandLine.h"
 
