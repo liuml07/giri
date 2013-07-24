@@ -1,8 +1,8 @@
-##===- projects/sample/Makefile ----------------------------*- Makefile -*-===##
+##===- giri/Makefile ----------------------------*- Makefile -*-===##
 #
-# This is a sample Makefile for a project that uses LLVM.
+# This is the top Makefile for Giri project, dynamic slicing in LLVM
 #
-##===----------------------------------------------------------------------===##
+##===-----------------------------------------------------------===##
 
 #
 # Indicates our relative path to the top of the project's root directory.

@@ -1,4 +1,4 @@
-##===- runtime/Makefile ------------------------------------*- Makefile -*-===##
+##===- giri/runtime/Makefile -----------------------------*- Makefile -*-===##
 
 #
 # Relative path to the top of the source tree.
