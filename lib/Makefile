@@ -1,4 +1,4 @@
-##===- projects/sample/lib/Makefile ------------------------*- Makefile -*-===##
+##===- giri/lib/Makefile ----------------------------*- Makefile -*-===##
 
 #
 # Relative path to the top of the source tree.

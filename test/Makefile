@@ -1,9 +1,9 @@
-##===- diagnosis/test/Makefile -----------------------------*- Makefile -*-===##
+##===- giri/test/Makefile ------------------------------*- Makefile -*-===##
 #
 # Define the default test rule, which allows people to just type 'make test' in
 # this directory.
 #
-##===----------------------------------------------------------------------===##
+##===------------------------------------------------------------------===##
 
 # The default target in this directory is the test:: target
 test::

@@ -1,5 +1,4 @@
-# Makefile for the hello world test for giri
-#
+##===- giri/test/hello-world/Makefile --------------------*- Makefile -*-===##
 #
 
 CC = clang
