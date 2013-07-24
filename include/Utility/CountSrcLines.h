@@ -24,7 +24,7 @@
 
 #include <deque>
 #include <set>
-#include <tr1/unordered_set>
+#include <unordered_set>
 
 using namespace llvm;
 //using namespace dg;
@@ -70,7 +70,7 @@ namespace dg {
 
     void countLines(const std::string & bbrecord_file);
 
-    std::tr1::unordered_set<unsigned> readBB(const std::string & bbrecord_file);
+    std::unordered_set<unsigned> readBB(const std::string & bbrecord_file);
  
     private:
  
@@ -78,7 +78,7 @@ namespace dg {
       const QueryLoadStoreNumbers  * lsNumPass;
 
       // Private methods
-      //void findSlice (DynValue & V, std::tr1::unordered_set<DynValue> & Slice,
+      //void findSlice (DynValue & V, std::unordered_set<DynValue> & Slice,
       //                                      std::set<DynValue *> & DataFlowGraph);
  
       // Trace file object (used for querying the trace)

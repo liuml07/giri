@@ -68,14 +68,14 @@ void dg::CountSrcLines::initialize (Module & M)
 }
 
 void dg::CountSrcLines::countLines(const std::string & bbrecord_file) {
-	std::tr1::unordered_set<unsigned> bb_set = readBB(TraceFilename);
+	std::unordered_set<unsigned> bb_set = readBB(TraceFilename);
         std::string srcLineInfo;
         std::set<std::string> srcLines;
         std::set<std::string> BBsWithInstWithNoSrcLineMapping;
 
 	std::cout << "Number of unique Basic Blocks executed: " << bb_set.size() << "\n";
 
-	std::tr1::unordered_set<unsigned>::iterator curr;
+	std::unordered_set<unsigned>::iterator curr;
 	for (curr = bb_set.begin(); curr != bb_set.end(); ++curr) {
 	   BasicBlock *BB = bbNumPass->getBlock (*curr);
            StaticLLVMInstCount += BB->size ();
@@ -106,7 +106,7 @@ void dg::CountSrcLines::countLines(const std::string & bbrecord_file) {
 
 }
 
-std::tr1::unordered_set<unsigned> dg::CountSrcLines::readBB(const std::string & bbrecord_file) {
+std::unordered_set<unsigned> dg::CountSrcLines::readBB(const std::string & bbrecord_file) {
         int NumOfDynamicBBs = 0;
 
 	int bb_fd = open(bbrecord_file.c_str(), O_RDONLY);
@@ -116,7 +116,7 @@ std::tr1::unordered_set<unsigned> dg::CountSrcLines::readBB(const std::string & 
         }
 
 	// Keep track of basic bock ids we have seen
-	std::tr1::unordered_set<unsigned> bb_set;
+	std::unordered_set<unsigned> bb_set;
 	// Read in each entry from the file
 	Entry entry;
 	while (read(bb_fd, &entry, sizeof(entry)) == sizeof(entry)) {

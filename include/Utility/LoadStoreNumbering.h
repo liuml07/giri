@@ -22,7 +22,7 @@
 #include "llvm/Support/InstVisitor.h"
 
 #include <map>
-#include <tr1/unordered_map>
+#include <unordered_map>
 
 using namespace llvm;
 
@@ -103,7 +103,7 @@ namespace dg {
       }
 
       Value * getInstforID (unsigned id) const {
-        std::tr1::unordered_map<unsigned, Value *>::const_iterator i = InstMap.find (id);
+        std::unordered_map<unsigned, Value *>::const_iterator i = InstMap.find (id);
         if (i != InstMap.end())
           return i->second;
         return 0;
@@ -118,7 +118,7 @@ namespace dg {
       // Map an ID to the instruction to which it is mapped.  Note that we can
       // have multiple IDs mapped to the same instruction; however, we ignore
       // that possibility for now.
-      std::tr1::unordered_map<unsigned, Value *> InstMap;
+      std::unordered_map<unsigned, Value *> InstMap;
   };
 
   //
