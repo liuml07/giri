@@ -287,14 +287,14 @@ bool giri::DynamicGiri::checkForSameFunction (DynValue *DV, DynValue & Initial) 
 //  instruction. 
 //
 void giri::DynamicGiri::findSlice (DynValue & Initial,
-                              std::tr1::unordered_set<DynValue> & Slice,
+                              std::unordered_set<DynValue> & Slice,
                               std::set<DynValue *> & DataFlowGraph) {
   // Worklist
   Worklist_t Worklist;
   DynValue *lastDV = NULL;
 
   // Set of basic blocks that have had their control dependence processed
-  std::tr1::unordered_set<DynBasicBlock> processedBBs;
+  std::unordered_set<DynBasicBlock> processedBBs;
 
   //
   // Start off by processing the initial value we're given.
@@ -329,7 +329,7 @@ void giri::DynamicGiri::findSlice (DynValue & Initial,
     // Check to see if this dynamic value has already been processed.
     // If it has been processed, then don't process it again.
     //
-    std::tr1::unordered_set<DynValue>::iterator dvi = Slice.find (*DV);
+    std::unordered_set<DynValue>::iterator dvi = Slice.find (*DV);
     if (dvi != Slice.end()) {
       ++DynValsSkipped;
       continue;
@@ -765,7 +765,7 @@ FindFlows::findArgSources (Argument * Arg,
 //  the specified instruction.
 //
 void giri::DynamicGiri::printBackwardsSlice (std::set<Value *> & Slice,  
-                                        std::tr1::unordered_set<DynValue> & dynamicSlice,
+                                        std::unordered_set<DynValue> & dynamicSlice,
                                         std::set<DynValue *> & DataFlowGraph) {
 
 #if 0
@@ -797,7 +797,7 @@ void giri::DynamicGiri::printBackwardsSlice (std::set<Value *> & Slice,
         llvm::outs() << "==================================================\n";
         llvm::outs() << " Dynamic Slice \n";
         llvm::outs() << "==================================================\n";
-        for (std::tr1::unordered_set<DynValue>::iterator i = dynamicSlice.begin();
+        for (std::unordered_set<DynValue>::iterator i = dynamicSlice.begin();
                                                 i != dynamicSlice.end(); ++i) {
             DynValue DV = *i;
 
@@ -848,7 +848,7 @@ void giri::DynamicGiri::printBackwardsSlice (std::set<Value *> & Slice,
 //
 void giri::DynamicGiri::getBackwardsSlice (Instruction * I,
                                       std::set<Value *> & Slice,  
-                                      std::tr1::unordered_set<DynValue > & dynamicSlice,
+                                      std::unordered_set<DynValue > & dynamicSlice,
                                       std::set<DynValue *> & DataFlowGraph) {
 
   //
@@ -866,7 +866,7 @@ void giri::DynamicGiri::getBackwardsSlice (Instruction * I,
   // Fetch the instructions out of the dynamic slice set.  The caller may be
   // interested in static instructions.
   //
-  std::tr1::unordered_set<DynValue>::iterator i = dynamicSlice.begin();
+  std::unordered_set<DynValue>::iterator i = dynamicSlice.begin();
   while (i != dynamicSlice.end()) {
     Slice.insert (i->getValue());
     ++i;
@@ -883,7 +883,7 @@ void giri::DynamicGiri::getBackwardsSlice (Instruction * I,
 //   source lines 
 //
 void giri::DynamicGiri::getExprTree ( std::set<Value *> & Slice,  
-                                      std::tr1::unordered_set<DynValue > & dynamicSlice,
+                                      std::unordered_set<DynValue > & dynamicSlice,
                                       std::set<DynValue *> & DataFlowGraph) {
 
 
@@ -987,7 +987,7 @@ bool giri::DynamicGiri::checkForInvariantInst(Value *V)
 bool giri::DynamicGiri::runOnModule (Module & M) {
 
   std::set<Value *> mySliceOfLife;
-  std::tr1::unordered_set<DynValue> myDynSliceOfLife;
+  std::unordered_set<DynValue> myDynSliceOfLife;
   std::set<DynValue *> myDataFlowGraph;
 
   //

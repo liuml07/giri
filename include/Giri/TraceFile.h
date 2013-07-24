@@ -27,7 +27,7 @@
 #include <iterator>
 #include <set>
 #include <string>
-#include <tr1/unordered_set>
+#include <unordered_set>
 
 using namespace llvm;
 using namespace dg;
@@ -345,7 +345,7 @@ namespace giri {
       unsigned long maxIndex;
       // Set of errorneous Static Values which have issues like missing matching entries
       // during normalization for some reason
-      std::tr1::unordered_set<Value *> BuggyValues;
+      std::unordered_set<Value *> BuggyValues;
     public:
       // Statistics on loads
       unsigned totalLoadsTraced;
@@ -357,21 +357,19 @@ namespace giri {
 // Create a specialization of the hash class for DynValue and DynBasicBlock.
 //
 namespace std {
-  namespace tr1 {
-    template <> struct hash<giri::DynValue> {
-      std::size_t operator() (const giri::DynValue & DV) const {
-        std::size_t index = (std::size_t) DV.getIndex() << 30;
-        std::size_t value = (std::size_t) DV.getValue() >> 2;
-        return value | index;
-      }
-    };
+  template <> struct hash<giri::DynValue> {
+    std::size_t operator() (const giri::DynValue & DV) const {
+      std::size_t index = (std::size_t) DV.getIndex() << 30;
+      std::size_t value = (std::size_t) DV.getValue() >> 2;
+      return value | index;
+    }
+  };
 
-    template <> struct hash<giri::DynBasicBlock> {
-      std::size_t operator() (const giri::DynBasicBlock & DBB) const {
-        return (std::size_t) DBB.getIndex();
-      }
-    };
-  }
+  template <> struct hash<giri::DynBasicBlock> {
+    std::size_t operator() (const giri::DynBasicBlock & DBB) const {
+      return (std::size_t) DBB.getIndex();
+    }
+  };
 }
 
 #endif

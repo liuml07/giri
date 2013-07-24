@@ -1,5 +1,5 @@
 # Set the name of the project here
-PROJECT_NAME := giri
+PROJECT_NAME := Giri
 PROJ_VERSION := 3.1
  
 # Set this variable to the top of the LLVM source tree.
@@ -25,7 +25,6 @@ TEST_OBJDIR := @testobjdir@
 # Include LLVM's Master Makefile.
 include $(LLVM_SRC_ROOT)/Makefile.common
 
-CFLAGS   += -Wno-deprecated
-CXXFLAGS += -Wno-deprecated
-CPPFLAGS += -Wno-deprecated
+CFLAGS   += -Wno-deprecated -std=c++11
+CXXFLAGS += -Wno-deprecated -std=c++11
 

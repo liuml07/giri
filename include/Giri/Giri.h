@@ -27,7 +27,7 @@
 
 #include <deque>
 #include <set>
-#include <tr1/unordered_set>
+#include <unordered_set>
 
 using namespace llvm;
 using namespace dg;
@@ -177,12 +177,16 @@ namespace giri {
       // Public, class specific methods
       //////////////////////////////////////////////////////////////////////////
 
-    void getBackwardsSlice (Instruction * I, std::set<Value *> & Slice, std::tr1::unordered_set<DynValue> & dynamicSlice,
-                                                                                       std::set<DynValue *> & DataFlowGraph);
-    void printBackwardsSlice (std::set<Value *> & Slice, std::tr1::unordered_set<DynValue> & dynamicSlice,
-                                                                                       std::set<DynValue *> & DataFlowGraph);
-    void getExprTree (std::set<Value *> & Slice, std::tr1::unordered_set<DynValue> & dynamicSlice,
-                                                                                       std::set<DynValue *> & DataFlowGraph);
+    void getBackwardsSlice (Instruction *I,
+                            std::set<Value *> & Slice,
+                            std::unordered_set<DynValue> & dynamicSlice,
+                            std::set<DynValue *> & DataFlowGraph);
+    void printBackwardsSlice (std::set<Value *> & Slice,
+                              std::unordered_set<DynValue> & dynamicSlice,
+                              std::set<DynValue *> & DataFlowGraph);
+    void getExprTree (std::set<Value *> & Slice,
+                      std::unordered_set<DynValue> & dynamicSlice,
+                      std::set<DynValue *> & DataFlowGraph);
     bool checkForSameFunction (DynValue *DV, DynValue & Initial);
 
 #if 0
@@ -213,8 +217,9 @@ namespace giri {
       typedef std::set<DynValue *> Processed_t;
 
       // Private methods
-      void findSlice (DynValue & V, std::tr1::unordered_set<DynValue> & Slice,
-                                            std::set<DynValue *> & DataFlowGraph);
+      void findSlice (DynValue & V,
+                      std::unordered_set<DynValue> & Slice,
+                      std::set<DynValue *> & DataFlowGraph);
       bool findExecForcers (BasicBlock * BB, std::set<unsigned> & bbNums);
       
       void updateInvCounters (DynValue *DV, int counter); 

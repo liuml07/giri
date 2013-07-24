@@ -40,7 +40,7 @@ namespace giri {
 
     // Dynamic backwards slice
     std::set<Value *> mySliceOfLife;
-    std::tr1::unordered_set<DynValue> myDynSliceOfLife;
+    std::unordered_set<DynValue> myDynSliceOfLife;
     std::set<DynValue *> myDataFlowGraph;
 
     public:
