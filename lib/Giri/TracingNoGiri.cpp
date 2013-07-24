@@ -22,11 +22,11 @@
 #include "diagnosis/VectorExtras.h"
 
 #include "llvm/ADT/Statistic.h"
-//#include "llvm/ADT/VectorExtras.h"
 #include "llvm/Constants.h"
 #include "llvm/DerivedTypes.h"
 #include "llvm/Instructions.h"
 #include "llvm/Support/CommandLine.h"
+#include "llvm/Support/Debug.h"
 
 #include <vector>
 
