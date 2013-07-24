@@ -8,6 +8,6 @@ LEVEL=..
 #
 # List all of the subdirectories that we will compile.
 #
-PARALLEL_DIRS=giri
+PARALLEL_DIRS=Giri
 
 include $(LEVEL)/Makefile.common
