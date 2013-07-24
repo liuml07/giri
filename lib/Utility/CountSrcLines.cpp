@@ -15,10 +15,8 @@
 
 #define DEBUG_TYPE "CountSrcLines"
 
-#include "diagnosis/CountSrcLines.h"
-//#include "inv/inv_utils.h"
-//#include "diagnosis/Utils.h"
-#include "diagnosis/SourceLineMapping.h"
+#include "Utility/CountSrcLines.h"
+#include "Utility/SourceLineMapping.h"
 
 #include "llvm/ADT/Statistic.h"
 #include "llvm/IntrinsicInst.h"

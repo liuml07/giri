@@ -26,8 +26,8 @@
 #include "llvm/IntrinsicInst.h"
 #include "llvm/Instructions.h"
 
-#include "diagnosis/Utils.h"
-#include "diagnosis/SourceLineMapping.h"
+#include "Utility/Utils.h"
+#include "Utility/SourceLineMapping.h"
 
 #include <iostream>
 #include <fstream>

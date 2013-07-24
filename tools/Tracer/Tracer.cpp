@@ -14,8 +14,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "diagnosis/BasicBlockNumbering.h"
-#include "diagnosis/LoadStoreNumbering.h"
+#include "Utility/BasicBlockNumbering.h"
+#include "Utility/LoadStoreNumbering.h"
 #include "Giri/Giri.h"
 
 #include "llvm/Module.h"
