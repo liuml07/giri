@@ -16,7 +16,7 @@
 
 #include "diagnosis/BasicBlockNumbering.h"
 #include "diagnosis/LoadStoreNumbering.h"
-#include "giri/Giri.h"
+#include "Giri/Giri.h"
 
 #include "llvm/Module.h"
 #include "llvm/LLVMContext.h"

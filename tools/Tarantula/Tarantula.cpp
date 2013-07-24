@@ -15,7 +15,7 @@
 
 // local includes
 #include "Tarantula.h"
-#include "giri/TraceFile.h"
+#include "Giri/TraceFile.h"
 
 int main(int argc, char ** argv) {
 	// Parse command line

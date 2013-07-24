@@ -16,7 +16,7 @@
 
 #include "diagnosis/BasicBlockNumbering.h"
 #include "diagnosis/LoadStoreNumbering.h"
-#include "giri/TraceFile.h"
+#include "Giri/TraceFile.h"
 #include "llvm/Pass.h"
 #include "llvm/Support/InstVisitor.h"
 #include "llvm/Target/TargetData.h"

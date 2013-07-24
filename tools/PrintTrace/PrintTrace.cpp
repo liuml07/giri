@@ -12,7 +12,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "giri/TraceFile.h"
+#include "Giri/TraceFile.h"
 
 #include "llvm/Support/CommandLine.h"
 

@@ -15,7 +15,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "giri/Runtime.h"
+#include "Giri/Runtime.h"
 
 //#include <iostream>
 #include <cstdio>
