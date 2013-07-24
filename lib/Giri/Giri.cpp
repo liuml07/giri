@@ -16,7 +16,7 @@
 #define DEBUG_TYPE "giri"
 
 #include "Giri/Giri.h"
-#include "inv/inv_utils.h"
+//#include "inv/inv_utils.h"
 #include "diagnosis/Utils.h"
 #include "diagnosis/SourceLineMapping.h"
 
@@ -1018,16 +1018,6 @@ giri::DynamicGiri::runOnModule (Module & M) {
   // To test this pass, get the backwards slice of any return instructions
   // in the main() function.
   //
-
-
-  // Read the invariants
-
-  invInpFile = new std::ifstream("ViolatedInvariants.txt");
-  if (!invInpFile) {
-    std::cerr << "Error opening Invariants file!\n";
-    exit(1);
-  }
-  readInvariants(invMap, invInpFile);
 
   initialize(M); // Initialize type variables for invariants
 

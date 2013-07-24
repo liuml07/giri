@@ -17,7 +17,6 @@
 #include "diagnosis/BasicBlockNumbering.h"
 #include "diagnosis/LoadStoreNumbering.h"
 #include "Giri/TraceFile.h"
-#include "inv/inv_utils.h"
 
 #include "llvm/Analysis/PostDominators.h"
 #include "llvm/Analysis/Dominators.h"
@@ -265,7 +264,6 @@ namespace giri {
 
       // For reading invariants
       std::ifstream *invInpFile;
-      InvMap invMap;
   };
 }
 
