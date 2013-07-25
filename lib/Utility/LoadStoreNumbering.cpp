@@ -48,23 +48,23 @@ MDNode* dg::LoadStoreNumberPass::assignID (Instruction * I, unsigned id) {
   Value * ID[2];
   ID[0] = I;
   ID[1] = ConstantInt::get(Type::getInt32Ty(Context), id);
-  MDNode * MD = MDNode::get (Context, ArrayRef<Value *> (ID, 2));
+  MDNode *MD = MDNode::getWhenValsUnresolved(Context, ArrayRef<Value *>(ID, 2), false);
   return MD;
 }
 
 void dg::LoadStoreNumberPass::visitLoadInst (LoadInst &I) {
   //MDNodes.push_back (assignID (&I, ++count));
-  MD->addOperand( (assignID (&I, ++count)) ); 
+  MD->addOperand((assignID (&I, ++count))); 
 }
 
 void dg::LoadStoreNumberPass::visitStoreInst (StoreInst &I) {
   //MDNodes.push_back (assignID (&I, ++count));
-  MD->addOperand( (assignID (&I, ++count)) );
+  MD->addOperand((assignID (&I, ++count)));
 }
 
 void dg::LoadStoreNumberPass::visitSelectInst (SelectInst &SI) {
   //MDNodes.push_back (assignID (&SI, ++count));
-    MD->addOperand( (assignID (&SI, ++count)) ); 
+    MD->addOperand((assignID (&SI, ++count))); 
 }
 
 void dg::LoadStoreNumberPass::visitCallInst (CallInst &CI) {
