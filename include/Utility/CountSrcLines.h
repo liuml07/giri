@@ -1,4 +1,4 @@
-//===- Giri.h - Dynamic Slicing Pass ----------------------------*- C++ -*-===//
+//===- CountSrcLines.h - Dynamic Slicing Pass -------------------*- C++ -*-===//
 //
 //                     The LLVM Compiler Infrastructure
 //
@@ -14,9 +14,9 @@
 #ifndef DG_COUNTSRCLINES_H
 #define DG_COUNTSRCLINES_H
 
-#include "BasicBlockNumbering.h"
-#include "LoadStoreNumbering.h"
 #include "Giri/TraceFile.h"
+#include "Utility/BasicBlockNumbering.h"
+#include "Utility/LoadStoreNumbering.h"
 
 #include "llvm/Pass.h"
 #include "llvm/Support/InstVisitor.h"
@@ -31,59 +31,44 @@ using namespace llvm;
 
 namespace dg {
 
-  //
-  // Module Pass: CountSrcLines
-  //
-  // Description:
-  //  This pass counts the number of static Source lines/LLVM insts .
-  //  executed in a trace.
-  //
+/// \class This pass counts the number of static Source lines/LLVM insts.
+/// executed in a trace.
+struct CountSrcLines : public ModulePass {
+public:
+  static char ID;
 
-  struct CountSrcLines : public ModulePass {
-    public:
-      //////////////////////////////////////////////////////////////////////////
-      // LLVM Pass Variables and Methods 
-      //////////////////////////////////////////////////////////////////////////
+  CountSrcLines() : ModulePass (ID) { 
+    //llvm::initializeDynamicGiriPass(*PassRegistry::getPassRegistry());
+  }
+  virtual bool runOnModule(Module & M);
 
-      static char ID;
-      CountSrcLines () : ModulePass (ID) { 
-	//llvm::initializeDynamicGiriPass(*PassRegistry::getPassRegistry());
-      }
-      virtual bool runOnModule (Module & M);
+  const char *getPassName() const {
+    return "Count static #SourceLines/LLVM Insts in a trace";
+  }
 
-      const char *getPassName() const {
-        return "Count static #SourceLines/LLVM Insts in a trace";
-      }
+  virtual void getAnalysisUsage(AnalysisUsage &AU) const {
+    // We will need the ID numbers of basic blocks
+    AU.addRequiredTransitive<QueryBasicBlockNumbers>();
 
-      virtual void getAnalysisUsage(AnalysisUsage &AU) const {
-        // We will need the ID numbers of basic blocks
-        AU.addRequiredTransitive<QueryBasicBlockNumbers>();
+    // We will need the ID numbers of loads and stores
+    AU.addRequiredTransitive<QueryLoadStoreNumbers>();
 
-        // We will need the ID numbers of loads and stores
-        AU.addRequiredTransitive<QueryLoadStoreNumbers>();
-
-        // This pass is an analysis pass, so it does not modify anything
-        AU.setPreservesAll();
-      };
-
-    void initialize (Module & M);
-
-    void countLines(const std::string & bbrecord_file);
-
-    std::unordered_set<unsigned> readBB(const std::string & bbrecord_file);
- 
-    private:
- 
-      const QueryBasicBlockNumbers * bbNumPass;
-      const QueryLoadStoreNumbers  * lsNumPass;
-
-      // Private methods
-      //void findSlice (DynValue & V, std::unordered_set<DynValue> & Slice,
-      //                                      std::set<DynValue *> & DataFlowGraph);
- 
-      // Trace file object (used for querying the trace)
-      //TraceFile * Trace;
+    // This pass is an analysis pass, so it does not modify anything
+    AU.setPreservesAll();
   };
+
+  void initialize (Module & M);
+
+  void countLines(const std::string & bbrecord_file);
+
+  std::unordered_set<unsigned> readBB(const std::string & bbrecord_file);
+
+private:
+  const QueryBasicBlockNumbers * bbNumPass;
+  const QueryLoadStoreNumbers  * lsNumPass;
+
+};
+
 }
 
 #endif

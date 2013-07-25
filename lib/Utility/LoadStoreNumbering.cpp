@@ -1,6 +1,6 @@
 //===- LoadStoreNumbering.cpp - Provide BB identifiers ----------*- C++ -*-===//
 //
-//                           Diagnosis Compiler
+//                     Giri: Dynamic Slicing in LLVM
 //
 // This file was developed by the LLVM research group and is distributed under
 // the University of Illinois Open Source License. See LICENSE.TXT for details.
@@ -13,6 +13,7 @@
 
 #define DEBUG_TYPE "LoadStoreNumbering"
 
+#include "defs.h"
 #include "Utility/LoadStoreNumbering.h"
 #include "Utility/Utils.h"
 
@@ -21,8 +22,6 @@
 #include "llvm/Support/Debug.h"
 
 #include <vector>
-
-#include "defs.h"
 
 char dg::LoadStoreNumberPass::ID    = 0;
 char dg::QueryLoadStoreNumbers::ID  = 0;
@@ -39,25 +38,13 @@ Y ("query-lsnum", "Query Unique Identifiers of Loads and Stores");
 static RegisterPass<dg::RemoveLoadStoreNumbers>
 Z ("remove-lsnum", "Remove Unique Identifiers of Loads and Stores");
 
-//
-// Method: assignID()
-//
-// Description:
-//  This method modifies the IR to assign the specified ID to the specified
-//  instruction.
-//
-MDNode *
-dg::LoadStoreNumberPass::assignID (Instruction * I, unsigned id) {
-  //
+MDNode* dg::LoadStoreNumberPass::assignID (Instruction * I, unsigned id) {
   // Fetch the context in which the enclosing module was defined.  We'll need
   // it for creating practically everything.
-  //
   Module * M = I->getParent()->getParent()->getParent();
   LLVMContext & Context = M->getContext();
 
-  //
   // Create a new metadata node that contains the ID as a constant.
-  //
   Value * ID[2];
   ID[0] = I;
   ID[1] = ConstantInt::get(Type::getInt32Ty(Context), id);
@@ -98,16 +85,6 @@ void dg::LoadStoreNumberPass::visitCallInst (CallInst &CI) {
   MD->addOperand( (assignID (&CI, ++count)) );  
 }
 
-//
-// Method: runOnModule()
-//
-// Description:
-//  This is the entry point for our pass.  It takes a module and assigns a
-//  unique identifier for each load and store instruction.
-//
-// Return value:
-//  true - The module was modified.
-//
 bool dg::LoadStoreNumberPass::runOnModule (Module & M) {
   //
   // Now create a named metadata node that links all of this metadata together.
@@ -155,18 +132,6 @@ bool dg::LoadStoreNumberPass::runOnModule (Module & M) {
   return true;
 }
 
-//
-// Method: runOnModule()
-//
-// Description:
-//  This is the entry point for our pass.  It examines the metadata for the
-//  module and constructs a mapping from instructions to identifiers.  It can
-//  also tell if an instruction has been added since the instructions were
-//  assigned identifiers.
-//
-// Return value:
-//  false - The module is never modified because this is an analysis pass.
-//
 bool dg::QueryLoadStoreNumbers::runOnModule (Module & M) {
   //std::cout << "Inside QueryLoadStoreNumbers " << M.getModuleIdentifier() << std::endl;
   //
@@ -176,29 +141,21 @@ bool dg::QueryLoadStoreNumbers::runOnModule (Module & M) {
   const NamedMDNode * MD = M.getNamedMetadata (mdKindName);
   if (!MD) return false;
 
-  //
   // Scan through all of the metadata (should be pairs of instructions/IDs) and
   // bring them into our internal data structure.
-  //
   for (unsigned index = 0; index < MD->getNumOperands(); ++index) {
-    //
     // The instruction should be the first element, and the ID should be the
     // second element.
-    //
     MDNode * Node = dyn_cast<MDNode>(MD->getOperand (index));
     assert (Node && "Wrong type of meta data!\n");
     Instruction * I = dyn_cast<Instruction>(Node->getOperand (0));
     ConstantInt * ID = dyn_cast<ConstantInt>(Node->getOperand (1));
 
-    //
     // Do some assertions to make sure that everything is sane.
-    //
     assert (I  && "MDNode first element is not an Instruction!\n");
     assert (ID && "MDNode second element is not a ConstantInt!\n");
 
-    //
     // Add the values into the map.
-    //
     assert (ID->getZExtValue() && "Instruction with zero ID!\n");
     IDMap[I] = ID->getZExtValue();
     unsigned id = (unsigned) ID->getZExtValue();
@@ -209,32 +166,15 @@ bool dg::QueryLoadStoreNumbers::runOnModule (Module & M) {
   return false;
 }
 
-//
-// Method: runOnModule()
-//
-// Description:
-//  This is the entry point for our pass.  It takes a module and removes the
-//  instruction ID metadata.
-//
-// Return value:
-//  false - The module was not modified.
-//  true  - The module was modified.
-//
 bool dg::RemoveLoadStoreNumbers::runOnModule (Module & M) {
-  //
-  // Get the basic block metadata.  If there isn't any metadata, then no basic
+  // Get the basic block metadata. If there isn't any metadata, then no basic
   // blocks have been numbered.
-  //
   NamedMDNode * MD = M.getNamedMetadata (mdKindName);
   if (!MD) return false;
 
-  //
   // Remove the metadata.
-  //
   MD->eraseFromParent();
 
-  //
   // Assume we always modify the module.
-  //
   return true;
 }

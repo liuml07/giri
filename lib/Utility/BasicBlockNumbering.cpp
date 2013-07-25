@@ -1,6 +1,6 @@
-//===- StableBasicBlockNumbering.cpp - Provide BB identifiers ---*- C++ -*-===//
+//===- BasicBlockNumbering.cpp - Provide BB identifiers ---------*- C++ -*-===//
 //
-//                           Diagnosis Compiler
+//                    Giri: Dynamic Slicing in LLVM
 //
 // This file was developed by the LLVM research group and is distributed under
 // the University of Illinois Open Source License. See LICENSE.TXT for details.
@@ -36,13 +36,6 @@ Y ("query-bbnum", "Query Unique Identifiers of Basic Blocks");
 static RegisterPass<dg::RemoveBasicBlockNumbers>
 Z ("remove-bbnum", "Remove Unique Identifiers of Basic Blocks");
 
-//
-// Method: assignIDToBlock()
-//
-// Description:
-//  This function modifies the specified basic block so that it has the
-//  specified ID.
-//
 MDNode* dg::BasicBlockNumberPass::assignIDToBlock (BasicBlock * BB, unsigned id) {
   //
   // Fetch the context in which the enclosing module was defined.  We'll need
@@ -60,16 +53,6 @@ MDNode* dg::BasicBlockNumberPass::assignIDToBlock (BasicBlock * BB, unsigned id)
   return MD;
 }
 
-//
-// Method: runOnModule()
-//
-// Description:
-//  This is the entry point for our pass.  It takes a module and assigns a
-//  unique identifier for each basic block.
-//
-// Return value:
-//  true - The module was modified.
-//
 bool dg::BasicBlockNumberPass::runOnModule (Module & M) {
   //
   // Now create a named metadata node that links all of this metadata together.
@@ -116,18 +99,6 @@ bool dg::BasicBlockNumberPass::runOnModule (Module & M) {
   return true;
 }
 
-//
-// Method: runOnModule()
-//
-// Description:
-//  This is the entry point for our pass.  It examines the metadata for the
-//  module and constructs a mapping from basic blocks to identifiers.  It can
-//  also tell if a basic block has been added since the basic blocks were
-//  assigned identifiers.
-//
-// Return value:
-//  false - The module is never modified because this is an analysis pass.
-//
 bool dg::QueryBasicBlockNumbers::runOnModule (Module & M) {
   //std::cout << "Inside QueryBasicBlockNumbers " << M.getModuleIdentifier() << std::endl;
   //
@@ -170,33 +141,15 @@ bool dg::QueryBasicBlockNumbers::runOnModule (Module & M) {
   return false;
 }
 
-//
-// Method: runOnModule()
-//
-// Description:
-//  This is the entry point for our pass.  It takes a module and removes the
-//  basic block ID metadata.
-//
-// Return value:
-//  false - The module was not modified.
-//  true  - The module was modified.
-//
 bool dg::RemoveBasicBlockNumbers::runOnModule (Module & M) {
-  //
   // Get the basic block metadata.  If there isn't any metadata, then no basic
   // blocks have been numbered.
-  //
   NamedMDNode * MD = M.getNamedMetadata (mdKindName);
   if (!MD) return false;
 
-  //
   // Remove the metadata.
-  //
   MD->eraseFromParent();
 
-  //
   // Assume we always modify the module.
-  //
   return true;
 }
-

@@ -44,42 +44,33 @@ OneFunction("OneFunction", cl::desc("Map LLVM instructions in only one function"
 // ID Variable to identify the pass
 char dg::SourceLineMappingPass::ID = 0;
 
-//
 // Pass registration
-//
 static RegisterPass<dg::SourceLineMappingPass>
 X ("SrcLineMapping", "Mapping LLVM inst to source line number");
 
 namespace {
-  ///////////////////////////////////////////////////////////////////////////
+  //===--------------------------------------------------------------------===//
   // Pass Statistics
-  ///////////////////////////////////////////////////////////////////////////
+  //===--------------------------------------------------------------------===//
   STATISTIC (FoundSrcInfo,   "Number of Source Information Locations Found");
   STATISTIC (NotFoundSrcInfo,   "Number of Source Information Locations Not Found");
   STATISTIC (QueriedSrcInfo, "Number of Source Information Locations Queried Including Ignored LLVM Insts");
 }
 
 std::string dg::SourceLineMappingPass::locateSrcInfo (Instruction *I) {
-
-  //
   // Update the number of source locations queried.
-  //
   ++QueriedSrcInfo;
 
-  //const DbgStopPointInst *StopPt = findStopPoint (I);
+  // const DbgStopPointInst *StopPt = findStopPoint (I);
   unsigned LineNumber, ColumnNumber;
   Value *SourceFile, *SourceDir;
   std::string FileName, DirName;
 
-  //
   // Get the ID number for debug metadata.
-  //
   Module *M = I->getParent()->getParent()->getParent();
   unsigned dbgKind = M->getContext().getMDKindID("dbg");
 
-  //
   // Get the line number and source file information for the call.
-  //
   //  if (StopPt) {
   if (MDNode *Dbg = I->getMetadata(dbgKind)) {
     //    LineNumber = StopPt->getLine(); 
@@ -107,7 +98,6 @@ std::string dg::SourceLineMappingPass::locateSrcInfo (Instruction *I) {
     DirName = temp2->getAsString(); 
     */
 
-    //std::cout << DirName << " " << FileName << " " << I->getParent()->getParent()->getNameStr()  << " " << LineNumber << " " << ColumnNumber << std::endl;
     DEBUG( std::cout << DirName << " " << FileName << " " << " " << LineNumber << std::endl );
     char LineInfo[10];
     sprintf(LineInfo, "%d", LineNumber);
@@ -243,11 +233,6 @@ void dg::SourceLineMappingPass::locateSrcInfoForCheckingOptimizations (Instructi
 
 }
 
-//
-// Method: mapCompleteFile()
-//
-// Description:
-//  Map all instruction in Module M to source lines
 void dg::SourceLineMappingPass::mapCompleteFile(Module & M) {
 
   //
@@ -269,11 +254,6 @@ void dg::SourceLineMappingPass::mapCompleteFile(Module & M) {
 
 }
 
-//
-// Method: mapOneFunction()
-//
-// Description:
-//  Map all instruction in one function Module M to source lines
 void dg::SourceLineMappingPass::mapOneFunction(Module & M) {
 
   int instCount = 0, bbCount = 0, lastInst;
@@ -287,53 +267,37 @@ void dg::SourceLineMappingPass::mapOneFunction(Module & M) {
   Function * F = M.getFunction (startFunction); // ("find_allowdeny");
   assert (F);
 
-      bbCount = 0; instCount = 0;
-      for (Function::iterator BB = F->begin(); BB != F->end(); ++BB) {
-	  //instCount = 0;
- 	  std::cout << std::endl << std::endl << BB->getName().str() << std::endl ;
-          //BB->dump();
-          for (BasicBlock::iterator INST = BB->begin(); INST != BB->end(); ++INST) {
-              std::cout << bbCount << " : " << instCount << " : ";
-              //if ( instCount <=  lastInst ) { // 45, 53, 62 
-	      //INST->dump();
-              INST->print(llvm::outs());
-	      llvm::outs() << "\n" ;        
-              locateSrcInfoForCheckingOptimizations (&(*INST));
-	      //}
+  bbCount = 0; instCount = 0;
+  for (Function::iterator BB = F->begin(); BB != F->end(); ++BB) {
+    //instCount = 0;
+    std::cout << std::endl << std::endl << BB->getName().str() << std::endl;
+    //BB->dump();
+ 
+    for (BasicBlock::iterator INST = BB->begin(); INST != BB->end(); ++INST) {
+      std::cout << bbCount << " : " << instCount << " : ";
+      //if ( instCount <=  lastInst ) { // 45, 53, 62 
+        //INST->dump();
+      INST->print(llvm::outs());
+      llvm::outs() << "\n" ;        
+      locateSrcInfoForCheckingOptimizations (&(*INST));
+      //}
+ 
+      //std::cout << *INST;
+      instCount++;
+    } 
 
-	      //std::cout << *INST;
-              instCount++;
-          } 
-          bbCount++;      
-      }
+    bbCount++;      
+  }
 
   LLVMInstLineNum.close();
-
 }
 
-//
-// Method: runOnModule()
-//
-// Description:
-//  Entry point for this LLVM pass.  Using debug information, find the source line number
-//  corresponding to a specified LLVM instruction.
-//
-// Inputs:
-//  M - The module to analyze.
-//
-// Return value:
-//  false - The module was not modified.
-//
 bool dg::SourceLineMappingPass::runOnModule (Module & M) {
-
-
-  if ( CompleteFile ) 
+  if (CompleteFile) 
     mapCompleteFile(M);
-  else if ( OneFunction )
+  else if (OneFunction)
     mapOneFunction(M);
 
-  //
   // This is an analysis pass, so always return false.
-  //
   return false;
 }

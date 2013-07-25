@@ -28,28 +28,13 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
+//===----------------------------------------------------------------------===//
 // Pass Statistics
 namespace {
   STATISTIC (StaticBuggyValuesCount, "Number of Possible static values which are possibly missing matching entries in trace");
   STATISTIC (DynBuggyValuesCount, "Number of Possible dynamic values which are possibly missing matching entries in trace");
 }
 
-//
-// Method: constructor
-//
-// Description:
-//  Initialize a new trace file object.  We'll open the trace file and attempt
-//  to mmap() it into memory.
-//
-// Inputs:
-//  Filename - The name of the trace file.
-//  bbNums   - A pointer to the analysis pass that numbers basic blocks.
-//  lsNums   - A pointer to the analysis pass that numbers loads and stores.
-//
-// Notes:
-//  This method may not work on 32-bit systems; simple trace files are easily
-//  12 GB in size.
-//
 giri::TraceFile::TraceFile (std::string Filename,
                             const QueryBasicBlockNumbers * bbNums,
                             const QueryLoadStoreNumbers  * lsNums)
@@ -88,17 +73,6 @@ giri::TraceFile::TraceFile (std::string Filename,
   return;
 }
 
-//
-// Method: buildTraceFunAddrMap()
-//
-// FIX ME!!! Can we record this during trace generation or similar to lsNumPass
-// This also doesn't work with indirect calls.
-// Description: Scan forward through the entire trace and record the
-// runtime function addresses from the trace.  and map the functions
-// in this run to their corresponding trace function addresses which
-// can possibly be different This algorithm should be n*c where n
-// is the number of elements in the trace.
-//
 void giri::TraceFile::buildTraceFunAddrMap (void) {
 
   Function *calledFun = NULL;
@@ -128,16 +102,10 @@ void giri::TraceFile::buildTraceFunAddrMap (void) {
   std::cout << "Size of Runtime Fun Addr Map: " << traceFunAddrMap.size() << std::endl;
 }
 
-
+/// This is a comparison operator that is specially designed to determine if
+/// an overlapping entry exists within a std::set.  It doesn't implement
+/// standard less-than semantics.
 struct EntryCompare {
-  //
-  // Method: operator()
-  //
-  // Description:
-  //  This is a comparison operator that is specially designed to determine if
-  //  an overlapping entry exists within a std::set.  It doesn't implement
-  //  standard less-than semantics.
-  //
   bool operator() (const Entry & e1, const Entry & e2) const {
     if ((e1.address < e2.address) &&
         ((e1.address + e1.length - 1) < e2.address))
@@ -147,26 +115,11 @@ struct EntryCompare {
   }
 };
 
-//
-// Method: fixupLostLoads()
-//
-// Description:
-//  Scan forward through the entire trace and record store instructions,
-//  creating a set of memory intervals that have been written.  Along the way,
-//  determine if there are load records for which no previous store record can
-//  match.  Mark these load records so that we don't try to find their matching
-//  stores when peforming the dynamic backwards slice.
-//
-//  This algorithm should be n*log(n) where n is the number of elements in the
-//  trace.
-//
 void giri::TraceFile::fixupLostLoads (void) {
   // Set of written memory locations
   std::set<Entry,EntryCompare> Stores;
 
-  //
   // Loop through the entire trace to look for lost loads.
-  //
   for (unsigned long index = 0; trace[index].type != ENType; ++index) {
     //
     // Take action on the various record types.
@@ -220,13 +173,6 @@ void giri::TraceFile::fixupLostLoads (void) {
   }
 }
 
-//
-// Method: getLastDynValue()
-//
-// Description:
-//  Given an LLVM instruction, return a DynValue object that describes
-//  the last dynamic execution of the instruction within the trace.
-//
 giri::DynValue* giri::TraceFile::getLastDynValue (Value * V) {
   //
   // Determine if this is an instruction.  If not, then it is some other value
@@ -260,19 +206,6 @@ giri::DynValue* giri::TraceFile::getLastDynValue (Value * V) {
   return new DynValue (I, 0);
 }
 
-//
-// Method: addToWorklist()
-//
-// Description:
-//  This method add a new DynValue to the worklist and updates its parent pointer.
-//
-// Inputs:
-//  DV - New dynamic value to be inserted.
-//  Sources - The dynamic values that are inputs for this instruction are added
-//            to a container using this insertion iterator.
-//  Parent -  One of the Parent node of new node DV in the Data flow graph.
-// Return value:
-//  The index in the trace of entry with the specified type and ID is returned.
 void giri::TraceFile::addToWorklist (DynValue & DV,  Worklist_t & Sources, /* insert_iterator & Sources, */
 				DynValue & Parent) {
   // Allocate a new DynValue which can stay till deallocated
@@ -291,32 +224,10 @@ void giri::TraceFile::addCtrDepToWorklist (DynValue & DV, Worklist_t & Sources, 
   addToWorklist (DV, Sources, Parent);
 }
 
-//
-// Method: findPrevious()
-//
-// Description:
-//  This method searches backwards in the trace file for an entry of the
-//  specified type.
-//
-// Inputs:
-//  start_index - The index in the trace file which will be examined first
-//                for a match.
-//  type        - The type of entry for which the caller searches.
-//
-// Return value:
-//  The index in the trace of entry with the specified type and ID is returned.
-//
-// Preconditions:
-//  This method assumes that a previous entry in the trace *will* match the
-//  type.  Asserts in the code will ensure that this is true when this code is
-//  compiled with assertions enabled.
-//
 unsigned long giri::TraceFile::findPrevious (unsigned long start_index,
                                const unsigned char type) {
-  //
   // Start searching from the specified index and continue until we find an
   // entry with the correct ID.
-  //
   unsigned long index = start_index;
   bool found = false;
   while (!found) {
@@ -339,30 +250,11 @@ unsigned long giri::TraceFile::findPrevious (unsigned long start_index,
   return index;
 }
 
-//
-// Method: findPreviousID()
-//
-// Description:
-//  This method searches backwards in the trace file for an entry of the
-//  specified type and ID.
-//
-// Inputs:
-//  start_index - The index in the trace file which will be examined first
-//                for a match.
-//  type        - The type of entry for which the caller searches.
-//  ids         - A set of IDs which the entry in the trace should match.
-//
-// Return value:
-//  The index in the trace of entry with the specified type and ID is returned.
-//  If no such entry is found, then the end entry is returned.
-//
 unsigned long giri::TraceFile::findPreviousID (unsigned long start_index,
                                  const unsigned char type,
                                  const std::set<unsigned> & ids) {
-  //
   // Start searching from the specified index and continue until we find an
   // entry with the correct ID.
-  //
   unsigned long index = start_index;
   bool found = false;
   while (!found) {
@@ -392,22 +284,6 @@ unsigned long giri::TraceFile::findPreviousID (unsigned long start_index,
   return index;
 }
 
-//
-// Method: findPreviousID()
-//
-// Description:
-//  This method searches backwards in the trace file for an entry of the
-//  specified type and ID.
-//
-// Inputs:
-//  start_index - The index in the trace file which will be examined first
-//                for a match.
-//  type        - The type of entry for which the caller searches.
-//  id          - The ID field of the entry for which the caller searches.
-//
-// Return value:
-//  The index in the trace of entry with the specified type and ID is returned.
-//
 unsigned long giri::TraceFile::findPreviousID (unsigned long start_index,
                                  const unsigned char type,
                                  const unsigned id) {
@@ -446,22 +322,6 @@ unsigned long giri::TraceFile::findPreviousID (unsigned long start_index,
   return index;
 }
 
-// CHANGE TO USE WithRecursion functionality here and also in recursion
-// handling of loads/stores, calls/returns mapping, and recursion handling 
-// during invariants failure detection
-//
-// Method: findPreviousNestedID()
-//
-// Description:
-//  This method is like findPreviousID() but takes recursion into account.
-//
-// Inputs:
-//  start_index - The index before which we should start the search (i.e., we
-//                first examine the entry in the log file at start_index - 1).
-//  type        - The type of entry for which we are looking.
-//  id          - The ID of the entry for which we are looking.
-//  nestedID    - The ID of the basic block to use to find nesting levels.
-//
 unsigned long giri::TraceFile::findPreviousNestedID (unsigned long start_index,
                                        const unsigned char type,
                                        const unsigned id,
@@ -530,28 +390,6 @@ unsigned long giri::TraceFile::findPreviousNestedID (unsigned long start_index,
   return 0;
 }
 
-
-//
-// Method: findNextID()
-//
-// Description:
-//  This method searches forwards in the trace file for an entry of the
-//  specified type and ID.
-//
-// Inputs:
-//  start_index - The index in the trace file which will be examined first
-//                for a match.
-//  type        - The type of entry for which the caller searches.
-//  id          - The ID field of the entry for which the caller searches.
-//
-// Return value:
-//  The index in the trace of entry with the specified type and ID is returned.
-//
-// Preconditions:
-//  This method assumes that a subsequent entry in the trace *will* match the
-//  type and ID criteria.  Asserts in the code will ensure that this is true
-//  when this code is compiled with assertions enabled.
-//
 unsigned long giri::TraceFile::findNextID (unsigned long start_index,
                              const unsigned char type,
                              const unsigned id) {
@@ -581,28 +419,6 @@ unsigned long giri::TraceFile::findNextID (unsigned long start_index,
   return index;
 }
 
-//
-// Method: findNextAddress()
-//
-// Description:
-//  This method searches forwards in the trace file for an entry of the
-//  specified type and ID.
-//
-// Inputs:
-//  start_index - The index in the trace file which will be examined first
-//                for a match.
-//  type        - The type of entry for which the caller searches.
-//  address     - The address of the entry for which the caller searches.
-//
-// Return value:
-//  The index in the trace of entry with the specified type and address is
-//  returned.
-//
-// Preconditions:
-//  This method assumes that a subsequent entry in the trace *will* match the
-//  type and address criteria.  Asserts in the code will ensure that this is
-//  true when this code is compiled with assertions enabled.
-//
 unsigned long giri::TraceFile::findNextAddress (unsigned long start_index,
                                   const unsigned char type,
                                   const uintptr_t address) {
@@ -624,10 +440,9 @@ unsigned long giri::TraceFile::findNextAddress (unsigned long start_index,
     ++index;
   }
 
-  //
   // Assert that we've found the entry for which we're looking.
-  //
   // assert (found && "Did not find desired subsequent entry in trace!\n");
+
   if( !found ) { // sometimes assertion violated due to unknown reason in clang
     llvm::errs() << "Removed assertion failure in findNextAddress\n";
     return maxIndex;
@@ -636,24 +451,12 @@ unsigned long giri::TraceFile::findNextAddress (unsigned long start_index,
   return index;
 }
 
-// CHANGE TO USE WithRecursion functionality here and also in recursion
-// handling of loads/stores, calls/returns mapping, and recursion handling 
-// during invariants failure detection
-//
-// Method: findNextNestedID()
-//
-// Description:
-//  This method finds the next entry in the trace file that has the specified
-//  type and ID.  However, it also handles nesting.
-//
 unsigned long giri::TraceFile::findNextNestedID (unsigned long start_index,
                                    const unsigned char type,
                                    const unsigned id,
                                    const unsigned nestID) {
-  //
   // Start searching from the specified index and continue until we find an
   // entry with the correct ID.
-  //
   //
   // This works because entry id belongs to basicblock nestedID. So
   // any more occurance of nestedID before id means a recursion.
@@ -700,48 +503,23 @@ unsigned long giri::TraceFile::findNextNestedID (unsigned long start_index,
   return index;
 }
 
-
-//
-// Method: findPreviousIDWithRecursion()
-//
-// Description:
-//  This method searches backwards in the trace file for an entry of the
-//  specified type and ID taking recursion into account. 
-//  FIX ME !!!! Doesn't work for recursion through indirect function calls
-//
-// Inputs:
-//  fun         - Function to which this search entry belongs. Needed to check recursion.
-//  start_index - The index in the trace file which will be examined first
-//                for a match.
-//  type        - The type of entry for which the caller searches.
-//  id          - The ID field of the entry for which the caller searches.
-//
-// Return value:
-//  The index in the trace of entry with the specified type and ID is returned.
-//  If it can't find a matching entry it'll return maxIndex as error code
-//
 unsigned long giri::TraceFile::findPreviousIDWithRecursion (Function *fun, 
                                  unsigned long start_index,  
                                  const unsigned char type, 
                                  const unsigned id) {
-
-  //
   // Start searching from the specified index and continue until we find an 
   // entry with the correct ID.
-  //
-
   unsigned long index = start_index;
   signed nesting = 0;
   uintptr_t funAddr;
 
- // Get the runtime trace address of this function fun 
- // If this function is not called or called through indirect call we won't
- // have its runtime trace address. So, we can't track recursion for them.
- if ( traceFunAddrMap.find (fun) != traceFunAddrMap.end() )
-     funAddr = traceFunAddrMap[fun];
+  // Get the runtime trace address of this function fun 
+  // If this function is not called or called through indirect call we won't
+  // have its runtime trace address. So, we can't track recursion for them.
+  if (traceFunAddrMap.find (fun) != traceFunAddrMap.end())
+    funAddr = traceFunAddrMap[fun];
   else 
-     funAddr = 0;
-
+    funAddr = 0;
 
   do {
 
@@ -827,43 +605,20 @@ unsigned long giri::TraceFile::findPreviousIDWithRecursion (Function *fun,
   return index;
 }
 
-//
-// Method: findPreviousIDWithRecursion()
-//
-// Description:
-//  This method searches backwards in the trace file for an entry of the
-//  specified type and ID taking recursion into account.
-//  FIX ME !!!! Doesn't work for recursion through indirect function calls
-//
-// Inputs:
-//  fun         - Function to which this search entry belongs. Needed to check recursion.
-//  start_index - The index in the trace file which will be examined first
-//                for a match.
-//  type        - The type of entry for which the caller searches.
-//  ids         - A set of ids of the entry for which the caller searches.
-//
-// Return value:
-//  The index in the trace of entry with the specified type and ID is returned.
-//  If it can't find a matching entry it'll return maxIndex as error code
-//
 unsigned long giri::TraceFile::findPreviousIDWithRecursion (Function *fun, 
                                  unsigned long start_index,  
                                  const unsigned char type, 
                                  const std::set<unsigned> & ids) {
-
-  //
   // Start searching from the specified index and continue until we find an 
   // entry with the correct ID.
-  //
-
   unsigned long index = start_index;
   signed nesting = 0;
   uintptr_t funAddr;
 
- // Get the runtime trace address of this function fun 
- // If this function is not called or called through indirect call we won't
- // have its runtime trace address. So, we can't track recursion for them.
- if ( traceFunAddrMap.find (fun) != traceFunAddrMap.end() )
+  // Get the runtime trace address of this function fun 
+  // If this function is not called or called through indirect call we won't
+  // have its runtime trace address. So, we can't track recursion for them.
+  if ( traceFunAddrMap.find (fun) != traceFunAddrMap.end() )
      funAddr = traceFunAddrMap[fun];
   else 
      funAddr = ~0; // Make sure nothing matches in this case (**** Check again)
@@ -950,15 +705,6 @@ unsigned long giri::TraceFile::findPreviousIDWithRecursion (Function *fun,
   */
 }
 
-
-
-//
-// Method: normalize()
-//
-// Description:
-//  Normalize a dynamic basic block.  This means that we search for its entry
-//  within the dynamic trace and update its index.
-//
 long giri::TraceFile::normalize (DynBasicBlock & DBB) {
    
   if (BuggyValues.find (DBB.BB) != BuggyValues.end()) {
@@ -996,21 +742,6 @@ long giri::TraceFile::normalize (DynBasicBlock & DBB) {
   return 0;
 }
 
-//
-// Method: normalize()
-//
-// Description:
-//  Normalize a dynamic value.  This means that we update its index value to
-//  be equal to the basic block entry corresponding to the value's dynamic
-//  execution within the trace.  Alternatively, if the index is pointing to
-//  the END record, we leave it there, since that can only happen if we
-//  search forward through the trace and can't find the basic block because
-//  the program terminated before the basic block finished execution.
-//
-
-//  We don't need to take into account nesting struction due to recursive calls
-//  as except stores, all values are propagated through SSA values.
-//  For store, we already point to BB end accounting for recursion.
 long giri::TraceFile::normalize (DynValue & DV) {
 #if 0
   //
@@ -1078,37 +809,12 @@ long giri::TraceFile::normalize (DynValue & DV) {
   return 0;
 }
 
-
-//
-// Method: markInvFailure()
-//
-// Description: Mark a dynamic instance of instruction as invariant
-// failed, if the corresponding invariant failure is found in the
-// trace.
-//
 void giri::TraceFile::markInvFailure (DynValue & DV) {
 
    
 
 }
 
-
-//
-// Method: getSourcesForPHI()
-//
-// Description:
-//  Given a dynamic value representing a phi-node, determine which basic block
-//  was executed before the phi-node's basic block and add the correct dynamic
-//  input to the phi-node to the backwards slice.
-//
-// Inputs:
-//  DV - The dynamic phi-node value.
-//
-// Outputs:
-//  Sources - An insertion iterator.  The dynamic value that becomes the result
-//            of the phi-node will be inserted into a container using this
-//            iterator.
-//
 void giri::TraceFile::getSourcesForPHI (DynValue & DV, Worklist_t &  Sources) {
   //
   // Get the PHI instruction.
@@ -1164,21 +870,6 @@ void giri::TraceFile::getSourcesForPHI (DynValue & DV, Worklist_t &  Sources) {
   return;
 }
 
-//
-// Method: getCallInstForFormalArg()
-//
-// Description:
-//  Given a dynamic use of a function's formal argument, find the call
-//  Instruction which provides the actual value for this arg.
-//  Only used for building expression tree
-//
-// Inputs:
-//  DV - The dynamic argument value.  The LLVM value must be an Argument.  DV
-//       is not required to be normalized.
-//
-// Return:
-//  Corresponding call instruction.
-//
 Instruction* giri::TraceFile::getCallInstForFormalArg(DynValue & DV) {
   //
   // Get the argument from the dynamic instruction instance.
@@ -1230,21 +921,6 @@ Instruction* giri::TraceFile::getCallInstForFormalArg(DynValue & DV) {
   return CI;
 }
 
-//
-// Method: getSourcesForArg()
-//
-// Description:
-//  Given a dynamic use of a function's formal argument, find the dynamic
-//  value that is the corresponding actual argument.
-//
-// Inputs:
-//  DV - The dynamic argument value.  The LLVM value must be an Argument.  DV
-//       is not required to be normalized.
-//
-// Outputs:
-//  Sources - The dynamic value representing the actual argument is added to
-//            a container using this insertion iterator.
-//
 void giri::TraceFile::getSourcesForArg(DynValue & DV, Worklist_t &  Sources) {
   //
   // Get the argument from the dynamic instruction instance.
@@ -1413,17 +1089,10 @@ void giri::TraceFile::getSourcesForArg(DynValue & DV, Worklist_t &  Sources) {
   return;
 }
 
-//
-// Function: overlaps()
-//
-// Description:
-//  Determine whether the two specified entries access overlapping memory
-//  regions.
-//
-// Return value:
-//  true  - The objects have some memory locations in common.
-//  false - The objects have no common memory locations.
-//
+/// Determine whether the two specified entries access overlapping memory
+/// regions.
+/// \return true  - The objects have some memory locations in common.
+/// \return false - The objects have no common memory locations.
 static inline bool overlaps (Entry first, Entry second) {
   //
   // Case 1: The objects do not overlap and the first object is located at a
@@ -1447,12 +1116,6 @@ static inline bool overlaps (Entry first, Entry second) {
   return true;
 }
 
-//
-// Method: findAllStoresForLoad()
-//
-// Description:
-//  This method, given a dynamic value that reads from memory, will find the
-//  dynamic value(s) that stores into the same memory.
 void giri::TraceFile::findAllStoresForLoad (DynValue & DV,
                                        Worklist_t &  Sources,
                                        long store_index, 
@@ -1556,21 +1219,6 @@ void giri::TraceFile::findAllStoresForLoad (DynValue & DV,
 
 }
 
-//
-// Method: getSourcesForLoad()
-//
-// Description:
-//  This method, given a dynamic value that reads from memory, will find the
-//  dynamic value(s) that stores into the same memory.
-//
-// Inputs:
-//  DV    - The dynamic value which reads the memory.
-//  count - The number of loads performed by this instruction.
-//
-// Outputs:
-//  Sources - The dynamic value written to the memory location is added to
-//            a container using this insertion iterator.
-//
 void giri::TraceFile::getSourcesForLoad (DynValue & DV,
                                     Worklist_t &  Sources,
                                     unsigned count) {
@@ -1739,18 +1387,6 @@ void giri::TraceFile::getSourcesForLoad (DynValue & DV,
   return;
 }
 
-//
-// Method: getSourcesForSpecialCall()
-//
-// Description:
-//  Determine if the dynamic value is a call to a specially handled function
-//  and, if so, find the sources feeding information into that dynamic
-//  function.
-//
-// Return value:
-//  true  - This is a call to a special function.
-//  false - This is not a call to a special function.
-//
 bool giri::TraceFile::getSourcesForSpecialCall (DynValue & DV,
                                            Worklist_t &  Sources) {
   //
@@ -1897,24 +1533,6 @@ bool giri::TraceFile::getSourcesForSpecialCall (DynValue & DV,
   return false;
 }
 
-//
-// Method: matchReturnWithCall()
-//
-// Description:
-//  Given a call instruction, this method searches backwards in the trace file to
-//  match the return inst with its coressponding call instruction
-//
-// Inputs:
-//  start_index - The index in the trace file which will be examined first for a match. 
-//                This is points to the basic block entry containing the function call in trace.
-//                Start search from the previous of start_index.
-//  bbID        - The basic block ID of the basic block containing the call instruction.
-//  callID      - ID of the function call instruction we are trying to match.
-//
-// Return value:
-//  The index in the trace of entry with the specified type and ID is returned.
-//  If no such entry is found, then the end entry is returned.
-//
 unsigned long giri::TraceFile::matchReturnWithCall (unsigned long start_index,
                                  const unsigned bbID,
                                  const unsigned callID) {
@@ -1986,8 +1604,7 @@ unsigned long giri::TraceFile::matchReturnWithCall (unsigned long start_index,
 }
 
 // A public function to call getSourcesForCall
-void 
-giri::TraceFile::mapCallsToReturns( DynValue & DV, Worklist_t &  Sources ) {
+void giri::TraceFile::mapCallsToReturns( DynValue & DV, Worklist_t &  Sources ) {
   getSourcesForCall ( DV, Sources );
 }
 
@@ -2163,13 +1780,6 @@ void giri::TraceFile::getSourcesForCall (DynValue & DV, Worklist_t &  Sources) {
 
 }
 
-//
-// Method: getSourceForSelect()
-//
-// Description:
-//  Examine the trace file to determine which input of a select instruction was
-//  used during dynamic execution.
-//
 void giri::TraceFile::getSourceForSelect (DynValue & DV, Worklist_t &  Sources) {
   //
   // Get the select instruction.
@@ -2212,35 +1822,6 @@ void giri::TraceFile::getSourceForSelect (DynValue & DV, Worklist_t &  Sources) 
   return;
 }
 
-//
-// Method: getSourcesFor()
-//
-// Description:
-//  Given a dynamic instance of a value, find all other dynamic values
-//  instances that were used as inputs to this value.
-//
-// Inputs:
-//  DInst - The dynamic value for which the dynamic inputs need to be found.
-//
-// Outputs:
-//  Sources - The dynamic values that are inputs for this instruction are added
-//            to a container using this insertion iterator.
-//
-// Notes:
-//  The container and insertion pointer for the container passed into this
-//  method will dictate how the trace file is traversed, so clients should
-//  take caution.  Using a breadth-first search (e.g., using a deque that
-//  removes items from the front and has this method push new dynamic values on
-//  the end) has better locality within the trace file and is likely to work
-//  faster than a depth-first search.
-//
-// Algorithm:
-//  This method uses a combination of the trace data and LLVM's def-use chains
-//  for performing this search.  When all inputs to the value are used, then
-//  the static SSA graph is consulted.  The dynamic trace is used for
-//  inter-procedural tracing, tracing of data through memory, and for tracing
-//  *only* when a subset of the inputs to a value are used (e.g., phi-nodes).
-//
 void giri::TraceFile::getSourcesFor (DynValue & DInst, Worklist_t &  si) {
   //
   // If this is a conditional branch or switch instruction, add the conditional
@@ -2334,29 +1915,16 @@ void giri::TraceFile::getSourcesFor (DynValue & DInst, Worklist_t &  si) {
     return;
   }
 
-  //
   // If the value isn't any of the above, then we assume it's a
   // terminal value (like a constant, global constant value like
   // function pointer) and that there are no more inputs into it.
-  //
+
   return;
 }
 
-//
-// Method: getExecForcer()
-//
-// Description:
-//  Given a dynamic execution of a basic block and set of static basic block
-//  identifiers that can force its execution, search back in the trace for a
-//  dynamic basic block execution that forced the specified dynamic basic block
-//  to execute.
-//
-giri::DynBasicBlock
-giri::TraceFile::getExecForcer (DynBasicBlock DBB,
-                                const std::set<unsigned> & bbnums) {
-  //
+giri::DynBasicBlock giri::TraceFile::getExecForcer (DynBasicBlock DBB,
+                                                    const std::set<unsigned> & bbnums) {
   // Normalize the dynamic basic block.
-  //
   if( normalize (DBB) )
     return DynBasicBlock (NULL, maxIndex);
 
@@ -2371,9 +1939,7 @@ giri::TraceFile::getExecForcer (DynBasicBlock DBB,
     return DynBasicBlock (NULL, maxIndex);
   }
 
-  //
   // Assert that we have found the entry.
-  //
   assert (trace[index].type == BBType);
 
   return DynBasicBlock (bbNumPass->getBlock (trace[index].id), index);
