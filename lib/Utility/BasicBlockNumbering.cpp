@@ -15,6 +15,7 @@
 
 #include "Utility/BasicBlockNumbering.h"
 
+#include "llvm/Support/Debug.h"
 #include "llvm/Constants.h"
 #include "llvm/Instructions.h"
 
@@ -37,42 +38,30 @@ static RegisterPass<dg::RemoveBasicBlockNumbers>
 Z ("remove-bbnum", "Remove Unique Identifiers of Basic Blocks");
 
 MDNode* dg::BasicBlockNumberPass::assignIDToBlock (BasicBlock * BB, unsigned id) {
-  //
   // Fetch the context in which the enclosing module was defined.  We'll need
   // it for creating practically everything.
-  //
   LLVMContext & Context = BB->getParent()->getParent()->getContext();
 
-  //
   // Create a new metadata node that contains the ID as a constant.
-  //
-  Value * ID[2];
+  Value *ID[2];
   ID[0] = BB;
   ID[1] = ConstantInt::get(Type::getInt32Ty(Context), id);
-  MDNode * MD = MDNode::get ( Context, ArrayRef<Value *>(ID,2) );
+  MDNode *MD = MDNode::getWhenValsUnresolved(Context, ArrayRef<Value *>(ID, 2), false);
+
   return MD;
 }
 
 bool dg::BasicBlockNumberPass::runOnModule (Module & M) {
-  //
   // Now create a named metadata node that links all of this metadata together.
-  //
-  //Twine name(mdKindName);
   NamedMDNode * MD = M.getOrInsertNamedMetadata(mdKindName);
   
-  //
   // Scan through the module and assign a unique, positive (i.e., non-zero) ID
-  // to every basic block.  Create an array of metadata nodes to hold this
-  // data.
-  //
+  // to every basic block.
   unsigned count = 0;
-  //std::vector<MDNode *> MDNodes;
-  for (Module::iterator MI = M.begin(), ME = M.end(); MI != ME; ++MI) {
+  for (Module::iterator MI = M.begin(), ME = M.end(); MI != ME; ++MI)
     for (Function::iterator BB = MI->begin(), BE = MI->end(); BB != BE; ++BB) {
-      //MDNodes.push_back (assignIDToBlock (BB, ++count));
-      MD->addOperand( (assignIDToBlock (BB, ++count)) );
+      MD->addOperand((assignIDToBlock(BB, ++count)));
     }
-  }
   
   std::cout << "Total Number of Basic Blocks: " << count << std::endl;
 
@@ -93,9 +82,7 @@ bool dg::BasicBlockNumberPass::runOnModule (Module & M) {
   // If there is any memory error, use copying in place of using address of first element of vector
   // NamedMDNode * MD = NamedMDNode::Create (M.getContext(), name, /*(MetadataBase*const*) MDNodeArray*/  (MetadataBase*const*) &MDNodes[0] , MDNodes.size(), &M);
  
-  //
   // We always modify the module.
-  //
   return true;
 }
 
