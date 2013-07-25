@@ -364,15 +364,10 @@ void recordInit  (const char * name) {
   return;
 }
 
-//
-// Function: recordStartBB()
-//
-// Description:
-//  Record that a basic block has started execution.  This doesn't generate a
-//  record in the log itself; rather, it is used to create records for basic
-//  block termination if the program terminates before the basic blocks
-//  complete execution.
-//
+/// Record that a basic block has started execution. This doesn't generate a
+/// record in the log itself; rather, it is used to create records for basic
+/// block termination if the program terminates before the basic blocks
+/// complete execution.
 void recordStartBB (unsigned id, unsigned char * fp) {
  
   // Don't record, if it is not the main thread or connection handler thread
@@ -407,16 +402,9 @@ void recordStartBB (unsigned id, unsigned char * fp) {
   return;
 }
 
-//
-// Function: recordBB()
-//
-// Description:
-//  Record that a basic block has finished execution.
-//
-// Inputs:
-//  id - The ID of the basic block that has finished execution.
-//  fp - The pointer to the function in which the basic block belongs.
-//
+/// Record that a basic block has finished execution.
+/// \param id - The ID of the basic block that has finished execution.
+/// \param fp - The pointer to the function in which the basic block belongs.
 void recordBB (unsigned id, unsigned char * fp, unsigned lastBB) {
 
   // Don't record, if it is not the main thread or connection handler thread
@@ -468,12 +456,9 @@ void recordBB (unsigned id, unsigned char * fp, unsigned lastBB) {
   return;
 }
 
-// (**Not needed anymore as we don't add external function call records**)
-// Function: recordExtCallRet()
+// TODO: delete this (**Not needed anymore as we don't add external function call records**)
 //
-// Description:
-//  Record that a external function has finished execution by updating function call stack.
-//
+///  Record that a external function has finished execution by updating function call stack.
 void recordExtCallRet (unsigned callID, unsigned char * fp) {
 
   // Don't record, if it is not the main thread or connection handler thread
@@ -508,38 +493,24 @@ void recordLoad (unsigned id, unsigned char * p, uintptr_t length) {
   return;
 }
 
-//
-// Function: recordStore()
-//
-// Description:
-//  Record that a store has occurred.
-//
-// Inputs:
-//  id     - The ID assigned to the store instruction in the LLVM IR.
-//  p      - The starting address of the store.
-//  length - The length, in bytes, of the stored data.
-//
+/// Record that a store has occurred.
+/// \param id     - The ID assigned to the store instruction in the LLVM IR.
+/// \param p      - The starting address of the store.
+/// \param length - The length, in bytes, of the stored data.
 void recordStore (unsigned id, unsigned char * p, uintptr_t length) {
 
   // Don't record, if it is not the main thread or connection handler thread
   if( checkForNonHandlerThread() )
     return;
 
-  //
   // Record that a store has been executed.
-  //
   Entry entry (STType, id, p, length);
   addToEntryCache (entry);
 
   return;
 }
 
-//
-// Function: recordStrLoad()
-//
-// Description:
-//  Record that a string has been read.
-//
+///  Record that a string has been read.
 void recordStrLoad (unsigned id, char * p) {
 
   // Don't record, if it is not the main thread or connection handler thread
@@ -561,16 +532,9 @@ void recordStrLoad (unsigned id, char * p) {
   return;
 }
 
-//
-// Function: recordStrStore()
-//
-// Description:
-//  Record that a string has been written.
-//
-// Inputs:
-//  id - The ID of the instruction that wrote to the string.
-//  p  - A pointer to the string.
-//
+/// Record that a string has been written.
+/// \param id - The ID of the instruction that wrote to the string.
+/// \param p  - A pointer to the string.
 void recordStrStore (unsigned id, char * p) {
 
   // Don't record, if it is not the main thread or connection handler thread
@@ -593,16 +557,9 @@ void recordStrStore (unsigned id, char * p) {
   return;
 }
 
-//
-// Function: recordStrcatStore()
-//
-// Description:
-//  Record that a string has been written on strcat.
-//
-// Inputs:
-//  id - The ID of the instruction that wrote to the string.
-//  p  - A pointer to the string.
-//
+/// Record that a string has been written on strcat.
+/// \param id - The ID of the instruction that wrote to the string.
+/// \param  p  - A pointer to the string.
 void recordStrcatStore (unsigned id, char * p, char * s) {
 
   // Don't record, if it is not the main thread or connection handler thread
@@ -628,16 +585,9 @@ void recordStrcatStore (unsigned id, char * p, char * s) {
   return;
 }
 
-//
-// Function: recordCall()
-//
-// Description:
-//  Record that a call instruction was executed.
-//
-// Inputs:
-//  id - The ID of the call instruction.
-//  fp - The address of the function that was called.
-//
+/// Record that a call instruction was executed.
+/// \param id - The ID of the call instruction.
+/// \param fp - The address of the function that was called.
 void recordCall (unsigned id, unsigned char * fp) {
 
   // Don't record, if it is not the main thread or connection handler thread
@@ -669,17 +619,10 @@ void recordCall (unsigned id, unsigned char * fp) {
   return;
 }
 
-//
-// FIX IT!!!! Do we still need it after adding separate return records????
-// Function: recordExtCall()
-//
-// Description:
-//  Record that an external call instruction was executed.
-//
-// Inputs:
-//  id - The ID of the call instruction.
-//  fp - The address of the function that was called.
-//
+// FIXME: Do we still need it after adding separate return records????
+/// Record that an external call instruction was executed.
+/// \param id - The ID of the call instruction.
+/// \param fp - The address of the function that was called.
 void recordExtCall (unsigned id, unsigned char * fp) {
 
   // Don't record, if it is not the main thread or connection handler thread
@@ -697,12 +640,7 @@ void recordExtCall (unsigned id, unsigned char * fp) {
   return;
 }
 
-//
-// Function: recordReturn()
-//
-// Description:
-//  Record that a function has finished execution by adding a return trace entry.
-//
+/// Record that a function has finished execution by adding a return trace entry
 void recordReturn (unsigned id, unsigned char * fp) {
 
   // Don't record, if it is not the main thread or connection handler thread
@@ -718,15 +656,8 @@ void recordReturn (unsigned id, unsigned char * fp) {
   return;
 }
 
-//
-// Function: recordInvFailure
-//
-// Description:
-//  Record id of the failed invariant.
-//
-// Inputs:
-//  id     - The ID assigned to the corresponding instruction in the LLVM IR.
-//
+/// Record id of the failed invariant.
+/// \param id - The ID assigned to the corresponding instruction in the LLVM IR
 void recordInvFailure (unsigned id) {
 
   // Don't record, if it is not the main thread or connection handler thread
@@ -742,17 +673,10 @@ void recordInvFailure (unsigned id) {
   return;
 }
 
-//
-// Function: recordSelect()
-//
-// Description:
-//  This function records which input of a select instruction was selected.
-//
-// Inputs:
-//  id     - The ID assigned to the corresponding instruction in the LLVM IR.
-//  flag   - The boolean value (true or false) used to determine the select
-//           instruction's output.
-//
+/// This function records which input of a select instruction was selected.
+/// \param id - The ID assigned to the corresponding instruction in the LLVM IR
+/// \param flag - The boolean value (true or false) used to determine the select
+///               instruction's output.
 void recordSelect  (unsigned id, unsigned char flag) {
 
   // Don't record, if it is not the main thread or connection handler thread
@@ -768,54 +692,13 @@ void recordSelect  (unsigned id, unsigned char flag) {
   return;
 }
 
-//
-// Function: recordHandlerThreadID()
-//
-// Description:
-//  This function keeps track of the main thread id or the connection handler
-//  thread ID.
-//
-// Inputs:
-//  name   - The name of the connection handler function.
-//
+/// This function keeps track of the main thread id or the connection handler
+/// thread ID.
+/// \param name - The name of the connection handler function.
 void recordHandlerThreadID (const char * name) {
 
   printf("Inside Connection Handling function %s\n", name);
 
   // Update the thread id with the main or connection handler thread ID
   updateThreadID();
-
 }
-
-#if 0
-
-// Not needed now as we have split special calls into loads and stores
-//
-// Function: recordExtFun()
-//
-// Description:
-//  Record addresses for external function call  has accessed.
-//
-// Inputs:
-//  id     - The ID assigned to the call instruction in the LLVM IR.
-//  p      - The starting address of the destination.
-//  s      - The starting address of the source.
-//  length - The length, in bytes, of the data.
-//
-void
-recordExtFun (unsigned id, unsigned char * p, unsigned char * s, unsigned length) {
-
-  // Don't record, if it is not the main thread or connection handler thread
-  if( checkForNonHandlerThread() )
-    return;
-
-  //
-  // Record that a store has been executed.
-  //
-  Entry entry (EXType+length, id, p, s, length);
-  addToEntryCache (entry);
-
-  return;
-}
-
-#endif

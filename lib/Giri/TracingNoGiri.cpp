@@ -41,9 +41,8 @@ char giri::TracingNoGiri::ID = 0;
 static RegisterPass<giri::TracingNoGiri>
 X ("trace-giri", "Instrument code to trace basic block execution");
 
-//
+//===----------------------------------------------------------------------===//
 // Pass Statistics
-//
 namespace {
   STATISTIC (NumBBs, "Total number of basic blocks");
   STATISTIC (PHIBBs, "Total number of basic blocks with phi nodes");
@@ -56,34 +55,18 @@ namespace {
   STATISTIC (ExtFuns,  "Total number of special external calls like memcpy etc. processed");
 }
 
-//
-// Function: hasPHI()
-//
-// Description:
-//  This method determines whether the given basic block contains any PHI
-//  instructions.
-//
-// Inputs:
-//  BB - A reference to the Basic Block to analyze.  It is not modified.
-//
-// Return value:
-//  true  - The basic block has one or more PHI instructions.
-//  false - The basic block has no PHI instructions.
-//
+/// This method determines whether the given basic block contains any PHI
+/// instructions.
+///
+/// \param  BB - A reference to the Basic Block to analyze.  It is not modified.
+/// \return true  if the basic block has one or more PHI instructions,
+/// otherwise false.
 static bool hasPHI (const BasicBlock & BB) {
   for (BasicBlock::const_iterator I = BB.begin(); I != BB.end(); ++I)
     if (isa<PHINode>(I)) return true;
   return false;
 }
 
-//
-// Method: doInitialialization()
-//
-// Description:
-//  This method does module level changes needed for adding tracing
-//  instrumentation for dynamic slicing.  Specifically, we add the function
-//  prototypes for the dynamic slicing functionality here.
-//
 bool giri::TracingNoGiri::doInitialization (Module & M) {
   //
   // Get references to the different types that we'll need.
@@ -205,14 +188,6 @@ bool giri::TracingNoGiri::doInitialization (Module & M) {
   return true;
 }
 
-//
-// Function: createCtor()
-//
-// Description:
-//  Create a global constructor (ctor) function that can be called when the
-//  program starts up.
-//
-//
 Function* giri::TracingNoGiri::createCtor (Module & M) {
   //
   // Create the ctor function.
@@ -243,13 +218,6 @@ Function* giri::TracingNoGiri::createCtor (Module & M) {
   return RuntimeCtor;
 }
 
-//
-// Method: insertIntoGlobalCtorList()
-//
-// Description:
-//  Insert the specified function into the list of global constructor
-//  functions.
-//
 void giri::TracingNoGiri::insertIntoGlobalCtorList (Function * RuntimeCtor) {
   //
   // Insert the run-time ctor into the ctor list.
@@ -311,13 +279,6 @@ void giri::TracingNoGiri::insertIntoGlobalCtorList (Function * RuntimeCtor) {
                       "llvm.global_ctors");
 }
 
-//
-// Method: doFinalization()
-//
-// Description:
-//  This method is called after all the basic blocks have been transformed.  It
-//  inserts code to initialize the run-time of the tracing library.
-//
 bool giri::TracingNoGiri::doFinalization (Module & M) {
   //
   // Create a global constructor function that will initialize the run-time.
@@ -344,13 +305,6 @@ bool giri::TracingNoGiri::doFinalization (Module & M) {
   return true;
 }
 
-//
-// Method: instrumentBasicBlock()
-//
-// Description:
-//  This method instruments a basic block so that it records its execution at
-//  run-time.
-//
 void giri::TracingNoGiri::instrumentBasicBlock (BasicBlock & BB) {
 
   Value *LastBB;
@@ -397,14 +351,6 @@ void giri::TracingNoGiri::instrumentBasicBlock (BasicBlock & BB) {
   return;
 }
 
-//
-// Method: visitLoadInst()
-//
-// Description:
-//  Visit a load instruction.  This method instruments the load instruction
-//  with a call to the tracing run-time that will record, in the dynamic trace,
-//  the memory read by this load instruction.
-//
 void giri::TracingNoGiri::visitLoadInst (LoadInst & LI) {
   //
   // Cast the pointer into a void pointer type.
@@ -433,15 +379,6 @@ void giri::TracingNoGiri::visitLoadInst (LoadInst & LI) {
   ++Loads;
 }
 
-//
-// Method: visitSelectInst()
-//
-// Description:
-//  Visit a select instruction.  This method instruments the select instruction
-//  with a call to the tracing run-time that will record, in the dynamic trace,
-//  the boolean value that the select instruction will use to select its output
-//  operand.
-//
 void giri::TracingNoGiri::visitSelectInst (SelectInst & SI) {
   //
   // Cast the predicate (boolean) value into an 8-bit value.
@@ -465,14 +402,6 @@ void giri::TracingNoGiri::visitSelectInst (SelectInst & SI) {
   return;
 }
 
-//
-// Method: visitStoreInst()
-//
-// Description:
-//  Visit a store instruction.  This method instruments the store instruction
-//  with a call to the tracing run-time that will record, in the dynamic trace,
-//  the memory written by this store instruction.
-//
 void giri::TracingNoGiri::visitStoreInst (StoreInst & SI) {
   //
   // Cast the pointer into a void pointer type.
@@ -501,21 +430,6 @@ void giri::TracingNoGiri::visitStoreInst (StoreInst & SI) {
   ++Stores;
 }
 
-//
-// Method: visitSpecialCall()
-//
-// Description:
-//  Examine a call instruction and see if it is a call to an external function
-//  which is treated specially by the dynamic slicing code.  If so, instrument
-//  it with the appropriate calls to the run-time.
-//
-// Inputs:
-//  CI - The call instruction which may call a special function.
-//
-// Return value:
-//  true  - This call does call a special call instruction.
-//  false - This call does not call a special call instruction.
-//
 bool giri::TracingNoGiri::visitSpecialCall (CallInst & CI) {
   //
   // We do not support indirect calls to special functions.
@@ -774,16 +688,6 @@ bool giri::TracingNoGiri::visitSpecialCall (CallInst & CI) {
   return false;
 }
 
-//
-// Method: visitCallInst()
-//
-// Description:
-//  Visit a call instruction.  For most call instructions, we will instrument
-//  the call so that the trace contains enough information to track back from
-//  the callee to the caller.  For some call instructions, we will emit special 
-//  instrumentation to record the memory read and/or written by the call instruction. 
-//  Also call records are needed to map invariant failures to call insts.
-//
 void giri::TracingNoGiri::visitCallInst  (CallInst & CI) {
 
   CallInst *ClInst;
@@ -937,13 +841,6 @@ void giri::TracingNoGiri::visitCallInst  (CallInst & CI) {
   return;
 }
 
-//
-// Method: instrumentLoadsAndStores()
-//
-// Description:
-//  This method instruments loads and stores so that they record the memory
-//  addresses that they are accessing.  Record Calls and addresses of special 
-//  external functions as well.
 void giri::TracingNoGiri::instrumentLoadsAndStores (BasicBlock & BB) {
   //
   // Scan through all instructions in the basic block and instrument them as
@@ -958,13 +855,6 @@ void giri::TracingNoGiri::instrumentLoadsAndStores (BasicBlock & BB) {
   return;
 }
 
-//
-// Method:   instrumentPthreadCreatedFunctions ()
-//
-// Description:
-// Instrument the function to record it's thread id, 
-// if it is a function started from pthread_create
-//
 void giri::TracingNoGiri::instrumentPthreadCreatedFunctions (Function *F) {
 
   // If no such handler function exist, the return
@@ -983,15 +873,6 @@ void giri::TracingNoGiri::instrumentPthreadCreatedFunctions (Function *F) {
   return;
 }
 
-
-//
-// Method: runOnBasicBlock()
-//
-// Description:
-//  This method starts execution of the dynamic slice tracing instrumentation
-//  pass.  It will add code to a function that records the execution of basic
-//  blocks.
-//
 bool giri::TracingNoGiri::runOnBasicBlock (BasicBlock & BB) {
   //
   // Fetch the analysis results for numbering basic blocks.
@@ -1028,14 +909,6 @@ bool giri::TracingNoGiri::runOnBasicBlock (BasicBlock & BB) {
   return true;
 }
 
-//
-// Method: initialize()
-//
-// Description:
-//  Initialize type objects used for invarint inst checking.
-//
-// Inputs:
-//  M - The module to analyze.
 void giri::TracingNoGiri::initialize (Module & M)
 {
   /*** Create the type variables ***/

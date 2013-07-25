@@ -54,9 +54,7 @@ ExprTree ("expr-tree", cl::desc("Build expression tree from the root causes and 
 // ID Variable to identify the pass
 char giri::DynamicGiri::ID = 0;
 
-//
 // Pass registration
-//
 static RegisterPass<giri::DynamicGiri>
             X ("dgiri", "Dynamic Backwards Slice Analysis");
 /*
@@ -69,6 +67,7 @@ INITIALIZE_PASS_END(DynamicGiri, "DynamicGiri",
                 "Dynamic Backwards Slice Analysis", false, false)
 */
 
+//===----------------------------------------------------------------------===//
 // Pass Statistics
 namespace {
   STATISTIC (DynValueCount,   "Number of Dynamic Values in Slice");
@@ -79,26 +78,13 @@ namespace {
   STATISTIC (LostLoadsTraced,  "Number of Dynamic Loads Lost");
 }
 
-//
-// Function: isASource()
-//
-// Description:
-//  This function determines whether the specified value is a source of
-//  information (something that has a label independent of its input SSA
-//  values).
-//
-// Inputs:
-//  V - The value to analyze.
-//
-// Return value:
-//  true  - This value is a source.
-//  false - This value is not a source.  Its label is the join of the labels
-//          of its input operands.
-//
+/// This function determines whether the specified value is a source of
+/// information (something that has a label independent of its input SSA values.
+/// \param V - The value to analyze.
+/// \return true if this value is a source; otherwise false, its label is the
+/// join of the labels of its input operands.
 static inline bool isASource (const Value * V) {
-  //
   // Call instructions are sources *unless* they are inline assembly.
-  //
   if (const CallInst * CI = dyn_cast<CallInst>(V)) {
     if (isa<InlineAsm>(CI->getCalledValue()))
       return false;
@@ -143,37 +129,6 @@ FindFlows::addSource (const Value * V, const Function * F) {
 }
 #endif
 
-//
-// Method: findExecForcers()
-//
-// Description:
-//  Find the basic blocks that can force execution of the specified basic block
-//  and return the identifiers used to represent those basic blocks within the
-//  dynamic trace.
-//
-//  Note that this is slightly different from control-dependence.  A basic
-//  block can be forced to execute by a basic block on which it is
-//  control-dependent.  However, it can also be forced to execute simply
-//  because its containing function is executed (i.e., it post-dominates the
-//  entry block).
-//
-// Inputs:
-//  BB - The basic block for which the caller wants to know which basic blocks
-//       can force its execution.
-//
-// Outputs:
-//  bbNums - A set of basic block identifiers that can force execution of the
-//           specified basic block.  Note that identifiers are *added* to the
-//           set.
-//
-// Return value:
-//  true  - The specified basic block will be executed at least once every time
-//          the function is called.
-//
-//  false - The specified basic block may not be executed when the function is
-//          called (i.e., the specified basic block is control-dependent on
-//          the entry block if the entry block is in bbNums).
-//
 bool giri::DynamicGiri::findExecForcers (BasicBlock * BB,
                                     std::set<unsigned> & bbNums) {
   //
@@ -251,41 +206,10 @@ bool giri::DynamicGiri::findExecForcers (BasicBlock * BB,
   return (findExecForcers (BB, bbNums));
 }
 
-
-//
-// Method: checkForSameFunction
-//
-// Description:
-//  For the given value, find all of the values upon which it depends.
-//
-// Inputs:
-//  Initial - The initial value for which we want a slice.
-//  DV - The next value in the slice
-// Output: true, if both belong to same function, 
-//         so that we can keep the expr tree within a function
-
 bool giri::DynamicGiri::checkForSameFunction (DynValue *DV, DynValue & Initial) {
   
   }
 
-
-//
-// Method: findSlice()
-//
-// Description:
-//  For the given value, find all of the values upon which it depends.
-//
-// Inputs:
-//  Initial - The initial value for which we want a slice.
-//
-// Notes:
-//  When looking for control dependences, remember that a control-dependence
-//  doesn't always force the execution of a basic block.  For example, a basic
-//  block can post-dominate the entry basic block and be control-dependent on
-//  itself; this means that it is unconditionally executed once with subsequent
-//  executions depending on the result of the basic block's terminating
-//  instruction. 
-//
 void giri::DynamicGiri::findSlice (DynValue & Initial,
                               std::unordered_set<DynValue> & Slice,
                               std::set<DynValue *> & DataFlowGraph) {
@@ -452,25 +376,6 @@ void giri::DynamicGiri::findSlice (DynValue & Initial,
   LostLoadsTraced = Trace->lostLoadsTraced;
   return;
 }
-
-
-//
-// Method: updateInvCounters()
-//
-// Description:
-//  This method updates the counters associated with invariant failures.
-//  The counters infer the distance (intervening invariant successes) 
-//  from the previous invariant failure.
-//
-// Inputs:
-//  DV - The starting dynamic value.
-//  counter - distance (intervening invariant successes) from the previous 
-//            invariant failure.
-void giri::DynamicGiri::updateInvCounters (DynValue *DV, int counter) {
-
-
-}
-
 
 #if 0
 //
@@ -757,13 +662,6 @@ FindFlows::findArgSources (Argument * Arg,
 }
 #endif
 
-//
-// Method: printBackwardsSlice()
-//
-// Description:
-//  This method prints all of the values that are in the backwards slice of
-//  the specified instruction.
-//
 void giri::DynamicGiri::printBackwardsSlice (std::set<Value *> & Slice,  
                                         std::unordered_set<DynValue> & dynamicSlice,
                                         std::set<DynValue *> & DataFlowGraph) {
@@ -834,18 +732,9 @@ void giri::DynamicGiri::printBackwardsSlice (std::set<Value *> & Slice,
 	llvm::outs() << "Total No of Invariants in the slice: " << AllInvs.size() << "\n";
 
 #endif
- 
 
 }
 
-
-//
-// Method: getBackwardsSlice()
-//
-// Description:
-//  This method returns all of the values that are in the backwards slice of
-//  the specified instruction.
-//
 void giri::DynamicGiri::getBackwardsSlice (Instruction * I,
                                       std::set<Value *> & Slice,  
                                       std::unordered_set<DynValue > & dynamicSlice,
@@ -875,13 +764,6 @@ void giri::DynamicGiri::getBackwardsSlice (Instruction * I,
   return;
 }
 
-//
-// Method: getExprTree()
-//
-// Description:
-//   Start building expression tree from root cause and count the mapped
-//   source lines 
-//
 void giri::DynamicGiri::getExprTree ( std::set<Value *> & Slice,  
                                       std::unordered_set<DynValue > & dynamicSlice,
                                       std::set<DynValue *> & DataFlowGraph) {
@@ -889,15 +771,6 @@ void giri::DynamicGiri::getExprTree ( std::set<Value *> & Slice,
 
 }
 
-
-//
-// Method: initialize()
-//
-// Description:
-//  Initialize type objects used for invarint inst checking.
-//
-// Inputs:
-//  M - The module to analyze.
 void giri::DynamicGiri::initialize (Module & M)
 {
   /*** Create the type variables ***/
@@ -916,7 +789,7 @@ void giri::DynamicGiri::initialize (Module & M)
   DoubleTy = Type::getDoubleTy(M.getContext());
 }
 
-bool  giri::DynamicGiri::checkType(const Type *T) {
+bool giri::DynamicGiri::checkType(const Type *T) {
   if( T == SInt64Ty || T == SInt32Ty || T == SInt16Ty || T == SInt8Ty )
     return true;
   //if( !NO_UNSIGNED_CHECK )
@@ -970,20 +843,6 @@ bool giri::DynamicGiri::checkForInvariantInst(Value *V)
   return false; // All other instructions do not have invariants
 }
 
-
-//
-// Method: runOnModule()
-//
-// Description:
-//  Entry point for this LLVM pass.  Using trace information, find the dynamic
-//  backwards slice of a specified LLVM instruction.
-//
-// Inputs:
-//  M - The module to analyze.
-//
-// Return value:
-//  false - The module was not modified.
-//
 bool giri::DynamicGiri::runOnModule (Module & M) {
 
   std::set<Value *> mySliceOfLife;

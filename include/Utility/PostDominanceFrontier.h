@@ -21,11 +21,8 @@
 
 namespace llvm {
 
-  //void initializePostDominanceFrontierPass(PassRegistry&);
-
 /// PostDominanceFrontier Class - Concrete subclass of DominanceFrontier that is
 /// used to compute the a post-dominance frontier.
-///
 struct PostDominanceFrontier : public DominanceFrontierBase {
   static char ID;
   PostDominanceFrontier()

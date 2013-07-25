@@ -1,6 +1,6 @@
 //===-- tracer - Tracing for Dynamic Slicing Tool -------------------------===//
 //
-//                      Automatic Bug Diagnosis Project
+//                      Giri: Dynamic Slicing in LLVM
 //
 // This file was developed by the LLVM research group and is distributed
 // under the University of Illinois Open Source License. See LICENSE.TXT for
@@ -14,13 +14,14 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "Giri/Giri.h"
 #include "Utility/BasicBlockNumbering.h"
 #include "Utility/LoadStoreNumbering.h"
-#include "Giri/Giri.h"
 
+#include "llvm/Analysis/Verifier.h"
+#include "llvm/Bitcode/ReaderWriter.h"
 #include "llvm/Module.h"
 #include "llvm/LLVMContext.h"
-#include "llvm/Bitcode/ReaderWriter.h"
 #include "llvm/PassManager.h"
 #include "llvm/Pass.h"
 #include "llvm/Support/CommandLine.h"
@@ -33,7 +34,6 @@
 #include "llvm/Target/TargetMachine.h"
 #include "llvm/Transforms/IPO.h"
 #include "llvm/Transforms/Scalar.h"
-#include "llvm/Analysis/Verifier.h"
 #include "llvm/Transforms/Utils/UnifyFunctionExitNodes.h"
 
 #include <fstream>
@@ -72,8 +72,6 @@ GetFileNameRoot(const std::string &InputFilename) {
   return outputFilename;
 }
 
-// main - Entry point for the sc compiler.
-//
 int main(int argc, char **argv) {
   LLVMContext &Context = getGlobalContext();
   llvm_shutdown_obj ShutdownObject;
@@ -201,4 +199,3 @@ int main(int argc, char **argv) {
   llvm_shutdown();
   return 1;
 }
-

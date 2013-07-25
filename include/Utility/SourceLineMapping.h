@@ -20,37 +20,40 @@
 using namespace llvm;
 
 namespace dg {
-  //
-  // Pass: SourceLineMapping Pass
-  //
-  // Description:
-  //  This pass provides the functionality to find the source file and line
-  //  number corresponding to a llvm instruction.
-  //
-  class SourceLineMappingPass : public ModulePass {
-    public:
-      static char ID;
-      SourceLineMappingPass () : ModulePass (ID) {}
 
-      const char *getPassName() const {
-        return "Mapping LLVM instructions to source line numbers";
-      }
+/// \class This pass provides the functionality to find the source file and
+/// line number corresponding to a llvm instruction.
+class SourceLineMappingPass : public ModulePass {
+public:
+  static char ID;
 
-      void locateSrcInfoForCheckingOptimizations (Instruction *I);
+  SourceLineMappingPass () : ModulePass (ID) {}
 
-      static std::string locateSrcInfo (Instruction *I);
+  const char *getPassName() const {
+    return "Mapping LLVM instructions to source line numbers";
+  }
 
-      void mapCompleteFile(Module & M);
+  void locateSrcInfoForCheckingOptimizations (Instruction *I);
 
-      void mapOneFunction(Module & M);
+  static std::string locateSrcInfo (Instruction *I);
 
-      virtual bool runOnModule (Module & M);      
-      
-      virtual void getAnalysisUsage(AnalysisUsage &AU) const {
-        AU.setPreservesCFG();
-        AU.setPreservesAll();
-      };
-    private:
+  /// Map all instruction in Module M to source lines
+  void mapCompleteFile(Module & M);
+
+  /// Map all instruction in one function Module M to source lines
+  void mapOneFunction(Module & M);
+
+  /// \brief Using debug information, find the source line number corresponding
+  /// to a specified LLVM instruction.
+  /// @return false - The module was not modified.
+  virtual bool runOnModule (Module & M);      
+  
+  virtual void getAnalysisUsage(AnalysisUsage &AU) const {
+    AU.setPreservesCFG();
+    AU.setPreservesAll();
   };
+};
+
 }
+
 #endif
