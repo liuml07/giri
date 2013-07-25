@@ -3,20 +3,20 @@
 
 CC = clang
 CFLAGS = -g -O0 -c -emit-llvm
-LD_FLAGS = -lm
+LDFLAGS = -lm
 
 NAME = hello-world
 VERSION ?= Release+Debug+Asserts
 GIRI_DIR ?= ../../build/
 GIRI_LIB_DIR = $(GIRI_DIR)/$(VERSION)/lib
 
-all: lib $(NAME).trace.out $(NAME).slice.txt
+all: lib $(NAME).trace.exe $(NAME).slice.txt
 
 lib:
 	$(MAKE) -s -C $(GIRI_DIR)
 
-$(NAME).trace.out : $(NAME).trace.s $(GIRI_DIR)/runtime/giri/$(VERSION)/Tracing.o
-	$(CC) -fno-strict-aliasing $+ -o $@ -lpthread
+$(NAME).trace.exe : $(NAME).trace.s $(GIRI_DIR)/runtime/Giri/$(VERSION)/Tracing.o
+	$(CC) -fno-strict-aliasing $+ -o $@ -lpthread $(LDFLAGS)
 
 $(NAME).trace.s : $(NAME).trace.bc 
 	llc -asm-verbose=false -O0 $< -o $@
@@ -33,5 +33,7 @@ $(NAME).slice.txt : $(NAME).bc
 %.ll : %.bc
 	llvm-dis $< -o $@
 
+rebuild: clean all
+
 clean:
-	@ rm -f *.ll *.bc *.o *.s *.txt
+	@ rm -f *.ll *.bc *.o *.s *.txt *.exe
