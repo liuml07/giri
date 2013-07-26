@@ -84,8 +84,8 @@ std::string dg::SourceLineMappingPass::locateSrcInfo (Instruction *I) {
     DirName = Loc.getDirectory().str();
 
     ++FoundSrcInfo;
-    //std::cout << "Sucess!! Found the source line" << std::endl;
-    //std::cout << LineNumber << std::endl;
+    DEBUG(dbgs() << "Found the source line for line number: "
+                 << LineNumber << "\n");
     
     /*   
     // Its a GetElementPtrContsantExpr with filename as an operand of type pointer to array
@@ -98,7 +98,7 @@ std::string dg::SourceLineMappingPass::locateSrcInfo (Instruction *I) {
     DirName = temp2->getAsString(); 
     */
 
-    DEBUG( std::cout << DirName << " " << FileName << " " << " " << LineNumber << std::endl );
+    DEBUG(dbgs() << DirName << " " << FileName << " " << LineNumber << "\n");
     char LineInfo[10];
     sprintf(LineInfo, "%d", LineNumber);
     return DirName + " " + FileName + " " + LineInfo;
@@ -114,7 +114,6 @@ std::string dg::SourceLineMappingPass::locateSrcInfo (Instruction *I) {
           if (isTracerFunction(CalledFunc))
              return "NoSourceLineInfo: This category of instructions don't map to any source lines. Ignored.";
           std::string fnname = CalledFunc->getName().str();
-	  //std::cout<< fnname.substr(0,9) << std::endl;
           if( fnname.compare(0,9,"llvm.dbg.") == 0 )
 	    return "NoSourceLineInfo: This category of instructions don't map to any source lines. Ignored.";
        }
@@ -177,8 +176,8 @@ void dg::SourceLineMappingPass::locateSrcInfoForCheckingOptimizations (Instructi
     DirName = Loc.getDirectory().str();
 
     ++FoundSrcInfo;
-    //std::cout << "Sucess!! Found the source line" << std::endl;
-    //std::cout << LineNumber << std::endl;
+    DEBUG(dbgs() << "Found the source line for line number: "
+                 << LineNumber << "\n");
 
     /*
     // Its a GetElementPtrContsantExpr with filename as an operand of type pointer to array
@@ -192,8 +191,8 @@ void dg::SourceLineMappingPass::locateSrcInfoForCheckingOptimizations (Instructi
     */
 
     if ( OneFunction ) {
-       //std::cout << DirName << " " << FileName << " " << I->getParent()->getParent()->getNameStr()  << " " << LineNumber << " " << ColumnNumber << std::endl;
-       std::cout << DirName << " " << FileName << " " << " " << LineNumber << " " << ColumnNumber << std::endl;
+       DEBUG(dbgs() << DirName << " " << FileName << " " << LineNumber << " "
+                    << ColumnNumber << "\n");
     }
 
   } else {
@@ -207,7 +206,6 @@ void dg::SourceLineMappingPass::locateSrcInfoForCheckingOptimizations (Instructi
           if (isTracerFunction(CalledFunc))
              return;
           std::string fnname = CalledFunc->getName().str();
-	  //std::cout<< fnname.substr(0,9) << std::endl;
           if( fnname.compare(0,9,"llvm.dbg.") == 0 )
 	    return;
        }
@@ -244,10 +242,10 @@ void dg::SourceLineMappingPass::mapCompleteFile(Module & M) {
   for (Module::iterator MI = M.begin(), ME = M.end(); MI != ME; ++MI) {
       F = MI;
       for (Function::iterator BB = F->begin(); BB != F->end(); ++BB) {
-          for (BasicBlock::iterator INST = BB->begin(); INST != BB->end(); ++INST) {
-              INST->print(llvm::outs());
-	      llvm::outs() << "\n" ;        
-              locateSrcInfoForCheckingOptimizations (&(*INST));
+          for (BasicBlock::iterator I = BB->begin(); I != BB->end(); ++I) {
+              DEBUG(I->print(dbgs()));
+              DEBUG(dbgs() << "\n");
+              locateSrcInfoForCheckingOptimizations (&(*I));
           } 
       }
   }
@@ -262,28 +260,23 @@ void dg::SourceLineMappingPass::mapOneFunction(Module & M) {
   LLVMInstLineNum.open("LLVMInstLineNum.txt");
 
   LLVMInstLineNum >> startFunction >> lastInst;
-  std::cout << std::endl << startFunction << " " << lastInst << std::endl << std::endl ;  
+  DEBUG(dbgs() << startFunction << " " << lastInst << "\n");  
  
   Function * F = M.getFunction (startFunction); // ("find_allowdeny");
   assert (F);
 
   bbCount = 0; instCount = 0;
   for (Function::iterator BB = F->begin(); BB != F->end(); ++BB) {
-    //instCount = 0;
-    std::cout << std::endl << std::endl << BB->getName().str() << std::endl;
+    DEBUG(dbgs() << BB->getName().str() << "\n");
     //BB->dump();
  
-    for (BasicBlock::iterator INST = BB->begin(); INST != BB->end(); ++INST) {
-      std::cout << bbCount << " : " << instCount << " : ";
-      //if ( instCount <=  lastInst ) { // 45, 53, 62 
-        //INST->dump();
-      INST->print(llvm::outs());
-      llvm::outs() << "\n" ;        
-      locateSrcInfoForCheckingOptimizations (&(*INST));
-      //}
- 
-      //std::cout << *INST;
-      instCount++;
+    for (BasicBlock::iterator I = BB->begin();
+         I != BB->end();
+         ++I, ++instCount) {
+      DEBUG(dbgs() << bbCount << " : " << instCount << " : ");
+      DEBUG(I->print(dbgs()));
+      DEBUG(dbgs() << "\n");
+      locateSrcInfoForCheckingOptimizations (&(*I));
     } 
 
     bbCount++;      

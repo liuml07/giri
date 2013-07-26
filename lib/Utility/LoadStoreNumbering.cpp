@@ -11,7 +11,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#define DEBUG_TYPE "LoadStoreNumbering"
+#define DEBUG_TYPE "giri-lsn"
 
 #include "defs.h"
 #include "Utility/LoadStoreNumbering.h"
@@ -20,6 +20,7 @@
 #include "llvm/Constants.h"
 #include "llvm/Instructions.h"
 #include "llvm/Support/Debug.h"
+#include "llvm/Support/raw_ostream.h"
 
 #include <vector>
 
@@ -38,33 +39,30 @@ Y ("query-lsnum", "Query Unique Identifiers of Loads and Stores");
 static RegisterPass<dg::RemoveLoadStoreNumbers>
 Z ("remove-lsnum", "Remove Unique Identifiers of Loads and Stores");
 
-MDNode* dg::LoadStoreNumberPass::assignID (Instruction * I, unsigned id) {
+MDNode* dg::LoadStoreNumberPass::assignID (Instruction *I, unsigned id) {
   // Fetch the context in which the enclosing module was defined.  We'll need
   // it for creating practically everything.
-  Module * M = I->getParent()->getParent()->getParent();
+  Module *M = I->getParent()->getParent()->getParent();
   LLVMContext & Context = M->getContext();
 
   // Create a new metadata node that contains the ID as a constant.
   Value * ID[2];
   ID[0] = I;
   ID[1] = ConstantInt::get(Type::getInt32Ty(Context), id);
-  MDNode *MD = MDNode::getWhenValsUnresolved(Context, ArrayRef<Value *>(ID, 2), false);
-  return MD;
+
+  return MDNode::getWhenValsUnresolved(Context, ArrayRef<Value*>(ID, 2), false);
 }
 
 void dg::LoadStoreNumberPass::visitLoadInst (LoadInst &I) {
-  //MDNodes.push_back (assignID (&I, ++count));
   MD->addOperand((assignID (&I, ++count))); 
 }
 
 void dg::LoadStoreNumberPass::visitStoreInst (StoreInst &I) {
-  //MDNodes.push_back (assignID (&I, ++count));
   MD->addOperand((assignID (&I, ++count)));
 }
 
 void dg::LoadStoreNumberPass::visitSelectInst (SelectInst &SI) {
-  //MDNodes.push_back (assignID (&SI, ++count));
-    MD->addOperand((assignID (&SI, ++count))); 
+  MD->addOperand((assignID (&SI, ++count))); 
 }
 
 void dg::LoadStoreNumberPass::visitCallInst (CallInst &CI) {
@@ -81,63 +79,30 @@ void dg::LoadStoreNumberPass::visitCallInst (CallInst &CI) {
     if (isTracerFunction(CalledFunc))
       return;
   }
-  //MDNodes.push_back (assignID (&CI, ++count));
   MD->addOperand( (assignID (&CI, ++count)) );  
 }
 
 bool dg::LoadStoreNumberPass::runOnModule (Module & M) {
-  //
   // Now create a named metadata node that links all of this metadata together.
-  //
   MD = M.getOrInsertNamedMetadata(mdKindName);
 
-  //
   // Scan through the module and assign a unique, positive (i.e., non-zero) ID
   // to every load and store instruction.  Create an array of metadata nodes to
   // hold this data.
-  //
   count = 0;
   visit (&M);
-
-  std::cout << "Total Number of monitored program points: " << count << std::endl;
-
-  if ( count >   MAX_PROGRAM_POINTS )
-     std::cerr << "Total number of Program Points to be tracked:" << count << 
-                                                  "exceeds maximum allowed value\n";
-
-  //
-  // Now create a named metadata node that links all of this metadata together.
-  //
-  //Twine name(mdKindName);
-
-  /*  // addElement is inefficient due to bad implementation, use only Create in stead
-  NamedMDNode * MD = NamedMDNode::Create (M.getContext(), name, 0, 0, &M);
-  for (unsigned index = 0; index < MDNodes.size(); ++index)
-    MD->addElement (MDNodes[index]);
-  */
-
-  /* // Copy vector to array and then use it
-  MDNode **MDNodeArray;
-  MDNodeArray = (MDNode **) malloc ( sizeof(MDNode *) * MDNodes.size());
-  for (unsigned index = 0; index < MDNodes.size(); ++index) 
-  MDNodeArray[index] = MDNodes[index];  
-  */
-
-  // If there is any memory error, use copying in place of using address of first element of vector
-  //NamedMDNode * MD = NamedMDNode::Create (M.getContext(), name, /*(MetadataBase*const*) MDNodeArray*/  (MetadataBase*const*) &MDNodes[0] , MDNodes.size(), &M);
-
-  //
-  // We always modify the module.
-  //
+  DEBUG(dbgs() << "Number of monitored program points: " << count << "\n");
+  if (count > MAX_PROGRAM_POINTS)
+     errs() << "Number of monitored program points exceeds maximum value.\n";
   return true;
 }
 
 bool dg::QueryLoadStoreNumbers::runOnModule (Module & M) {
-  //std::cout << "Inside QueryLoadStoreNumbers " << M.getModuleIdentifier() << std::endl;
-  //
+  DEBUG(dbgs() << "Inside QueryLoadStoreNumbers for module "
+               << M.getModuleIdentifier()
+               << "\n");
   // Get the basic block metadata.  If there isn't any metadata, then no basic
   // block has been numbered.
-  //
   const NamedMDNode * MD = M.getNamedMetadata (mdKindName);
   if (!MD) return false;
 
@@ -159,7 +124,7 @@ bool dg::QueryLoadStoreNumbers::runOnModule (Module & M) {
     assert (ID->getZExtValue() && "Instruction with zero ID!\n");
     IDMap[I] = ID->getZExtValue();
     unsigned id = (unsigned) ID->getZExtValue();
-    bool inserted = InstMap.insert (std::make_pair(id,I)).second;
+    bool inserted = InstMap.insert(std::make_pair(id,I)).second;
     assert (inserted && "Repeated identifier!\n");
   }
 

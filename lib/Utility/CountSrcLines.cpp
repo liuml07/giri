@@ -22,6 +22,7 @@
 #include "llvm/IntrinsicInst.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/Debug.h"
+#include "llvm/Support/raw_ostream.h"
 
 #include <fcntl.h>
 #include <iostream>
@@ -72,8 +73,9 @@ void dg::CountSrcLines::countLines(const std::string & bbrecord_file) {
         std::string srcLineInfo;
         std::set<std::string> srcLines;
         std::set<std::string> BBsWithInstWithNoSrcLineMapping;
-
-	std::cout << "Number of unique Basic Blocks executed: " << bb_set.size() << "\n";
+	DEBUG(errs() << "Number of unique Basic Blocks executed: "
+                 << bb_set.size()
+                 << "\n");
 
 	std::unordered_set<unsigned>::iterator curr;
 	for (curr = bb_set.begin(); curr != bb_set.end(); ++curr) {
@@ -94,16 +96,27 @@ void dg::CountSrcLines::countLines(const std::string & bbrecord_file) {
                  srcLines.insert (srcLineInfo);
 	   }	          
 	}
-        StaticSrcLinesCount = srcLines.size();
 
-	std::cout << "Number of unique LLVM Instructions: " << StaticLLVMInstCount << "\n";
-	std::cout << "Number of unique Source Lines: " << StaticSrcLinesCount << "\n";
-	std::cout << "#unique LLVM Insts with source line debug info missing: " << StaticInstSrcLinesMissing << "\n";
-	std::cout << "#unique BBs woth LLVM Insts whose source line debug info missing: " << BBsWithInstWithNoSrcLineMapping.size() << "\n";
-	std::cout << "#unique LLVM Insts whose corr source lines don't exist : " << StaticInstWithoutSrcLines << "\n";
-	std::cout << "Number of unique Source Lines including 1 for each insts for which no source line could be found using debug info: " << StaticSrcLinesCount + StaticInstSrcLinesMissing  << "\n";
-
-
+    StaticSrcLinesCount = srcLines.size();
+	DEBUG(errs() << "Number of unique LLVM instructions: "
+                 << StaticLLVMInstCount
+                 << "\n");
+	DEBUG(errs() << "Number of unique source lines: "
+                 << StaticSrcLinesCount
+                 << "\n");
+	DEBUG(errs() << "#Unique LLVM insts with source line debug info missing: "
+                 << StaticInstSrcLinesMissing
+                 << "\n");
+	DEBUG(errs() << "#Unique BBs whose source line debug info missing: "
+                 << BBsWithInstWithNoSrcLineMapping.size()
+                 << "\n");
+	DEBUG(errs() << "#Unique LLVM insts whose corr source lines don't exist: "
+                 << StaticInstWithoutSrcLines
+                 << "\n");
+	DEBUG(errs() << "Number of unique source lines including 1 for each insts"\
+                 << "for which no source line could be found using debug info: "
+                 << StaticSrcLinesCount + StaticInstSrcLinesMissing
+                 << "\n");
 }
 
 std::unordered_set<unsigned> dg::CountSrcLines::readBB(const std::string & bbrecord_file) {

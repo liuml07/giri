@@ -31,7 +31,6 @@ struct PostDominanceFrontier : public DominanceFrontierBase {
     }
 
   virtual bool runOnFunction(Function &F) {
-    //std::cout << "Inside PostDominanceFrontier runOnFunction " << F.getName().str() << std::endl;
     Frontiers.clear();
     PostDominatorTree &DT = getAnalysis<PostDominatorTree>();
     Roots = DT.getRoots();
