@@ -232,11 +232,6 @@ void dg::SourceLineMappingPass::locateSrcInfoForCheckingOptimizations (Instructi
 }
 
 void dg::SourceLineMappingPass::mapCompleteFile(Module & M) {
-
-  //
-  // Read in the set of violated invariants from a file and determine if they
-  // are in the backwards slice.
-  //
   Function * F;
 
   for (Module::iterator MI = M.begin(), ME = M.end(); MI != ME; ++MI) {
