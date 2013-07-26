@@ -438,7 +438,6 @@ bool giri::TracingNoGiri::visitSpecialCall (CallInst & CI) {
   Function * CalledFunc = CI.getCalledFunction();
   if (CalledFunc == NULL)
     return false;
-  CalledFunc = CalledFunc;
 
   //
   // Do not consider a function special if it has a function body; in this

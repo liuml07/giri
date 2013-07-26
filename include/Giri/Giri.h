@@ -246,14 +246,6 @@ public:
                     std::unordered_set<DynValue> & dynamicSlice,
                     std::set<DynValue *> & DataFlowGraph);
 
-  /// For the given value, find all of the values upon which it depends.
-  ///
-  /// \param[in] DV - The next value in the slice
-  /// \param[in] Initial - The initial value for which we want a slice.
-  /// \return true, if both belong to same function, so that we can keep the
-  /// expr tree within a function.
-  bool checkForSameFunction (DynValue *DV, DynValue & Initial);
-
 #if 0
   src_iterator src_begin(const Function * F) {
     return Sources[F].begin();
