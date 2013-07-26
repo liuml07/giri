@@ -357,8 +357,6 @@ private:
   const Type *UInt64Ty, *UInt32Ty, *UInt16Ty, *UInt8Ty;
   const Type *FloatTy, *DoubleTy, *VoidTy;
 
-  // For reading invariants
-  std::ifstream *invInpFile;
 };
 
 }

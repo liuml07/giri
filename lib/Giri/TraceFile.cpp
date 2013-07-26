@@ -1150,17 +1150,12 @@ void giri::TraceFile::findAllStoresForLoad (DynValue & DV,
       // was executed.
       //
   
-      // ****** I think, we are unnecessarily going forward to the basic block end and then
-      // coming back to find the invariant failurs. We can optimize it avoid dual traversal 
-      // We'll have to change to point to directly load indices counting the nesting levels ******
-  
       unsigned storeID = lsNumPass->getID (SI);
       unsigned storeBBID = bbNumPass->getID (SI->getParent());
       unsigned long bbindex = findNextNestedID (store_index,
                                                 BBType,
                                                 storeBBID,
                                                 storeID);
-  
       //
       // Record the store instruction as a source.
       //

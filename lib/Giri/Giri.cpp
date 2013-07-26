@@ -33,17 +33,11 @@ using namespace llvm;
 static cl::opt<std::string>
 TraceFilename ("tf", cl::desc("Trace filename"), cl::init("bbrecord"));
 
-static cl::opt<std::string>
-InvRootCausesFileName ("inv-rc-file", cl::desc("Invariant failures which are part of rootcauses filename"), cl::init("inv-rootcauses.txt"));
-
 static cl::opt<bool>
 TraceCD ("trace-cd", cl::desc("Trace control dependence"), cl::init(false));
 
 static cl::opt<bool>
 DFS ("dfs", cl::desc("Do a depth first search"), cl::init(false));
-
-static cl::opt<bool>
-InvFilter ("inv-filter", cl::desc("Filter Invariants based on dynamic data flow"), cl::init(false));
 
 static cl::opt<bool>
 SelectOriginAsMain ("select-origin-as-main", cl::desc("Select the starting point of slicing as return from main or any particular instruction"), cl::init(false));
@@ -678,7 +672,7 @@ void giri::DynamicGiri::printBackwardsSlice (std::set<Value *> & Slice,
         }          
 #endif
 
-#if 1
+#if 0
         //
         // Print out the instructions in the dynamic backwards slice that
         // failed their invariants.
@@ -952,8 +946,6 @@ bool giri::DynamicGiri::runOnModule (Module & M) {
 
     startOfSlice.close();
   }
-
-  invInpFile->close();
 
   //
   // This is an analysis pass, so always return false.
