@@ -34,7 +34,7 @@ using namespace dg;
 namespace giri {
 
 /// This class represents a dynamic instruction within the dynamic trace.
-struct DynValue {
+class DynValue {
 public:
   friend class TraceFile;
   friend class DynBasicBlock;
@@ -120,7 +120,7 @@ private:
 
   // Record its parent in the current depth first search path
   // during DFS search of the data flow graph to filter invariants.
-  struct DynValue *parent;
+  DynValue *parent;
 
   // Record if the invariant corresponding to this dynamic
   // instance of the instruction failed or not.
@@ -133,7 +133,7 @@ private:
 };
 
 /// This class represents a dynamic basic block within the dynamic trace.
-struct DynBasicBlock {
+class DynBasicBlock {
 public:
   friend class TraceFile;
 
