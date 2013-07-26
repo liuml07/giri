@@ -205,16 +205,11 @@ bool giri::DynamicGiri::findExecForcers (BasicBlock * BB,
   return (findExecForcers (BB, bbNums));
 }
 
-bool giri::DynamicGiri::checkForSameFunction (DynValue *DV, DynValue & Initial) {
-  
-  }
-
 void giri::DynamicGiri::findSlice (DynValue & Initial,
                               std::unordered_set<DynValue> & Slice,
                               std::set<DynValue *> & DataFlowGraph) {
   // Worklist
   Worklist_t Worklist;
-  DynValue *lastDV = NULL;
 
   // Set of basic blocks that have had their control dependence processed
   std::unordered_set<DynBasicBlock> processedBBs;

@@ -63,7 +63,7 @@ std::string dg::SourceLineMappingPass::locateSrcInfo (Instruction *I) {
 
   // const DbgStopPointInst *StopPt = findStopPoint (I);
   unsigned LineNumber, ColumnNumber;
-  Value *SourceFile, *SourceDir;
+  //Value *SourceFile, *SourceDir;
   std::string FileName, DirName;
 
   // Get the ID number for debug metadata.
@@ -154,7 +154,7 @@ void dg::SourceLineMappingPass::locateSrcInfoForCheckingOptimizations (Instructi
   //
   //const DbgStopPointInst *StopPt = findStopPoint (I);
   unsigned LineNumber, ColumnNumber;
-  Value *SourceFile, *SourceDir;
+  //Value *SourceFile, *SourceDir;
   std::string FileName, DirName;
 
   //
