@@ -443,7 +443,7 @@ void recordExtCallRet (unsigned callID, unsigned char * fp) {
 
   assert( FNStackIndex > 0 ); 
 
-  fprintf(stdout, "Inside recordExtCallRet: %u %s %lx\n",
+  fprintf(stdout, "Inside recordExtCallRet: %u %s %s\n",
           callID, fp, FNStack[FNStackIndex - 1].fnAddress);
   
   if( FNStack[FNStackIndex - 1].fnAddress != fp )
@@ -603,7 +603,7 @@ void recordExtCall (unsigned id, unsigned char * fp) {
   if( checkForNonHandlerThread() )
     return;
 
-  fprintf(stdout, " Inside recordExtCall: %u %lx\n", id, fp);
+  fprintf(stdout, " Inside recordExtCall: %u %s\n", id, fp);
 
   // Record that a call has been executed.
   Entry entry (CLType, id, fp);
