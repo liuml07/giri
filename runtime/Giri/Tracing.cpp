@@ -159,9 +159,7 @@ void cleanup_only_tracing(int signum)
 }
 
 void entryCache::openFD (int FD) {
-  //
   // Save the file descriptor of the file that we'll use.
-  //
   fd = FD;
 
   //
@@ -274,7 +272,7 @@ void flushEntryCache (void) {
 }
 
 void closeCacheFile (void) {
-  fprintf(stderr, "Writing cache data to trace file and closing\n");
+  fprintf(stdout, "Writing cache data to trace file and closing\n");
   //
   // Create basic block termination entries for each basic block on the stack.
   // These were the basic blocks that were active when the program terminated.
@@ -313,51 +311,40 @@ void closeCacheFile (void) {
 }
 
 void recordInit  (const char * name) {
-  //
   // First assert that the size of an entry evenly divides the cache entry
   // buffer size.  The run-time will not work if this is not true.
-  //
   if (entryCacheSizeinBytes % sizeof (Entry)) {
     fprintf (stderr,
              "Entry size %lu does not divide cache size!\n",
-             sizeof (Entry));
+             sizeof(Entry));
     abort();
   }
 
-  //
   // Open the file for recording the trace if it hasn't been opened already.
   // Truncate it in case this dynamic trace is shorter than the last one stored
   // in the file.
-  //
   record = open (name, O_RDWR | O_CREAT | O_TRUNC, 0640u);
   assert ((record != -1) && "Failed to open tracing file!\n");
-  //cout << "Opened trace file" << name;
-  fprintf(stderr, "Opened trace file: %s\n", name);
+  fprintf(stdout, "Opened trace file: %s\n", name);
 
-  //
   // Initialize the entry cache by giving it a memory buffer to use.
-  //
   entryCache.openFD (record);
 
-  //
   // Make sure that we flush the entry cache on exit.
-  //
   atexit (closeCacheFile);
 
   //Register the signal handlers for flushing of diagnosis tracing data to file
-  //
-  #if 1
-     signal(SIGINT, cleanup_only_tracing);
-     signal(SIGQUIT, cleanup_only_tracing);
-     signal(SIGSEGV, cleanup_only_tracing);
-     signal(SIGABRT, cleanup_only_tracing);
-     signal(SIGTERM, cleanup_only_tracing);
-     signal(SIGKILL, cleanup_only_tracing);
-     signal(SIGILL, cleanup_only_tracing);
-     signal(SIGFPE, cleanup_only_tracing);
-#endif
+  signal(SIGINT, cleanup_only_tracing);
+  signal(SIGQUIT, cleanup_only_tracing);
+  signal(SIGSEGV, cleanup_only_tracing);
+  signal(SIGABRT, cleanup_only_tracing);
+  signal(SIGTERM, cleanup_only_tracing);
+  signal(SIGKILL, cleanup_only_tracing);
+  signal(SIGILL, cleanup_only_tracing);
+  signal(SIGFPE, cleanup_only_tracing);
 
   pthread_mutex_init(&mutexRecordThreadID, NULL);
+
   // Update the thread id with the main thread ID
   updateThreadID();
 
@@ -375,29 +362,26 @@ void recordStartBB (unsigned id, unsigned char * fp) {
     return;
 
   if( id >= 190525 && id <= 190532 )
-    fprintf(stderr, "At BasicBlock start, BBid %u between 190525 and 190532\n", id);
+    fprintf(stdout, "At BasicBlock start, BBid %u between 190525 and 190532\n",
+            id);
 
-  //
   // Ensure that we have enough space on the basic block stack.
-  //
   if (BBStackIndex == maxBBStack) {
     fprintf(stderr, "Basic Block Stack overflowed in Tracing runtime\n");
     abort();
   }
 
-  //
   // Push the basic block identifier on to the back of the stack.
-  //
   BBStack[BBStackIndex].id = id;
   BBStack[BBStackIndex++].address = fp;
   
-  // !!!! FIX IT !!!! Special handling for clang code
+  // FIXME: Special handling for clang code
   if( id == 190531 ) {
     fprintf(stderr, "Due to some bug, some entries r missing in trace. \
-                         Hence force writing trace file here at symptom\n");
-      closeCacheFile();
-      abort();
-      }
+                     Hence force writing trace file here at symptom\n");
+    closeCacheFile();
+    abort();
+  }
 
   return;
 }
@@ -412,52 +396,44 @@ void recordBB (unsigned id, unsigned char * fp, unsigned lastBB) {
     return;
 
   if( id >= 190525 && id <= 190532 )
-    fprintf(stderr, "At BasicBlock end, BBid %u between 190525 and 190532\n", id);
+    fprintf(stdout, "At BasicBlock end, BBid %u between 190525 and 190532\n", id);
   
-  //
   // Record that this basic block as been executed.
-  //
-
   unsigned callID = 0;
 
-  //
   // If this is the last BB of this function invocation, take the Function id
-  // off the Function stack stack. We have recorded that it has finished execution.
-  // Store the call id to record the end of function call at the end of the last BB.
-  
-  if( lastBB ) {
-    if( FNStackIndex > 0 ) {   
-      if( FNStack[FNStackIndex - 1].fnAddress != fp ) {
-	//fprintf(stderr, "Function id on stack doesn't match for id %u. 
-        //                     MAY be due to function call from external code\n", id);
-      }
-      else {
+  // off the Function stack stack. We have recorded that it has finished
+  // execution. Store the call id to record the end of function call at the end
+  // of the last BB.
+  if (lastBB) {
+    if (FNStackIndex > 0 ) {   
+      if (FNStack[FNStackIndex - 1].fnAddress != fp ) {
+        fprintf(stderr, "Function id on stack doesn't match for id %u.\
+                         MAY be due to function call from external code\n", id);
+      } else {
         --FNStackIndex;
         callID = FNStack[FNStackIndex].id;
       }
-    }
-    // If nothing in stack, it is main function return which doesn't have a matching call.
-    // Hence just store a large number as call id
-    else
+    } else {
+      // If nothing in stack, it is main function return which doesn't have a matching call.
+      // Hence just store a large number as call id
       callID = ~0;
-  }
-  else
+    }
+  } else {
     callID = 0;
+  }
     
-  Entry entry (BBType, id, fp, callID);
+  Entry entry(BBType, id, fp, callID);
   addToEntryCache (entry);
 
-  //
   // Take the basic block off the basic block stack.  We have recorded that it
   // has finished execution.
-  //
   --BBStackIndex;
 
   return;
 }
 
 // TODO: delete this (**Not needed anymore as we don't add external function call records**)
-//
 ///  Record that a external function has finished execution by updating function call stack.
 void recordExtCallRet (unsigned callID, unsigned char * fp) {
 
@@ -467,11 +443,12 @@ void recordExtCallRet (unsigned callID, unsigned char * fp) {
 
   assert( FNStackIndex > 0 ); 
 
-  fprintf(stderr, " Inside recordExtCallRet: %u %lx %lx\n", callID, fp, FNStack[FNStackIndex - 1].fnAddress);
+  fprintf(stdout, "Inside recordExtCallRet: %u %s %lx\n",
+          callID, fp, FNStack[FNStackIndex - 1].fnAddress);
   
   if( FNStack[FNStackIndex - 1].fnAddress != fp )
 	fprintf(stderr, "Function id on stack doesn't match for id %u. \
-                             MAY be due to function call from external code\n", callID);
+                     MAY be due to function call from external code\n", callID);
   else
      --FNStackIndex;
 
@@ -479,14 +456,11 @@ void recordExtCallRet (unsigned callID, unsigned char * fp) {
 }
 
 void recordLoad (unsigned id, unsigned char * p, uintptr_t length) {
-
   // Don't record, if it is not the main thread or connection handler thread
   if( checkForNonHandlerThread() )
     return;
 
-  //
   // Record that a load has been executed.
-  //
   Entry entry (LDType, id, p, length);
   addToEntryCache (entry);
 
@@ -604,7 +578,7 @@ void recordCall (unsigned id, unsigned char * fp) {
   // Ensure that we have enough space on the Function call stack.
   //
   if (FNStackIndex == maxFNStack) {
-    //fprintf(stderr, "Function call Stack overflowed in Tracing runtime\n");
+    fprintf(stderr, "Function call Stack overflowed in Tracing runtime\n");
     //abort();
     return;
   }
@@ -629,11 +603,9 @@ void recordExtCall (unsigned id, unsigned char * fp) {
   if( checkForNonHandlerThread() )
     return;
 
-  fprintf(stderr, " Inside recordExtCall: %u %lx\n", id, fp);
+  fprintf(stdout, " Inside recordExtCall: %u %lx\n", id, fp);
 
-  //
   // Record that a call has been executed.
-  //
   Entry entry (CLType, id, fp);
   addToEntryCache (entry);
 

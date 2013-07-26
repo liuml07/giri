@@ -73,7 +73,6 @@ namespace {
   STATISTIC (DynValueCount,   "Number of Dynamic Values in Slice");
   STATISTIC (DynSourcesCount, "Number of Dynamic Sources Queried");
   STATISTIC (DynValsSkipped,  "Number of Dynamic Values Skipped");
-
   STATISTIC (TotalLoadsTraced, "Number of Dynamic Loads Traced");
   STATISTIC (LostLoadsTraced,  "Number of Dynamic Loads Lost");
 }
@@ -696,40 +695,34 @@ void giri::DynamicGiri::printBackwardsSlice (std::set<Value *> & Slice,
         llvm::outs() << " Dynamic Slice \n";
         llvm::outs() << "==================================================\n";
         for (std::unordered_set<DynValue>::iterator i = dynamicSlice.begin();
-                                                i != dynamicSlice.end(); ++i) {
-            DynValue DV = *i;
+             i != dynamicSlice.end();
+             ++i) {
+          DynValue DV = *i;
+          if (checkForInvariantInst(DV.getValue()))
+            AllInvs.insert(DV.getValue());
 
-            //DV.print(lsNumPass);
-            //if (Instruction * I = dyn_cast<Instruction>(i->getValue())) {
-	      //std::string srcLineInfo = SourceLineMappingPass::locateSrcInfo (I);
-	      //std::cout << " Source Line Info : " << srcLineInfo << std::endl;
-	    //}
-            //printf("Address of DV= %x, Parent= %x\n", &(*i), (i->getParent()));
-            
-            
-           if ( checkForInvariantInst(DV.getValue()) )
-              AllInvs.insert(DV.getValue());
-
-            if ( DV.getInvFail() == true ) {
-	      DV.print(lsNumPass);
-              if (Instruction * I = dyn_cast<Instruction>(i->getValue())) {
-		std::string srcLineInfo = SourceLineMappingPass::locateSrcInfo (I);
-	        llvm::outs() << " Source Line Info : " << srcLineInfo <<  "\n";
-	      }
-              FailedInvs.insert(DV.getValue());
-	    }
-            /*
-            if (Instruction * I = dyn_cast<Instruction>(V)) {
-              int id = lsNumPass->getID (I);
-              // The instruction id is present in violated invariants
-              // if( invMap.find(id) !=  invMap.end() )             
-              //    I->dump();
+          if (DV.getInvFail() == true ) {
+            DV.print(lsNumPass);
+            if (Instruction *I = dyn_cast<Instruction>(i->getValue())) {
+              std::string srcLineInfo = SourceLineMappingPass::locateSrcInfo(I);
+              DEBUG(dbgs() << " Source Line Info : " << srcLineInfo <<  "\n");
             }
-            */
+            FailedInvs.insert(DV.getValue());
+          }
+          /*
+          if (Instruction * I = dyn_cast<Instruction>(V)) {
+            int id = lsNumPass->getID (I);
+            // The instruction id is present in violated invariants
+            // if( invMap.find(id) !=  invMap.end() )             
+            //    I->dump();
+          }
+          */
         }
 
-	llvm::outs() << "No of failed Invariants in the slice: " << FailedInvs.size() << "\n";
-	llvm::outs() << "Total No of Invariants in the slice: " << AllInvs.size() << "\n";
+	DEBUG(dbgs() << "No of failed Invariants in the slice: "
+                 << FailedInvs.size() << "\n");
+	DEBUG(dbgs() << "Total No of Invariants in the slice: "
+                 << AllInvs.size() << "\n");
 
 #endif
 
@@ -892,17 +885,7 @@ bool giri::DynamicGiri::runOnModule (Module & M) {
         if ( dyn_cast<ReturnInst>(I) ) {
           I->dump();
           getBackwardsSlice (I, mySliceOfLife, myDynSliceOfLife, myDataFlowGraph);
-    
-          /*
-          std::cerr << "==================================================" << std::endl;
-          std::cout << "==================================================" << std::endl;
-          for (std::set<Value *>::iterator i = mySliceOfLife.begin(); i != mySliceOfLife.end(); ++i) {
-              Value * V = *i;
-              V->dump();
-          }         
-	  */
           printBackwardsSlice (mySliceOfLife, myDynSliceOfLife, myDataFlowGraph);
-    
           break;
         }
       }

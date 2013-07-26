@@ -69,7 +69,7 @@ giri::TraceFile::TraceFile (std::string Filename,
   fixupLostLoads();
   buildTraceFunAddrMap();
 
-  std::cout<< " Finished reading trace file, building all the initialization tables " << std::endl;
+  DEBUG(dbgs() << "TraceFile successfully initialized.\n");
   return;
 }
 
@@ -87,11 +87,11 @@ void giri::TraceFile::buildTraceFunAddrMap (void) {
     //
     if (trace[index].type == CLType) {
 
-      if( (CI = dyn_cast<CallInst>(lsNumPass->getInstforID(trace[index].id))) ) {
+      if ((CI = dyn_cast<CallInst>(lsNumPass->getInstforID(trace[index].id))) ) {
         calledFun = CI->getCalledFunction();
    
         // For recursion through indirect function calls it'll be 0 and it will not work
-        if( calledFun ) {
+        if (calledFun) {
           if ( traceFunAddrMap.find (calledFun) == traceFunAddrMap.end() )
 	     traceFunAddrMap[calledFun] = trace[index].address;
         }
@@ -99,7 +99,7 @@ void giri::TraceFile::buildTraceFunAddrMap (void) {
     }
   }
 
-  std::cout << "Size of Runtime Fun Addr Map: " << traceFunAddrMap.size() << std::endl;
+  DEBUG(dbgs() << "traceFunAddrMap.size(): " << traceFunAddrMap.size() << "\n");
 }
 
 /// This is a comparison operator that is specially designed to determine if
@@ -1707,10 +1707,12 @@ void giri::TraceFile::getSourcesForCall (DynValue & DV, Worklist_t &  Sources) {
   //assert( trace[tempretindex].type == BBType &&			
   //      trace[tempretindex].address == trace[retindex].address && "Return and BB record doesn't match");
   // FIX ME!!! why records are not generated inside some calls as in stat,my_stat of mysql????
-  if(! ( trace[tempretindex].type == BBType && \
-                trace[tempretindex].address == trace[retindex].address) ) {
-    std::cout<< "!!!WARNING! Return and BB record doesn't match. May be due to some reason the \
-           records of a called function are not recorded as in stat function of mysql" << std::endl;
+  if (!trace[tempretindex].type == BBType ||
+      !trace[tempretindex].address == trace[retindex].address) {
+    DEBUG_WITH_TYPE("giri", errs() << "Return and BB record doesn't match!"
+                                   << "May be due to some reason the records "
+                                   << "of a called function are not recorded "
+                                   << "as in stat function of mysql.\n");
     // Treat it as external library call in this case and add all operands
     for (unsigned index = 0; index < CI->getNumOperands(); ++index) {
         DynValue newDynValue = DynValue (CI->getOperand(index), DV.index); 

@@ -18,10 +18,10 @@
 #include "Utility/BasicBlockNumbering.h"
 #include "Utility/LoadStoreNumbering.h"
 
+#include "llvm/Support/Debug.h"
 #include "llvm/Support/raw_os_ostream.h"
 #include "llvm/Value.h"
 
-#include <iostream>
 #include <deque>
 #include <iterator>
 #include <set>
@@ -79,21 +79,17 @@ public:
     counter = c;
   }
 
-  void print (const QueryLoadStoreNumbers  *  lsNumPass ) {
-    //raw_os_ostream *temp_ostream = new raw_os_ostream(std::cout);
-    V->print(llvm::outs()); 
-    llvm::outs() << "( ";
+  void print (const QueryLoadStoreNumbers  *lsNumPass) {
+#ifndef NDEBUG
+    DEBUG(V->print(dbgs())); 
+    DEBUG(dbgs() << "( ");
     if (Instruction * I = dyn_cast<Instruction>(V)) {
-      llvm::outs() << "[ " << I->getParent()->getParent()->getName().str() << " ]";
-      llvm::outs() << "< " << lsNumPass->getID(I) << " >";
+      DEBUG(dbgs() << "[ " << I->getParent()->getParent()->getName().str() << " ]");
+      DEBUG(dbgs() << "< " << lsNumPass->getID(I) << " >");
     }
-    llvm::outs() << " )";
-    llvm::outs() << " " << index  << " " << invFail  << " ";
-    /*if( parent == NULL )
-        std::cout << "NULL ";
-      else
-        parent->V->print (std::cout);*/
-    llvm::outs() << " " << counter << "\n";
+    DEBUG(dbgs() << " )" << " " << index  << " " << invFail << " " << " "
+                 << counter << "\n");
+#endif
   }
 
   DynValue (Value * Val, unsigned long i) : V(Val) {

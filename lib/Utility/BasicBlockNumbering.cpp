@@ -11,22 +11,22 @@
 //
 //===----------------------------------------------------------------------===//
 
-#define DEBUG_TYPE "BasicBlockNumbering"
+#define DEBUG_TYPE "giri-bbn"
 
 #include "Utility/BasicBlockNumbering.h"
 
-#include "llvm/Support/Debug.h"
 #include "llvm/Constants.h"
 #include "llvm/Instructions.h"
+#include "llvm/Support/Debug.h"
+#include "llvm/Support/raw_ostream.h"
 
-#include <iostream>
 #include <vector>
 
 char dg::BasicBlockNumberPass::ID    = 0;
 char dg::QueryBasicBlockNumbers::ID  = 0;
 char dg::RemoveBasicBlockNumbers::ID = 0;
 
-static const char * mdKindName = "dg";
+static const char *mdKindName = "dg";
 
 static RegisterPass<dg::BasicBlockNumberPass>
 X ("bbnum", "Assign Unique Identifiers to Basic Blocks");
@@ -62,33 +62,17 @@ bool dg::BasicBlockNumberPass::runOnModule (Module & M) {
     for (Function::iterator BB = MI->begin(), BE = MI->end(); BB != BE; ++BB) {
       MD->addOperand((assignIDToBlock(BB, ++count)));
     }
-  
-  std::cout << "Total Number of Basic Blocks: " << count << std::endl;
+  DEBUG(dbgs() << "Total Number of Basic Blocks: " << count << "\n");
 
-  /* // addElement is inefficient due to bad implementation, use only Create in stead
-  NamedMDNode * MD = NamedMDNode::Create (M.getContext(), name, 0, 0, &M);  
-  for (unsigned index = 0; index < MDNodes.size(); ++index) 
-     MD->addElement (MDNodes[index]);
-  */
-
-  //std::cout<< " Size of Metadata: "  << MDNodes.size() << std::endl;
-  /* // Copy vector to array and then use it
-  MDNode **MDNodeArray;
-  MDNodeArray = (MDNode **) malloc ( sizeof(MDNode *) * MDNodes.size());
-  for (unsigned index = 0; index < MDNodes.size(); ++index) 
-  MDNodeArray[index] = MDNodes[index];  
-  */
-
-  // If there is any memory error, use copying in place of using address of first element of vector
-  // NamedMDNode * MD = NamedMDNode::Create (M.getContext(), name, /*(MetadataBase*const*) MDNodeArray*/  (MetadataBase*const*) &MDNodes[0] , MDNodes.size(), &M);
- 
   // We always modify the module.
   return true;
 }
 
 bool dg::QueryBasicBlockNumbers::runOnModule (Module & M) {
-  //std::cout << "Inside QueryBasicBlockNumbers " << M.getModuleIdentifier() << std::endl;
-  //
+  DEBUG(dbgs() << "Inside QueryBasicBlockNumbers for module "
+               << M.getModuleIdentifier()
+               << "\n");
+
   // Get the basic block metadata.  If there isn't any metadata, then no basic
   // block has been numbered.
   //
@@ -129,10 +113,11 @@ bool dg::QueryBasicBlockNumbers::runOnModule (Module & M) {
 }
 
 bool dg::RemoveBasicBlockNumbers::runOnModule (Module & M) {
-  // Get the basic block metadata.  If there isn't any metadata, then no basic
+  // Get the basic block metadata. If there isn't any metadata, then no basic
   // blocks have been numbered.
   NamedMDNode * MD = M.getNamedMetadata (mdKindName);
-  if (!MD) return false;
+  if (!MD)
+    return false;
 
   // Remove the metadata.
   MD->eraseFromParent();
