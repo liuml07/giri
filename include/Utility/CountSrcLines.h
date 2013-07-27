@@ -37,7 +37,7 @@ struct CountSrcLines : public ModulePass {
 public:
   static char ID;
 
-  CountSrcLines() : ModulePass (ID) { 
+  CountSrcLines() : ModulePass (ID) {
     //llvm::initializeDynamicGiriPass(*PassRegistry::getPassRegistry());
   }
   virtual bool runOnModule(Module & M);

@@ -64,7 +64,7 @@ private:
 private:
   unsigned count; //< Counter for assigning unique IDs
 
-  NamedMDNode * MD; //< Store metadata of each load and store   
+  NamedMDNode * MD; //< Store metadata of each load and store
 };
 
 /// \class This pass is an analysis pass that reads the metadata added by the

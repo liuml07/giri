@@ -29,7 +29,7 @@ namespace dg {
 /// \class This pass adds metadata to an LLVM module to assign a unique, stable ID
 /// to each basic block.
 ///
-/// It adds metadata that cannot be written to disk 
+/// It adds metadata that cannot be written to disk
 /// using the LLVM BitcodeWriter pass.
 class BasicBlockNumberPass : public ModulePass {
 public:
@@ -95,7 +95,7 @@ public:
   }
 
 protected:
-  /// \brief Maps a basic block to the number to which it was assigned. 
+  /// \brief Maps a basic block to the number to which it was assigned.
   /// Note that *multiple* basic blocks can be assigned the same ID (e.g., if a
   /// transform clones a function).
   std::map<BasicBlock*, unsigned> IDMap;

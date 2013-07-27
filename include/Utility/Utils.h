@@ -1,10 +1,10 @@
 //===- Utils.h - Utilities for vector code generation -----------*- C++ -*-===//
-// 
+//
 //                     The LLVM Compiler Infrastructure
 //
 // This file was developed by the LLVM research group and is distributed under
 // the University of Illinois Open Source License. See LICENSE.TXT for details.
-// 
+//
 //===----------------------------------------------------------------------===//
 //
 // Utility functions for working with the LLVM IR.
@@ -60,7 +60,7 @@ castTo (Value * V, Type * Ty, Twine Name, Instruction * InsertPt) {
   //
   if (V->getType() == Ty)
     return V;
-                                                                                
+
   //
   // If it's a constant, just create a constant expression.
   //
@@ -68,7 +68,7 @@ castTo (Value * V, Type * Ty, Twine Name, Instruction * InsertPt) {
     Constant * CE = ConstantExpr::getZExtOrBitCast (C, Ty);
     return CE;
   }
-                                                                                
+
   //
   // Otherwise, insert a cast instruction.
   //
@@ -102,7 +102,7 @@ stringToGV (const std::string& s, Module *M) {
   //Constant *arr = ConstantArray::get(M->getContext(), StringRef(s)); //create a constant string array and add a null terminator
   Constant *arr = ConstantDataArray::getString(M->getContext(), StringRef(s), true); //create a constant string array and add a null terminator
   return new GlobalVariable(*M, arr->getType(), true,
-          GlobalValue::InternalLinkage, 
+          GlobalValue::InternalLinkage,
           arr, Twine("str"));
 }
 
@@ -114,7 +114,7 @@ shortToGV (short value, const std::string& name, Module *M) {
   IntegerType *Int16Ty =  Type::getInt16Ty(M->getContext());
   ConstantInt *cshort = ConstantInt::get(Int16Ty, value);
   return new GlobalVariable(*M, Int16Ty, true,
-          GlobalValue::InternalLinkage, 
+          GlobalValue::InternalLinkage,
           cshort, Twine(name) );
 }
 
@@ -122,10 +122,10 @@ static inline GlobalVariable *
 intToGV (int value, const std::string& name, Module *M) {
   //ConstantInt *cint = ConstantInt::get(IntegerType::get(32, value, true), value);
   // Inter Type definitions have changed, so make sure to use the correct type
-  IntegerType *Int32Ty =  Type::getInt32Ty(M->getContext());    
+  IntegerType *Int32Ty =  Type::getInt32Ty(M->getContext());
   ConstantInt *cint = ConstantInt::get(Int32Ty, value);
   return new GlobalVariable(*M, Int32Ty, true,
-          GlobalValue::InternalLinkage, 
+          GlobalValue::InternalLinkage,
           cint, Twine(name));
 }
 
@@ -133,10 +133,10 @@ static inline GlobalVariable *
 longToGV (long value, const std::string& name, Module *M) {
   //ConstantInt *cint = ConstantInt::get(IntegerType::get(32, value, true), value);
   // Inter Type definitions have changed, so make sure to use the correct type
-  IntegerType *Int64Ty =  Type::getInt64Ty(M->getContext());    
+  IntegerType *Int64Ty =  Type::getInt64Ty(M->getContext());
   ConstantInt *clong = ConstantInt::get(Int64Ty, value);
   return new GlobalVariable(*M, Int64Ty, true,
-          GlobalValue::InternalLinkage, 
+          GlobalValue::InternalLinkage,
           clong, Twine(name));
 }
 
@@ -145,11 +145,11 @@ longToGV (long value, const std::string& name, Module *M) {
 //===----------------------------------------------------------------------===//
 
 static inline CallInst *
-getCallInst (const Type* RetTy, const std::string& FName, 
+getCallInst (const Type* RetTy, const std::string& FName,
              std::vector<Value*>& args, const std::string& Name,
              Instruction *before) {
   std::vector<Type*> formalArgs;
-  for (std::vector<Value*>::iterator I = args.begin(), E = args.end(); 
+  for (std::vector<Value*>::iterator I = args.begin(), E = args.end();
        I != E; ++I) {
     formalArgs.push_back((*I)->getType());
   }
@@ -202,7 +202,7 @@ getCallInst (const Type* RetTy, const std::string& FName,
 
 static inline CallInst *
 getCallInst (const Type* RetTy, const std::string& FName,
-             Value *arg1, Value *arg2, const std::string& Name, 
+             Value *arg1, Value *arg2, const std::string& Name,
              Instruction *before) {
   std::vector<Value*> args;
   args.push_back(arg1);
@@ -211,7 +211,7 @@ getCallInst (const Type* RetTy, const std::string& FName,
 }
 
 static inline CallInst *
-getCallInst (const Type* RetTy, const std::string& FName, 
+getCallInst (const Type* RetTy, const std::string& FName,
             Value *arg1, const std::string& Name,
             Instruction *before) {
   std::vector<Value*> args;
@@ -220,7 +220,7 @@ getCallInst (const Type* RetTy, const std::string& FName,
 }
 
 static inline CallInst *
-getCallInst (const Type* RetTy, const std::string& FName, 
+getCallInst (const Type* RetTy, const std::string& FName,
             const std::string& Name,
             Instruction *before) {
   std::vector<Value*> args;
@@ -228,7 +228,7 @@ getCallInst (const Type* RetTy, const std::string& FName,
 }
 
 static inline CallInst *
-getCallInst (Type* RetTy, const std::string& FName, 
+getCallInst (Type* RetTy, const std::string& FName,
             const std::string& Name,
             BasicBlock *InsertAtEnd) {
   ArrayRef< Type * > Params;
@@ -296,7 +296,7 @@ isTracerFunction(Function *fun) {
       (name == "trace_double_value") ) {
     return true;
   }
-  
+
   return false;
 }
 

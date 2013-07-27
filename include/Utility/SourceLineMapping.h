@@ -7,7 +7,7 @@
 //
 //===----------------------------------------------------------------------===//
 //
-// This class provides LLVM passes that provide a mapping from LLVM 
+// This class provides LLVM passes that provide a mapping from LLVM
 // instruction to Source Line information.
 //
 //===----------------------------------------------------------------------===//
@@ -46,8 +46,8 @@ public:
   /// \brief Using debug information, find the source line number corresponding
   /// to a specified LLVM instruction.
   /// @return false - The module was not modified.
-  virtual bool runOnModule (Module & M);      
-  
+  virtual bool runOnModule (Module & M);
+
   virtual void getAnalysisUsage(AnalysisUsage &AU) const {
     AU.setPreservesCFG();
     AU.setPreservesAll();

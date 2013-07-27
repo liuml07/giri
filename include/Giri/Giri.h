@@ -180,7 +180,7 @@ struct DynamicGiri : public ModulePass {
 public:
   static char ID;
 
-  DynamicGiri () : ModulePass (ID) { 
+  DynamicGiri () : ModulePass (ID) {
     //llvm::initializeDynamicGiriPass(*PassRegistry::getPassRegistry());
   }
 
@@ -241,7 +241,7 @@ public:
                             std::unordered_set<DynValue> & dynamicSlice,
                             std::set<DynValue *> & DataFlowGraph);
   /// Start building expression tree from root cause and count the mapped
-  /// source lines 
+  /// source lines
   void getExprTree (std::set<Value *> & Slice,
                     std::unordered_set<DynValue> & dynamicSlice,
                     std::set<DynValue *> & DataFlowGraph);
@@ -279,7 +279,7 @@ private:
   /// block can post-dominate the entry basic block and be control-dependent on
   /// itself; this means that it is unconditionally executed once with
   /// subsequent executions depending on the result of the basic block's
-  /// terminating instruction. 
+  /// terminating instruction.
   ///
   /// \param[in] Initial - The initial value for which we want a slice.
   void findSlice (DynValue & V,
@@ -308,7 +308,7 @@ private:
   ///                 control-dependent on the entry block if the entry block
   ///                 is in bbNums).
   bool findExecForcers (BasicBlock * BB, std::set<unsigned> & bbNums);
-  
+
   void initDataFlowFitler (void);
 
   bool checkType(const Type *T);
