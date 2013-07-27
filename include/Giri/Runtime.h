@@ -1,10 +1,10 @@
 //===- Runtime.h - Header file for the dynamic slicing tracing runtime ----===//
-// 
+//
 //                          Bug Diagnosis Compiler
 //
 // This file was developed by the LLVM research group and is distributed under
 // the University of Illinois Open Source License. See LICENSE.TXT for details.
-// 
+//
 //===----------------------------------------------------------------------===//
 //
 // This file defines the format of the tracing file.
@@ -55,7 +55,7 @@ struct Entry {
 
   //
   // For load/store records, this holds the size of the memory access in bytes.
-  // For last returning basic block of the function, it is overloaded to store 
+  // For last returning basic block of the function, it is overloaded to store
   // the id of the function call instruction which invokes it.
   uintptr_t length;
 
@@ -112,7 +112,7 @@ struct Entry {
   //  Provide a nice one-line method for initializing the structure with
   //  pointers for special external function calls like memcpy.
   //
-  Entry (unsigned char new_type, unsigned new_id, unsigned char *p, 
+  Entry (unsigned char new_type, unsigned new_id, unsigned char *p,
          unsigned char *s, uintptr_t new_length = 0) {
     type    = new_type;
     id      = new_id;

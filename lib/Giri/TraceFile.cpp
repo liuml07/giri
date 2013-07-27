@@ -59,7 +59,7 @@ giri::TraceFile::TraceFile (std::string Filename,
   //
   // Calculate the index of the last record in the trace.
   //
-  maxIndex = (finfo.st_size / sizeof (Entry)) - 1;  
+  maxIndex = (finfo.st_size / sizeof (Entry)) - 1;
   //DEBUG( printf("Sizeof(Entry) = %lu\n", sizeof (Entry)) );
   //DEBUG( printf("B=%x C=%x L=%x S=%x\n", 'B', 'C', 'L', 'S') );
 
@@ -76,7 +76,7 @@ giri::TraceFile::TraceFile (std::string Filename,
 void giri::TraceFile::buildTraceFunAddrMap (void) {
 
   Function *calledFun = NULL;
-  CallInst *CI; 
+  CallInst *CI;
 
   //
   // Loop through the entire trace to look for Call records.
@@ -89,7 +89,7 @@ void giri::TraceFile::buildTraceFunAddrMap (void) {
 
       if ((CI = dyn_cast<CallInst>(lsNumPass->getInstforID(trace[index].id))) ) {
         calledFun = CI->getCalledFunction();
-   
+
         // For recursion through indirect function calls it'll be 0 and it will not work
         if (calledFun) {
           if ( traceFunAddrMap.find (calledFun) == traceFunAddrMap.end() )
@@ -212,7 +212,7 @@ void giri::TraceFile::addToWorklist (DynValue & DV,  Worklist_t & Sources, /* in
   DynValue *temp = new DynValue (DV);
   //printf("Address of DV= %x, Parent= %x\n", temp, &Parent);
   temp->setParent( &Parent ); // Used for traversing data flow graph
-  //*Sources = temp; //DynValue (DV.V, DV.index);  
+  //*Sources = temp; //DynValue (DV.V, DV.index);
   Sources.push_front( temp ); // Later make it generic to support both DFS & BFS
 }
 
@@ -270,7 +270,7 @@ unsigned long giri::TraceFile::findPreviousID (unsigned long start_index,
 
   //
   // We didn't find the record.  If this is a basic block record, then grab the
-  // END record. 
+  // END record.
   // ******************************** WHY?????? ****************************
   //
   if (type == BBType) {
@@ -334,12 +334,12 @@ unsigned long giri::TraceFile::findPreviousNestedID (unsigned long start_index,
           (trace[start_index].type == ENType));
 #else
   assert (trace[start_index].type == BBType);
-          
+
 #endif
 
   //
   // Assert that we're not looking for a basic block index, since we can only
-  // use this function when ebtry belongs to basicblock nestedID. 
+  // use this function when ebtry belongs to basicblock nestedID.
   assert (BBType != type);
 
   //
@@ -503,22 +503,22 @@ unsigned long giri::TraceFile::findNextNestedID (unsigned long start_index,
   return index;
 }
 
-unsigned long giri::TraceFile::findPreviousIDWithRecursion (Function *fun, 
-                                 unsigned long start_index,  
-                                 const unsigned char type, 
+unsigned long giri::TraceFile::findPreviousIDWithRecursion (Function *fun,
+                                 unsigned long start_index,
+                                 const unsigned char type,
                                  const unsigned id) {
-  // Start searching from the specified index and continue until we find an 
+  // Start searching from the specified index and continue until we find an
   // entry with the correct ID.
   unsigned long index = start_index;
   signed nesting = 0;
   uintptr_t funAddr;
 
-  // Get the runtime trace address of this function fun 
+  // Get the runtime trace address of this function fun
   // If this function is not called or called through indirect call we won't
   // have its runtime trace address. So, we can't track recursion for them.
   if (traceFunAddrMap.find (fun) != traceFunAddrMap.end())
     funAddr = traceFunAddrMap[fun];
-  else 
+  else
     funAddr = 0;
 
   do {
@@ -527,11 +527,11 @@ unsigned long giri::TraceFile::findPreviousIDWithRecursion (Function *fun,
     if( nesting < 0 ) {
       llvm::errs() << "Due to some reason call-records are not matching. Assertion disabled now\n";
       return maxIndex;
-    } 
+    }
 
     // Determine the address of the called/Return function;
     /* Function *calledFun = NULL;
-    CallInst *CI; 
+    CallInst *CI;
     if( (CI = dyn_cast<CallInst>(lsNumPass->getInstforID(trace[index].id))) ) {
       // For recursion through indirect function calls it'll be 0 and it will not work
       calledFun = CI->getCalledFunction();
@@ -544,15 +544,15 @@ unsigned long giri::TraceFile::findPreviousIDWithRecursion (Function *fun,
     if ((trace[index].type == type) && (trace[index].id == id)) {
       if (nesting == 0) {
         return index;
-      } 
+      }
       // If we are seraching for call record, then there may be problem due to self recursion
       // In this case, we return the index at nesting level 1 as we have already seen its return record
-      // and this call record should have decreased the nesting level to 0. 
+      // and this call record should have decreased the nesting level to 0.
       if (nesting == 1 && type == CLType) {
 	if ((trace[index].type == CLType) && (trace[index].address /*calledFun*/ == (uintptr_t)(funAddr)))  {
             return index;
 	 }
-      } 
+      }
     }
 
     //
@@ -605,22 +605,22 @@ unsigned long giri::TraceFile::findPreviousIDWithRecursion (Function *fun,
   return index;
 }
 
-unsigned long giri::TraceFile::findPreviousIDWithRecursion (Function *fun, 
-                                 unsigned long start_index,  
-                                 const unsigned char type, 
+unsigned long giri::TraceFile::findPreviousIDWithRecursion (Function *fun,
+                                 unsigned long start_index,
+                                 const unsigned char type,
                                  const std::set<unsigned> & ids) {
-  // Start searching from the specified index and continue until we find an 
+  // Start searching from the specified index and continue until we find an
   // entry with the correct ID.
   unsigned long index = start_index;
   signed nesting = 0;
   uintptr_t funAddr;
 
-  // Get the runtime trace address of this function fun 
+  // Get the runtime trace address of this function fun
   // If this function is not called or called through indirect call we won't
   // have its runtime trace address. So, we can't track recursion for them.
   if ( traceFunAddrMap.find (fun) != traceFunAddrMap.end() )
      funAddr = traceFunAddrMap[fun];
-  else 
+  else
      funAddr = ~0; // Make sure nothing matches in this case (**** Check again)
 
   do {
@@ -629,7 +629,7 @@ unsigned long giri::TraceFile::findPreviousIDWithRecursion (Function *fun,
 
     // Determine the address of the called/Return function;
     /* Function *calledFun = NULL;
-    CallInst *CI; 
+    CallInst *CI;
     if( (CI = dyn_cast<CallInst>(lsNumPass->getInstforID(trace[index].id))) ) {
       // For recursion through indirect function calls it'll be 0 and it will not work
       calledFun = CI->getCalledFunction();
@@ -642,15 +642,15 @@ unsigned long giri::TraceFile::findPreviousIDWithRecursion (Function *fun,
     if ((trace[index].type == type) && ids.count (trace[index].id)) {
       if (nesting == 0) {
         return index;
-      } 
+      }
       // If we are seraching for call record, then there may be problem due to self recursion
       // In this case, we return the index at nesting level 1 as we have already seen its return record
-      // and this call record should have decreased the nesting level to 0. 
+      // and this call record should have decreased the nesting level to 0.
        if (nesting == 1 && type == CLType) {
 	 if ((trace[index].type == CLType) && (trace[index].address/*calledFun*/ == (uintptr_t)(funAddr)))  {
             return index;
 	 }
-      } 
+      }
     }
 
     //
@@ -700,16 +700,16 @@ unsigned long giri::TraceFile::findPreviousIDWithRecursion (Function *fun,
   // Assert that we've found the entry for which we're looking.
   //
   assert (0 && "Did not find desired trace of basic block!\n");
-    
+
   return index;
   */
 }
 
 long giri::TraceFile::normalize (DynBasicBlock & DBB) {
-   
+
   if (BuggyValues.find (DBB.BB) != BuggyValues.end()) {
     DynBuggyValuesCount++;
-    return 1; // Buggy value, likely to fail again     
+    return 1; // Buggy value, likely to fail again
   }
 
   //
@@ -732,7 +732,7 @@ long giri::TraceFile::normalize (DynBasicBlock & DBB) {
   //
   // Assert that we have found the entry.
   //
-  assert ((trace[index].type == ENType) || 
+  assert ((trace[index].type == ENType) ||
           (trace[index].type == BBType) && (trace[index].id == bbID));
 
   //
@@ -756,7 +756,7 @@ long giri::TraceFile::normalize (DynValue & DV) {
 
   if (BuggyValues.find (DV.V) != BuggyValues.end()) {
     DynBuggyValuesCount++;
-    return 1; // Buggy value, likely to fail again     
+    return 1; // Buggy value, likely to fail again
   }
 
   //
@@ -811,7 +811,7 @@ long giri::TraceFile::normalize (DynValue & DV) {
 
 void giri::TraceFile::markInvFailure (DynValue & DV) {
 
-   
+
 
 }
 
@@ -1017,7 +1017,7 @@ void giri::TraceFile::getSourcesForArg(DynValue & DV, Worklist_t &  Sources) {
         // We have found our call instruction.  Add the actual argument in
         // the call instruction to the backwards slice.
         //
-        //DynValue newDynValue = DynValue (CI->getOperand(Arg->getArgNo()), index); 
+        //DynValue newDynValue = DynValue (CI->getOperand(Arg->getArgNo()), index);
         //addToWorklist( newDynValue, Sources, DV );
         //return;
         break;
@@ -1035,7 +1035,7 @@ void giri::TraceFile::getSourcesForArg(DynValue & DV, Worklist_t &  Sources) {
       // We have found our call instruction.  Add the actual argument in
       // the call instruction to the backwards slice.
       //
-      //DynValue newDynValue = DynValue (CI->getOperand(Arg->getArgNo()), index); 
+      //DynValue newDynValue = DynValue (CI->getOperand(Arg->getArgNo()), index);
       //addToWorklist( newDynValue, Sources, DV );
       //return;
       break;
@@ -1060,16 +1060,16 @@ void giri::TraceFile::getSourcesForArg(DynValue & DV, Worklist_t &  Sources) {
   Function * CalledFunc = CI->getCalledFunction();
 
   if (CalledFunc && (CalledFunc->isDeclaration())) {
- 
+
    // If pthread_create is called then handle it personally as it calls
-   // functions externally and add an extra call for the externally 
+   // functions externally and add an extra call for the externally
    // called functions with the same id so that returns can match with it.
-   // In addition to a function call 
+   // In addition to a function call
     if (CalledFunc->getName().str() == "pthread_create") {
      for (uint i=0; i<CI->getNumOperands()-1; i++) {
-         DynValue newDynValue = DynValue (CI->getOperand(i), index); 
+         DynValue newDynValue = DynValue (CI->getOperand(i), index);
          addToWorklist( newDynValue, Sources, DV );
-     }      
+     }
      return;
    }
   }
@@ -1081,7 +1081,7 @@ void giri::TraceFile::getSourcesForArg(DynValue & DV, Worklist_t &  Sources) {
   // the call instruction to the backwards slice.
   //
   else {
-      DynValue newDynValue = DynValue (CI->getOperand(Arg->getArgNo()), index); 
+      DynValue newDynValue = DynValue (CI->getOperand(Arg->getArgNo()), index);
       addToWorklist( newDynValue, Sources, DV );
       return;
   }
@@ -1118,7 +1118,7 @@ static inline bool overlaps (Entry first, Entry second) {
 
 void giri::TraceFile::findAllStoresForLoad (DynValue & DV,
                                        Worklist_t &  Sources,
-                                       long store_index, 
+                                       long store_index,
                                        Entry load_entry) {
 
   while ( store_index >= 0 ) {
@@ -1129,13 +1129,13 @@ void giri::TraceFile::findAllStoresForLoad (DynValue & DV,
       fflush (stdout);
 #endif
 
-    if( (trace[store_index].type == STType) && 
+    if( (trace[store_index].type == STType) &&
 	(overlaps (trace[store_index], load_entry)) ) {
 
       //assert (shouldBeLost == false);
-      assert (trace[store_index].type    == STType); 
+      assert (trace[store_index].type    == STType);
       assert (overlaps (trace[store_index], load_entry));
-  
+
       //
       // Find the LLVM store instruction(s) that match this dynamic store
       // instruction.
@@ -1144,12 +1144,12 @@ void giri::TraceFile::findAllStoresForLoad (DynValue & DV,
       assert (V);
       Instruction * SI = dyn_cast<Instruction>(V);
       assert (SI);
-  
+
       //
       // Scan forward through the trace to get the basic block in which the store
       // was executed.
       //
-  
+
       unsigned storeID = lsNumPass->getID (SI);
       unsigned storeBBID = bbNumPass->getID (SI->getParent());
       unsigned long bbindex = findNextNestedID (store_index,
@@ -1163,10 +1163,10 @@ void giri::TraceFile::findAllStoresForLoad (DynValue & DV,
       //  This should handle *all* stores with the ID.  It is possible that this
       //  occurs through function cloning.
       //
-      DynValue newDynValue =  DynValue (V, bbindex); 
-      addToWorklist( newDynValue, Sources, DV ); 
+      DynValue newDynValue =  DynValue (V, bbindex);
+      addToWorklist( newDynValue, Sources, DV );
 
-      Entry store_entry = trace[store_index];      
+      Entry store_entry = trace[store_index];
       Entry new_entry;
       unsigned long store_end = store_entry.address + store_entry.length;
       unsigned long load_end = load_entry.address + load_entry.length;
@@ -1175,25 +1175,25 @@ void giri::TraceFile::findAllStoresForLoad (DynValue & DV,
         new_entry.address = load_entry.address;
         new_entry.length = store_entry.address - load_entry.address;
         findAllStoresForLoad(DV, Sources, store_index-1, new_entry);
-      }  
+      }
 
       if ( (store_end) < (load_end) ){
         new_entry.address = store_end;
-        new_entry.length = load_end - store_end;       
+        new_entry.length = load_end - store_end;
         findAllStoresForLoad(DV, Sources, store_index-1, new_entry);
       }
 
-      break;    
+      break;
     }
-  
+
     --store_index;
   }
-  
+
   #if 0
       DEBUG( printf("exited store_index = %ld\n", store_index) );
       fflush(stdout);
   #endif
-  
+
       //
       // It is possible that this load reads data that was stored by something
       // outside of the program or that was initialzed by the load (e.g., global
@@ -1230,7 +1230,7 @@ void giri::TraceFile::getSourcesForLoad (DynValue & DV,
   unsigned loadID = lsNumPass->getID (I);
   assert (loadID && "load does not have an ID!\n");
   unsigned bbID = bbNumPass->getID (I->getParent());
- 
+
   // Thre are no loads to find sources for
   // Possible for sprintf with only scalar variables
   if (count == 0)
@@ -1251,14 +1251,14 @@ void giri::TraceFile::getSourcesForLoad (DynValue & DV,
   //
   // **** can be optimized to point to load entry when adding to work list
   // Will avoid duplicate traversal during invariant violation finding pass *****
-  
+
   unsigned long * load_indices = new unsigned long[count];
   unsigned long start_index = findPreviousNestedID (DV.index,
                                                     LDType,
                                                     loadID,
                                                     bbID);
   load_indices[0]= start_index;
-  
+
   //
   // If there are more load records to find, search back through the log to
   // find the most recently executed load with the same ID as this load.  Note
@@ -1335,7 +1335,7 @@ void giri::TraceFile::getSourcesForLoad (DynValue & DV,
     }
 
     assert (shouldBeLost == false);
-    assert (trace[store_index].type    == STType); 
+    assert (trace[store_index].type    == STType);
     assert (overlaps (trace[store_index], trace[block_index]));
 
     //
@@ -1353,7 +1353,7 @@ void giri::TraceFile::getSourcesForLoad (DynValue & DV,
     //
 
     // ****** I think, we are unnecessarily going forward to the basic block end and then
-    // coming back to find the invariant failurs. We can optimize it avoid dual traversal 
+    // coming back to find the invariant failurs. We can optimize it avoid dual traversal
     // We'll have to change to point to directly load indices counting the nesting levels ******
 
     unsigned storeID = lsNumPass->getID (SI);
@@ -1370,8 +1370,8 @@ void giri::TraceFile::getSourcesForLoad (DynValue & DV,
     //  This should handle *all* stores with the ID.  It is possible that this
     //  occurs through function cloning.
     //
-    DynValue newDynValue =  DynValue (V, bbindex); 
-    addToWorklist( newDynValue, Sources, DV );    
+    DynValue newDynValue =  DynValue (V, bbindex);
+    addToWorklist( newDynValue, Sources, DV );
     */
   }
 
@@ -1429,11 +1429,11 @@ bool giri::TraceFile::getSourcesForSpecialCall (DynValue & DV,
   if (name.substr(0,12) == "llvm.memset." /* "memset" */  || name == "calloc") {  /* Same as fgets() */
     //
     // Add all arguments (including pointer values) into the backwards
-    // dynamic slice. Not including called function pointer now. 
+    // dynamic slice. Not including called function pointer now.
     //
     for (unsigned index = 0; index < CS.arg_size(); ++index) {
-      DynValue newDynValue = DynValue (CS.getArgument(index), trace_index); 
-      addToWorklist( newDynValue, Sources, DV ); 
+      DynValue newDynValue = DynValue (CS.getArgument(index), trace_index);
+      addToWorklist( newDynValue, Sources, DV );
     }
     // We don't read from any memory buffer, so return true and be done.
     return true;
@@ -1442,12 +1442,12 @@ bool giri::TraceFile::getSourcesForSpecialCall (DynValue & DV,
              name == "strcpy" || name == "strlen") {
     //
     // Scan through the arguments to the call.  Add all the values
-    // to the set of sources. For the destination pointer, 
+    // to the set of sources. For the destination pointer,
     // backtrack to find the storing instruction. Not including called function pointer now.
     //
     for (unsigned index = 0; index < CS.arg_size(); ++index) {
-      DynValue newDynValue = DynValue (CS.getArgument(index), trace_index); 
-      addToWorklist( newDynValue, Sources, DV ); 
+      DynValue newDynValue = DynValue (CS.getArgument(index), trace_index);
+      addToWorklist( newDynValue, Sources, DV );
     }
 
     //
@@ -1459,12 +1459,12 @@ bool giri::TraceFile::getSourcesForSpecialCall (DynValue & DV,
   } else if (name == "strcat") {
     //
     // Scan through the arguments to the call.  Add all the values
-    // to the set of sources. For the destination pointer, 
+    // to the set of sources. For the destination pointer,
     // backtrack to find the storing instruction. Not including called function pointer now.
     //
     for (unsigned index = 0; index < CS.arg_size(); ++index) {
-      DynValue newDynValue = DynValue (CS.getArgument(index), trace_index); 
-      addToWorklist( newDynValue, Sources, DV ); 
+      DynValue newDynValue = DynValue (CS.getArgument(index), trace_index);
+      addToWorklist( newDynValue, Sources, DV );
     }
 
     //
@@ -1493,8 +1493,8 @@ bool giri::TraceFile::getSourcesForSpecialCall (DynValue & DV,
       //
       // All scalars (including the pointers) into the dynamic backwards slice.
       //
-      DynValue newDynValue = DynValue (CS.getArgument(index), trace_index); 
-      addToWorklist( newDynValue, Sources, DV ); 
+      DynValue newDynValue = DynValue (CS.getArgument(index), trace_index);
+      addToWorklist( newDynValue, Sources, DV );
 
       //
       // If it's a character ptr and if its not the destination ptr or format string
@@ -1514,8 +1514,8 @@ bool giri::TraceFile::getSourcesForSpecialCall (DynValue & DV,
     // dynamic slice. Not including called function pointer now.
     //
     for (unsigned index = 0; index < CS.arg_size(); ++index) {
-      DynValue newDynValue = DynValue (CS.getArgument(index), trace_index); 
-      addToWorklist( newDynValue, Sources, DV ); 
+      DynValue newDynValue = DynValue (CS.getArgument(index), trace_index);
+      addToWorklist( newDynValue, Sources, DV );
     }
 
     // We don't read from any memory buffer, so return true and be done.
@@ -1536,7 +1536,7 @@ unsigned long giri::TraceFile::matchReturnWithCall (unsigned long start_index,
   // Assert that we're starting our backwards scan on a basic block entry.
   //
   assert (trace[start_index].type == BBType);
-          
+
   //
   // Start searching from the specified index and continue until we find an
   // entry with the correct ID.
@@ -1645,7 +1645,7 @@ void giri::TraceFile::getSourcesForCall (DynValue & DV, Worklist_t &  Sources) {
       llvm::outs() << "Most likely an (indirect) external call. Check to make sure\n";
       // Possible call to external function, just add its operands to slice conservatively.
       for (unsigned index = 0; index < CI->getNumOperands(); ++index) {
-        DynValue newDynValue = DynValue (CI->getOperand(index), DV.index); 
+        DynValue newDynValue = DynValue (CI->getOperand(index), DV.index);
         addToWorklist( newDynValue, Sources, DV );
       }
       return;
@@ -1658,7 +1658,7 @@ void giri::TraceFile::getSourcesForCall (DynValue & DV, Worklist_t &  Sources) {
     unsigned long targetEntryBB = findNextAddress (callIndex+1, BBType, fp);
     if( targetEntryBB == maxIndex ) // Error, cusn't find due to some reason
       return;
-  
+
     //
     // Get the LLVM basic block associated with the entry and, from that, get
     // the called function.
@@ -1667,14 +1667,14 @@ void giri::TraceFile::getSourcesForCall (DynValue & DV, Worklist_t &  Sources) {
     CalledFunc = TargetEntryBB->getParent();
   }
   assert (CalledFunc && "Could not find call target!\n");
-  
+
   //
   // If this is a call to an external library function, then just add its
   // operands to the slice conservatively.
   //
   if (CalledFunc->isDeclaration()) {
     for (unsigned index = 0; index < CI->getNumOperands(); ++index) {
-        DynValue newDynValue = DynValue (CI->getOperand(index), DV.index); 
+        DynValue newDynValue = DynValue (CI->getOperand(index), DV.index);
         addToWorklist( newDynValue, Sources, DV );
     }
     return;
@@ -1691,14 +1691,14 @@ void giri::TraceFile::getSourcesForCall (DynValue & DV, Worklist_t &  Sources) {
   unsigned long retindex = matchReturnWithCall (block_index, bbID, callID);
 
   // If there are multiple threads, previous entry may not be the BB of the returned function,
-  // in that case this assert may fail. May need to search the last such BB entry of the 
+  // in that case this assert may fail. May need to search the last such BB entry of the
   // trace of corresponding trace. FIX IT FOR MUTIPLE THREADS.
   // There may also be Inv Failure record in between. So search for the BB entry
 
   unsigned long tempretindex = retindex - 1;
   while( trace[tempretindex].type != BBType )
     tempretindex--;
-  
+
   //assert( trace[tempretindex].type == BBType &&			
   //      trace[tempretindex].address == trace[retindex].address && "Return and BB record doesn't match");
   // FIX ME!!! why records are not generated inside some calls as in stat,my_stat of mysql????
@@ -1710,10 +1710,10 @@ void giri::TraceFile::getSourcesForCall (DynValue & DV, Worklist_t &  Sources) {
                                    << "as in stat function of mysql.\n");
     // Treat it as external library call in this case and add all operands
     for (unsigned index = 0; index < CI->getNumOperands(); ++index) {
-        DynValue newDynValue = DynValue (CI->getOperand(index), DV.index); 
+        DynValue newDynValue = DynValue (CI->getOperand(index), DV.index);
         addToWorklist( newDynValue, Sources, DV );
     }
-    return;    
+    return;
   }
 
   //
@@ -1723,18 +1723,18 @@ void giri::TraceFile::getSourcesForCall (DynValue & DV, Worklist_t &  Sources) {
   for (Function::iterator BB = CalledFunc->begin();  BB != CalledFunc->end(); ++BB) {
     if (isa<ReturnInst>(BB->getTerminator())) {
       if ( bbNumPass->getID (BB) == trace[tempretindex].id ) {
-          DynValue newDynValue = DynValue (BB->getTerminator(), tempretindex); 
-          addToWorklist( newDynValue, Sources, DV );           
+          DynValue newDynValue = DynValue (BB->getTerminator(), tempretindex);
+          addToWorklist( newDynValue, Sources, DV );
       }
     }
   }
-  
+
   /* // For return matching using BB record length
   for (Function::iterator BB = CalledFunc->begin();  BB != CalledFunc->end(); ++BB) {
     if (isa<ReturnInst>(BB->getTerminator())) {
       if ( bbNumPass->getID (BB) == trace[retindex].id ) {
-          DynValue newDynValue = DynValue (BB->getTerminator(), retindex); 
-          addToWorklist( newDynValue, Sources, DV );           
+          DynValue newDynValue = DynValue (BB->getTerminator(), retindex);
+          addToWorklist( newDynValue, Sources, DV );
       }
     }
   }
@@ -1762,7 +1762,7 @@ void giri::TraceFile::getSourcesForCall (DynValue & DV, Worklist_t &  Sources) {
   // Take into account recursion and successive calls of same function using
   // return ids of function calls in the last basic block.
   //
-  
+
   unsigned long retindex = findPreviousID (block_index, BBType, retIDs);
 
 
@@ -1771,7 +1771,7 @@ void giri::TraceFile::getSourcesForCall (DynValue & DV, Worklist_t &  Sources) {
   // instruction's return value.
   //
   unsigned retid = trace[retindex].id;
-  DynValue newDynValue = DynValue (retMap[retid]->getTerminator(), retindex); 
+  DynValue newDynValue = DynValue (retMap[retid]->getTerminator(), retindex);
   addToWorklist( newDynValue, Sources, DV );
   */
 
@@ -1814,8 +1814,8 @@ void giri::TraceFile::getSourceForSelect (DynValue & DV, Worklist_t &  Sources) 
   //
   unsigned predicate = trace[selectIndex].address;
   Value * Operand = (predicate) ? SI->getTrueValue() : SI->getFalseValue();
-  DynValue newDynValue = DynValue (Operand, DV.index); 
-  addToWorklist( newDynValue, Sources, DV ); 
+  DynValue newDynValue = DynValue (Operand, DV.index);
+  addToWorklist( newDynValue, Sources, DV );
   return;
 }
 
@@ -1828,14 +1828,14 @@ void giri::TraceFile::getSourcesFor (DynValue & DInst, Worklist_t &  si) {
   //
   if (BranchInst * BI = dyn_cast<BranchInst>(DInst.V)) {
     if (BI->isConditional()) {
-      DynValue newDynValue = DynValue (BI->getCondition(), DInst.index); 
-      addToWorklist( newDynValue, si, DInst ); 
+      DynValue newDynValue = DynValue (BI->getCondition(), DInst.index);
+      addToWorklist( newDynValue, si, DInst );
     }
     return;
   }
 
   if (SwitchInst * SI = dyn_cast<SwitchInst>(DInst.V)) {
-    DynValue newDynValue = DynValue (SI->getCondition(), DInst.index); 
+    DynValue newDynValue = DynValue (SI->getCondition(), DInst.index);
     addToWorklist( newDynValue, si, DInst );
     return;
   }
@@ -1875,7 +1875,7 @@ void giri::TraceFile::getSourcesFor (DynValue & DInst, Worklist_t &  si) {
     //
     // The dereferenced pointer should be part of the dynamic backwards slice.
     //
-    DynValue newDynValue = DynValue (LI->getOperand(0), DInst.index); 
+    DynValue newDynValue = DynValue (LI->getOperand(0), DInst.index);
     addToWorklist( newDynValue, si, DInst );
 
     //
@@ -1906,7 +1906,7 @@ void giri::TraceFile::getSourcesFor (DynValue & DInst, Worklist_t &  si) {
   //
   if (Instruction * I = dyn_cast<Instruction>(DInst.V)) {
     for (unsigned index = 0; index < I->getNumOperands(); ++index) {
-      DynValue newDynValue = DynValue (I->getOperand(index), DInst.index); 
+      DynValue newDynValue = DynValue (I->getOperand(index), DInst.index);
       addToWorklist( newDynValue, si, DInst );
     }
     return;

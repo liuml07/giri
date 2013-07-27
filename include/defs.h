@@ -26,10 +26,10 @@ struct Invariant {
   union {
     long longChange;
     unsigned long ulongChange;
-    double doubleChange;    
+    double doubleChange;
   }Change;
   long NoOfUpdation;
-  long Count;  
+  long Count;
   char Type[10];
   char DetailedType[10];
   char InstName[10]; /* load, store, call or ret */

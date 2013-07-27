@@ -1,10 +1,10 @@
 //===- TraceFile.h - Header file for reading the dynamic trace file -------===//
-// 
+//
 //                          Giri: Dynamic Slicing in LLVM
 //
 // This file was developed by the LLVM research group and is distributed under
 // the University of Illinois Open Source License. See LICENSE.TXT for details.
-// 
+//
 //===----------------------------------------------------------------------===//
 //
 // This file provides classes for reading the trace file.
@@ -81,7 +81,7 @@ public:
 
   void print (const QueryLoadStoreNumbers  *lsNumPass) {
 #ifndef NDEBUG
-    DEBUG(V->print(dbgs())); 
+    DEBUG(V->print(dbgs()));
     DEBUG(dbgs() << "( ");
     if (Instruction * I = dyn_cast<Instruction>(V)) {
       DEBUG(dbgs() << "[ " << I->getParent()->getParent()->getName().str() << " ]");
@@ -106,7 +106,7 @@ public:
     invFail = false;
     parent = NULL;
     counter = -1;
-    
+
     return;
   }
 
@@ -234,7 +234,7 @@ public:
   /// inter-procedural tracing, tracing of data through memory, and for tracing
   /// *only* when a subset of the inputs to a value are used (e.g., phi-nodes).
   ///
-  /// 
+  ///
   /// \param[in] DInst - The dynamic value for which the dynamic inputs need to
   ///                    be found.
   /// \param[out] Sources - The dynamic values that are inputs for this
@@ -267,7 +267,7 @@ public:
 
   /// Search the trace file and mark the dynamic instruction, if
   /// the corresponding invariant has failed.
-  void markInvFailure (DynValue & DV); 
+  void markInvFailure (DynValue & DV);
 
   /// @TODO Remove this function later
   /// Add the control dependence to worklist since we can't directly call the
@@ -354,7 +354,7 @@ private:
                                 const unsigned id);
 
   // CHANGE TO USE WithRecursion functionality here and also in recursion
-  // handling of loads/stores, calls/returns mapping, and recursion handling 
+  // handling of loads/stores, calls/returns mapping, and recursion handling
   // during invariants failure detection
 
   /// This method is like findPreviousID() but takes recursion into account.
@@ -386,7 +386,7 @@ private:
                             const unsigned id);
 
   // CHANGE TO USE WithRecursion functionality here and also in recursion
-  // handling of loads/stores, calls/returns mapping, and recursion handling 
+  // handling of loads/stores, calls/returns mapping, and recursion handling
   // during invariants failure detection
 
   /// This method finds the next entry in the trace file that has the specified
@@ -432,7 +432,7 @@ private:
                                      const unsigned callID);
 
   /// This method searches backwards in the trace file for an entry of the
-  /// specified type and ID taking recursion into account. 
+  /// specified type and ID taking recursion into account.
   ///
   /// FIXME: Doesn't work for recursion through indirect function calls
   ///
@@ -445,7 +445,7 @@ private:
   /// \return The index in the trace of entry with the specified type and ID is
   /// returned; If it can't find a matching entry it'll return maxIndex as
   /// error code
-  unsigned long findPreviousIDWithRecursion (Function *fun, 
+  unsigned long findPreviousIDWithRecursion (Function *fun,
                                      unsigned long start_index,
                                      const unsigned char type,
                          const unsigned id);
@@ -463,16 +463,16 @@ private:
   /// \return The index in the trace of entry with the specified type and ID is
   /// returned; If it can't find a matching entry it'll return maxIndex as error
   /// code.
-  unsigned long findPreviousIDWithRecursion (Function *fun, 
-                             unsigned long start_index,  
-                             const unsigned char type, 
+  unsigned long findPreviousIDWithRecursion (Function *fun,
+                             unsigned long start_index,
+                             const unsigned char type,
              const std::set<unsigned> & ids);
 
   /// This method, given a dynamic value that reads from memory, will find the
   /// dynamic value(s) that stores into the same memory.
   void findAllStoresForLoad (DynValue & DV,
                                    Worklist_t &  Sources,
-                                   long store_index, 
+                                   long store_index,
                            Entry load_entry);
 
   /// Given a dynamic value representing a phi-node, determine which basic block

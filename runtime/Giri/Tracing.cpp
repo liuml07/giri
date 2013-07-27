@@ -1,10 +1,10 @@
 //===- Tracing.cpp - Implementation of dynamic slicing tracing runtime ----===//
-// 
+//
 //                          Bug Diagnosis Compiler
 //
 // This file was developed by the LLVM research group and is distributed under
 // the University of Illinois Open Source License. See LICENSE.TXT for details.
-// 
+//
 //===----------------------------------------------------------------------===//
 //
 // This file implements the run-time functions for tracing program execution.
@@ -55,7 +55,7 @@ extern "C" void recordHandlerThreadID (const char * name);
 // File for recording tracing information
 static int record = 0;
 
-// Stores the threadID for the thread which 
+// Stores the threadID for the thread which
 // handles incoming connections
 static unsigned long handlerThreadID = 0;
 static int countUpdateThreadID = 0;
@@ -154,7 +154,7 @@ void cleanup_only_tracing(int signum)
       closeCacheFile (); // Make sure to close the file properly and flush the file cache
   #endif
   */
- 
+
   exit(signum);
 }
 
@@ -356,7 +356,7 @@ void recordInit  (const char * name) {
 /// block termination if the program terminates before the basic blocks
 /// complete execution.
 void recordStartBB (unsigned id, unsigned char * fp) {
- 
+
   // Don't record, if it is not the main thread or connection handler thread
   if( checkForNonHandlerThread() )
     return;
@@ -374,7 +374,7 @@ void recordStartBB (unsigned id, unsigned char * fp) {
   // Push the basic block identifier on to the back of the stack.
   BBStack[BBStackIndex].id = id;
   BBStack[BBStackIndex++].address = fp;
-  
+
   // FIXME: Special handling for clang code
   if( id == 190531 ) {
     fprintf(stderr, "Due to some bug, some entries r missing in trace. \
@@ -397,7 +397,7 @@ void recordBB (unsigned id, unsigned char * fp, unsigned lastBB) {
 
   if( id >= 190525 && id <= 190532 )
     fprintf(stdout, "At BasicBlock end, BBid %u between 190525 and 190532\n", id);
-  
+
   // Record that this basic block as been executed.
   unsigned callID = 0;
 
@@ -406,7 +406,7 @@ void recordBB (unsigned id, unsigned char * fp, unsigned lastBB) {
   // execution. Store the call id to record the end of function call at the end
   // of the last BB.
   if (lastBB) {
-    if (FNStackIndex > 0 ) {   
+    if (FNStackIndex > 0 ) {
       if (FNStack[FNStackIndex - 1].fnAddress != fp ) {
         fprintf(stderr, "Function id on stack doesn't match for id %u.\
                          MAY be due to function call from external code\n", id);
@@ -422,7 +422,7 @@ void recordBB (unsigned id, unsigned char * fp, unsigned lastBB) {
   } else {
     callID = 0;
   }
-    
+
   Entry entry(BBType, id, fp, callID);
   addToEntryCache (entry);
 
@@ -441,11 +441,11 @@ void recordExtCallRet (unsigned callID, unsigned char * fp) {
   if( checkForNonHandlerThread() )
     return;
 
-  assert( FNStackIndex > 0 ); 
+  assert( FNStackIndex > 0 );
 
   fprintf(stdout, "Inside recordExtCallRet: %u %s %s\n",
           callID, fp, FNStack[FNStackIndex - 1].fnAddress);
-  
+
   if( FNStack[FNStackIndex - 1].fnAddress != fp )
 	fprintf(stderr, "Function id on stack doesn't match for id %u. \
                      MAY be due to function call from external code\n", callID);

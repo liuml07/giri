@@ -291,7 +291,7 @@ bool giri::TracingNoGiri::doFinalization (Module & M) {
   insertIntoGlobalCtorList (RuntimeCtor);
 
   //
-  // Instrument the function to record it's thread id, 
+  // Instrument the function to record it's thread id,
   // if it is a function started from pthread_create
   //
   // Test handler function
@@ -321,12 +321,12 @@ void giri::TracingNoGiri::instrumentBasicBlock (BasicBlock & BB) {
   //
   Value * FP = castTo (BB.getParent(), VoidPtrType, "", BB.getTerminator());
 
-  
+
   if ( dyn_cast<ReturnInst> (BB.getTerminator()) )
-     LastBB = ConstantInt::get(Int32Type, 1);                            
+     LastBB = ConstantInt::get(Int32Type, 1);
   else
-     LastBB = ConstantInt::get(Int32Type, 0);                            
- 
+     LastBB = ConstantInt::get(Int32Type, 0);
+
 
   //
   // Insert code at the end of the basic block to record that it was executed.
@@ -347,7 +347,7 @@ void giri::TracingNoGiri::instrumentBasicBlock (BasicBlock & BB) {
   //
   args = make_vector<Value *>(BBID, FP, 0);
   CallInst::Create (RecordStartBB, args, "", BB.getFirstInsertionPt());
-  
+
   return;
 }
 
@@ -362,7 +362,7 @@ void giri::TracingNoGiri::visitLoadInst (LoadInst & LI) {
   // Get the size of the loaded data.
   //
   uint64_t size = TD->getTypeStoreSize (LI.getType());
-  Value * LoadSize = ConstantInt::get(Int64Type, size); 
+  Value * LoadSize = ConstantInt::get(Int64Type, size);
 
   //
   // Get the ID of the load instruction.
@@ -413,7 +413,7 @@ void giri::TracingNoGiri::visitStoreInst (StoreInst & SI) {
   // Get the size of the stored data.
   //
   uint64_t size = TD->getTypeStoreSize (SI.getOperand(0)->getType());
-  Value * StoreSize = ConstantInt::get(Int64Type, size); 
+  Value * StoreSize = ConstantInt::get(Int64Type, size);
 
   //
   // Get the ID of the store instruction.
@@ -493,7 +493,7 @@ bool giri::TracingNoGiri::visitSpecialCall (CallInst & CI) {
     // Get the ID of the ext fun call instruction.
     Value * CallID = ConstantInt::get(Int32Type, lsNumPass->getID (&CI));
 
-    // Create the call to the run-time to record the loads and stores of 
+    // Create the call to the run-time to record the loads and stores of
     // external call instruction.
     if(name == "strcpy") {
       // CHECK: If the tracer function should be inserted before or after????
@@ -502,7 +502,7 @@ bool giri::TracingNoGiri::visitSpecialCall (CallInst & CI) {
 
       args = make_vector (CallID, dstPointer, 0);
       CallInst *recStore = CallInst::Create (RecordStrStore, args, "", &CI);
-      CI.moveBefore(recStore);      
+      CI.moveBefore(recStore);
     } else {
       // get the num elements to be transfered
       NumElts = CI.getOperand(2);
@@ -530,7 +530,7 @@ bool giri::TracingNoGiri::visitSpecialCall (CallInst & CI) {
     // Get the ID of the ext fun call instruction.
     Value * CallID = ConstantInt::get(Int32Type, lsNumPass->getID (&CI));
 
-    // Create the call to the run-time to record the loads and stores of 
+    // Create the call to the run-time to record the loads and stores of
     // external call instruction.
     // CHECK: If the tracer function should be inserted before or after????
     std::vector<Value *> args = make_vector (CallID, dstPointer, 0);
@@ -578,10 +578,10 @@ bool giri::TracingNoGiri::visitSpecialCall (CallInst & CI) {
     Value * dstPointer = castTo (&CI, VoidPtrType, CI.getName(), &CI);
 
     /* // To move after call inst, we need to know if cast is a constant expr or inst
-    if ( (dstPointerInst = dyn_cast<Instruction>(dstPointer)) ) { 
+    if ( (dstPointerInst = dyn_cast<Instruction>(dstPointer)) ) {
         CI.moveBefore(dstPointerInst); // dstPointerInst->insertAfter(&CI);
         // ((Instruction *)NumElts)->insertAfter(dstPointerInst);
-    } 
+    }
     else {
         CI.moveBefore((Instruction *)NumElts); // ((Instruction *)NumElts)->insertAfter(&CI);
 	}
@@ -601,7 +601,7 @@ bool giri::TracingNoGiri::visitSpecialCall (CallInst & CI) {
     CI.moveBefore(recStore); //recStore->insertAfter((Instruction *)NumElts);
 
     // Moove cast, #byte computation and store to after call inst
-    CI.moveBefore((Instruction *)NumElts); 
+    CI.moveBefore((Instruction *)NumElts);
 
     // Update statistics
     ++ExtFuns;
@@ -693,7 +693,7 @@ void giri::TracingNoGiri::visitCallInst  (CallInst & CI) {
 
   //
   // Attempt to get the called function.
-  //      
+  //
   Function * CalledFunc = CI.getCalledFunction();
 
   //
@@ -702,9 +702,9 @@ void giri::TracingNoGiri::visitCallInst  (CallInst & CI) {
   if (isTracerFunction(CalledFunc))
     return;
 
-  if (CalledFunc) {  
+  if (CalledFunc) {
     if(CalledFunc->getName().str().compare(0,9,"llvm.dbg.") == 0 )
-      return; 
+      return;
   }
 
   // Now, need to record call and return records of external calls
@@ -718,26 +718,26 @@ void giri::TracingNoGiri::visitCallInst  (CallInst & CI) {
   //
   if (visitSpecialCall (CI))
     return;
-        
+
   //
   // If the call is not a special call but directly calls an external function,
   // don't instrument it.
   //
   */
-  
+
   // Instrument external calls which can have invariants on its return value
   if (CalledFunc && (CalledFunc->isDeclaration())) {
      // No need to record calls of functions on which there are no invariants
      // Do not instrument calls to intrinsic functions as it is giving an assert failure.
-     // FIX ME!!!! may miss some invariant failures, not likely as none of the intrinsics 
+     // FIX ME!!!! may miss some invariant failures, not likely as none of the intrinsics
      // have invariants
     if ( CalledFunc->isIntrinsic () || !checkForInvariantInst(&CI)  ) {
-       // Instrument special external calls which loads/stores 
+       // Instrument special external calls which loads/stores
        // like strlen, strcpy, memcpy etc.
        visitSpecialCall (CI);
        return;
     }
-  
+
      //if(CalledFunc->getNameStr() != "pthread_create")
      // return;
   }
@@ -776,7 +776,7 @@ void giri::TracingNoGiri::visitCallInst  (CallInst & CI) {
   // FIX IT!!!! Do we still need it after adding separate return records????
   if( CalledFunc && CalledFunc->getName().str() == "pthread_create")
     CallInst::Create (RecordExtCall, args, "", &CI);
-  else 
+  else
     CallInst::Create (RecordCall, args, "", &CI);
 
   // Update statistics
@@ -789,19 +789,19 @@ void giri::TracingNoGiri::visitCallInst  (CallInst & CI) {
   CI.moveBefore(ClInst);
 
   // The best way to handle external call is to set a flag before calling ext fn and
-  // use that to determine if an internal function is called from ext fn. It flag can be 
+  // use that to determine if an internal function is called from ext fn. It flag can be
   // reset afterwards and restored to its original value before returning to ext code.
   // FIX ME!!!! LATER
 
   if (CalledFunc && (CalledFunc->isDeclaration())) {
 
     // If pthread_create is called then handle it specially as it calls
-    // functions externally and add an extra call for the externally 
+    // functions externally and add an extra call for the externally
     // called functions with the same id so that returns can match with it.
     // In addition to a function call to pthread_create.
 
     if(CalledFunc->getName().str() == "pthread_create") {
-   
+
     //
     // Get the function pointer operand which will be called externally  and cast it to a void pointer.
     //
@@ -813,13 +813,13 @@ void giri::TracingNoGiri::visitCallInst  (CallInst & CI) {
     std::vector<Value *> argsExt = make_vector<Value *>(CallID, FP, 0);
     ClInst = CallInst::Create (RecordCall, argsExt, "", &CI);
     CI.moveBefore(ClInst);
-       
+
     // Update statistics
     ++Calls;
 
     // For, both external functions and internal/ext functions called from
     // external functions, return records are not useful as they won't be used.
-    // Since, we won't create return records for them, simply update the call 
+    // Since, we won't create return records for them, simply update the call
     // stack to mark the end of function call.
 
     //args = make_vector<Value *>(CallID, FP, 0);
@@ -832,8 +832,8 @@ void giri::TracingNoGiri::visitCallInst  (CallInst & CI) {
     }
 
   }
- 
-  // Instrument special external calls which loads/stores 
+
+  // Instrument special external calls which loads/stores
   // like strlen, strcpy, memcpy etc.
   visitSpecialCall (CI);
 
@@ -859,7 +859,7 @@ void giri::TracingNoGiri::instrumentPthreadCreatedFunctions (Function *F) {
   // If no such handler function exist, the return
   if( F == NULL )
     return;
-  
+
   Module & M = *(F->getParent());
 
   //
@@ -931,11 +931,11 @@ bool  giri::TracingNoGiri::checkType(const Type *T) {
     return true;
   //if( !NO_UNSIGNED_CHECK )
   if( T == UInt64Ty || T == UInt32Ty || T == SInt16Ty || T == SInt8Ty )
-      return true; 
+      return true;
   //if( !NO_FLOAT_CHECK )
   if( T == FloatTy || T == DoubleTy )
       return true;
- 
+
   return false;
 }
 
@@ -943,7 +943,7 @@ bool giri::TracingNoGiri::checkForInvariantInst(Value *V)
 {
   Value *CheckVal;
 
-  if( CallInst *ClInst = dyn_cast<CallInst>(V) ) 
+  if( CallInst *ClInst = dyn_cast<CallInst>(V) )
     {
       CheckVal = ClInst; // Get the value to be checked
 
@@ -958,22 +958,22 @@ bool giri::TracingNoGiri::checkForInvariantInst(Value *V)
         return true;
     }
 
-  else if( StoreInst *StInst = dyn_cast<StoreInst>(V) ) 
+  else if( StoreInst *StInst = dyn_cast<StoreInst>(V) )
     {
       DEBUG( std::cerr << "Handling store instruction \n" );
-      CheckVal = StInst->getOperand(0);  // Get value operand               
-      
+      CheckVal = StInst->getOperand(0);  // Get value operand
+
       // If this instruction is in the slice, then the corresponding invariant must have executed successfully or failed
       if( checkType(CheckVal->getType()) && isa<Constant>(*CheckVal) == false )
-        return true; 
+        return true;
     }
-  else if( LoadInst *LdInst = dyn_cast<LoadInst>(V) ) 
+  else if( LoadInst *LdInst = dyn_cast<LoadInst>(V) )
     {
       DEBUG( std::cerr << "Handling load instruction \n" );
-      CheckVal = LdInst;  // Get value operand               
-      
+      CheckVal = LdInst;  // Get value operand
+
       // If this instruction is in the slice, then the corresponding invariant must have executed successfully or failed
-      if( checkType(CheckVal->getType()) && isa<Constant>(*CheckVal) == false ) 
+      if( checkType(CheckVal->getType()) && isa<Constant>(*CheckVal) == false )
         return true;
     }
 

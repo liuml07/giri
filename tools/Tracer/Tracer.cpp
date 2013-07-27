@@ -94,7 +94,7 @@ int main(int argc, char **argv) {
       std::cerr << ec.message() << "\n";
       return 1; // error
     }
-    
+
     M.reset(ParseBitcodeFile(BuffPtr.take(), Context, &ErrorMessage));
 
     if (M.get() == 0) {
@@ -167,7 +167,7 @@ int main(int argc, char **argv) {
                     << "Use -f command line argument to force output\n";
           return 1;
       }
-      
+
       Out = new std::ofstream(OutputFilename.c_str());
       if (!Out->good()) {
         std::cerr << argv[0] << ": error opening " << OutputFilename << "!\n";
@@ -189,7 +189,7 @@ int main(int argc, char **argv) {
 
     // Delete the ostream if it's not a stdout stream
     if (Out != &std::cout) delete Out;
-  
+
     return 0;
   } catch (const std::string & msg) {
     std::cerr << argv[0] << ": " << msg << "\n";

@@ -54,7 +54,7 @@ MDNode* dg::BasicBlockNumberPass::assignIDToBlock (BasicBlock * BB, unsigned id)
 bool dg::BasicBlockNumberPass::runOnModule (Module & M) {
   // Now create a named metadata node that links all of this metadata together.
   NamedMDNode * MD = M.getOrInsertNamedMetadata(mdKindName);
-  
+
   // Scan through the module and assign a unique, positive (i.e., non-zero) ID
   // to every basic block.
   unsigned count = 0;

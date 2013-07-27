@@ -1,10 +1,10 @@
 //===- Giri.cpp - Find dynamic backwards slice analysis pass -------------- --//
-// 
+//
 //                          The Information Flow Compiler
 //
 // This file was developed by the LLVM research group and is distributed under
 // the University of Illinois Open Source License. See LICENSE.TXT for details.
-// 
+//
 //===----------------------------------------------------------------------===//
 //
 // This file implements an analysis pass that allows clients to find the
@@ -83,18 +83,18 @@ void dg::CountSrcLines::countLines(const std::string & bbrecord_file) {
            StaticLLVMInstCount += BB->size ();
            for(BasicBlock::iterator it = BB->begin(); it != BB->end(); it++) {
 	       srcLineInfo = SourceLineMappingPass::locateSrcInfo (it);
-               if ( srcLineInfo.compare(0,23,"SourceLineInfoMissing: ") == 0 ) { 
+               if ( srcLineInfo.compare(0,23,"SourceLineInfoMissing: ") == 0 ) {
                   // Separately keep track of LLVM insts whose source line can't be found using debug info
 		  StaticInstSrcLinesMissing++;
 		  BBsWithInstWithNoSrcLineMapping.insert(srcLineInfo);
 	       }
-               else if ( srcLineInfo.compare(0,18,"NoSourceLineInfo: ") == 0 ) { 
+               else if ( srcLineInfo.compare(0,18,"NoSourceLineInfo: ") == 0 ) {
                   // Count static LLVM insts whose corresponding source lines don't exist
-		  StaticInstWithoutSrcLines++;		  
+		  StaticInstWithoutSrcLines++;		
 	       }
                else
                  srcLines.insert (srcLineInfo);
-	   }	          
+	   }	
 	}
 
     StaticSrcLinesCount = srcLines.size();

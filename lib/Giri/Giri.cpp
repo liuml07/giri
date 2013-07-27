@@ -1,10 +1,10 @@
 //===- Giri.cpp - Find dynamic backwards slice analysis pass -------------- --//
-// 
+//
 //                          The Information Flow Compiler
 //
 // This file was developed by the LLVM research group and is distributed under
 // the University of Illinois Open Source License. See LICENSE.TXT for details.
-// 
+//
 //===----------------------------------------------------------------------===//
 //
 // This file implements an analysis pass that allows clients to find the
@@ -229,14 +229,14 @@ void giri::DynamicGiri::findSlice (DynValue & Initial,
     Worklist.pop_front();
 
     //printf("Address of DV %x\n", DV);
- 
+
     //
     // Normalize the dynamic value.
     //
     //DV->print();
     Trace->normalize (*DV);
     //DV->print();
-   
+
     //
     // Check to see if this dynamic value has already been processed.
     // If it has been processed, then don't process it again.
@@ -246,7 +246,7 @@ void giri::DynamicGiri::findSlice (DynValue & Initial,
       ++DynValsSkipped;
       continue;
     }
- 
+
     // Print the values in dynamic slice for debugging
 #if 0
     DEBUG( std::cerr << "DV: " << DV.getIndex() << ": " );
@@ -345,7 +345,7 @@ void giri::DynamicGiri::findSlice (DynValue & Initial,
     /*
     if( !DFS )
       Trace->getSourcesFor (*DV, std::inserter(Worklist, Worklist.end()));
-    else 
+    else
       Trace->getSourcesFor (*DV, std::inserter(Worklist, Worklist.begin()));
     */
     Trace->getSourcesFor (*DV, Worklist);
@@ -650,7 +650,7 @@ FindFlows::findArgSources (Argument * Arg,
 }
 #endif
 
-void giri::DynamicGiri::printBackwardsSlice (std::set<Value *> & Slice,  
+void giri::DynamicGiri::printBackwardsSlice (std::set<Value *> & Slice,
                                         std::unordered_set<DynValue> & dynamicSlice,
                                         std::set<DynValue *> & DataFlowGraph) {
 
@@ -669,7 +669,7 @@ void giri::DynamicGiri::printBackwardsSlice (std::set<Value *> & Slice,
 	       std::string srcLineInfo = SourceLineMappingPass::locateSrcInfo (I);
 	       llvm::outs() << " Source Line Info : " << srcLineInfo << "\n";
 	    }
-        }          
+        }
 #endif
 
 #if 0
@@ -679,7 +679,7 @@ void giri::DynamicGiri::printBackwardsSlice (std::set<Value *> & Slice,
         //
         std::set<Value *> FailedInvs;
         std::set<Value *> AllInvs;
- 
+
         llvm::outs() << "==================================================\n";
         llvm::outs() << " Dynamic Slice \n";
         llvm::outs() << "==================================================\n";
@@ -702,7 +702,7 @@ void giri::DynamicGiri::printBackwardsSlice (std::set<Value *> & Slice,
           if (Instruction * I = dyn_cast<Instruction>(V)) {
             int id = lsNumPass->getID (I);
             // The instruction id is present in violated invariants
-            // if( invMap.find(id) !=  invMap.end() )             
+            // if( invMap.find(id) !=  invMap.end() )
             //    I->dump();
           }
           */
@@ -718,7 +718,7 @@ void giri::DynamicGiri::printBackwardsSlice (std::set<Value *> & Slice,
 }
 
 void giri::DynamicGiri::getBackwardsSlice (Instruction * I,
-                                      std::set<Value *> & Slice,  
+                                      std::set<Value *> & Slice,
                                       std::unordered_set<DynValue > & dynamicSlice,
                                       std::set<DynValue *> & DataFlowGraph) {
 
@@ -746,7 +746,7 @@ void giri::DynamicGiri::getBackwardsSlice (Instruction * I,
   return;
 }
 
-void giri::DynamicGiri::getExprTree ( std::set<Value *> & Slice,  
+void giri::DynamicGiri::getExprTree ( std::set<Value *> & Slice,
                                       std::unordered_set<DynValue > & dynamicSlice,
                                       std::set<DynValue *> & DataFlowGraph) {
 
@@ -776,11 +776,11 @@ bool giri::DynamicGiri::checkType(const Type *T) {
     return true;
   //if( !NO_UNSIGNED_CHECK )
   if( T == UInt64Ty || T == UInt32Ty || T == SInt16Ty || T == SInt8Ty )
-      return true; 
+      return true;
   //if( !NO_FLOAT_CHECK )
   if( T == FloatTy || T == DoubleTy )
       return true;
- 
+
   return false;
 }
 
@@ -788,7 +788,7 @@ bool giri::DynamicGiri::checkForInvariantInst(Value *V)
 {
   Value *CheckVal;
 
-  if( CallInst *ClInst = dyn_cast<CallInst>(V) ) 
+  if( CallInst *ClInst = dyn_cast<CallInst>(V) )
     {
       CheckVal = ClInst; // Get the value to be checked
 
@@ -803,22 +803,22 @@ bool giri::DynamicGiri::checkForInvariantInst(Value *V)
         return true;
     }
 
-  else if( StoreInst *StInst = dyn_cast<StoreInst>(V) ) 
+  else if( StoreInst *StInst = dyn_cast<StoreInst>(V) )
     {
       DEBUG( std::cerr << "Handling store instruction \n" );
-      CheckVal = StInst->getOperand(0);  // Get value operand               
-      
+      CheckVal = StInst->getOperand(0);  // Get value operand
+
       // If this instruction is in the slice, then the corresponding invariant must have executed successfully or failed
       if( checkType(CheckVal->getType()) && isa<Constant>(*CheckVal) == false )
-        return true; 
+        return true;
     }
-  else if( LoadInst *LdInst = dyn_cast<LoadInst>(V) ) 
+  else if( LoadInst *LdInst = dyn_cast<LoadInst>(V) )
     {
       DEBUG( std::cerr << "Handling load instruction \n" );
-      CheckVal = LdInst;  // Get value operand               
-      
+      CheckVal = LdInst;  // Get value operand
+
       // If this instruction is in the slice, then the corresponding invariant must have executed successfully or failed
-      if( checkType(CheckVal->getType()) && isa<Constant>(*CheckVal) == false ) 
+      if( checkType(CheckVal->getType()) && isa<Constant>(*CheckVal) == false )
         return true;
     }
 
@@ -865,7 +865,7 @@ bool giri::DynamicGiri::runOnModule (Module & M) {
     //
     Function * F = M.getFunction ("main");
     if (!F) return false;
-    
+
     //
     // Find the instruction referenced by the user and get its backwards slice.
     //
@@ -894,10 +894,10 @@ bool giri::DynamicGiri::runOnModule (Module & M) {
     std::string startFunction;
     std::ifstream startOfSlice;
     startOfSlice.open("StartOfSlice.txt");
-    
+
     startOfSlice >> startFunction >> startInst;
-    llvm::outs() << "\n" << startFunction << " " << startInst << "\n";  
-    
+    llvm::outs() << "\n" << startFunction << " " << startInst << "\n";
+
     //
     // Read in the set of violated invariants from a file and determine if they
     // are in the backwards slice.
@@ -906,7 +906,7 @@ bool giri::DynamicGiri::runOnModule (Module & M) {
     //
     Function * F = M.getFunction (startFunction);
     assert (F);
-    
+
     //
     // Scan through the function and find the instruction from which to begin the
     // dynamic backwards slice.
@@ -917,30 +917,30 @@ bool giri::DynamicGiri::runOnModule (Module & M) {
       // Print out some sort of header for each basic block.
       //
       //llvm::outs() << "\n" << std::endl << bbCount << " : " << BB->getNameStr();
-    
+
       //
       // Look for the beginning of the slice by scanning through all of the
       // instructions.
       //
       for (BasicBlock::iterator INST = BB->begin(); INST != BB->end(); ++INST) {
         //llvm::outs() << std::endl << bbCount << " : " << instCount << " : ";
-        if (instCount ==  startInst) { // 45, 53, 62 
+        if (instCount ==  startInst) { // 45, 53, 62
           INST->dump();
           Found = true;
           //
           // Get the dynamic backwards slice.
           //
           getBackwardsSlice (&(*INST), mySliceOfLife, myDynSliceOfLife, myDataFlowGraph);
-    
+
           printBackwardsSlice (mySliceOfLife, myDynSliceOfLife, myDataFlowGraph);
-    
+
         }
         //llvm::outs() << *INST;
         instCount++;
-      } 
-      bbCount++;      
+      }
+      bbCount++;
     }
-    
+
     if( !Found )
       llvm::outs() << "Didin't find the starting instruction to slice " << "\n";
 

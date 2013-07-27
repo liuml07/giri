@@ -54,7 +54,7 @@ MDNode* dg::LoadStoreNumberPass::assignID (Instruction *I, unsigned id) {
 }
 
 void dg::LoadStoreNumberPass::visitLoadInst (LoadInst &I) {
-  MD->addOperand((assignID (&I, ++count))); 
+  MD->addOperand((assignID (&I, ++count)));
 }
 
 void dg::LoadStoreNumberPass::visitStoreInst (StoreInst &I) {
@@ -62,7 +62,7 @@ void dg::LoadStoreNumberPass::visitStoreInst (StoreInst &I) {
 }
 
 void dg::LoadStoreNumberPass::visitSelectInst (SelectInst &SI) {
-  MD->addOperand((assignID (&SI, ++count))); 
+  MD->addOperand((assignID (&SI, ++count)));
 }
 
 void dg::LoadStoreNumberPass::visitCallInst (CallInst &CI) {
@@ -79,7 +79,7 @@ void dg::LoadStoreNumberPass::visitCallInst (CallInst &CI) {
     if (isTracerFunction(CalledFunc))
       return;
   }
-  MD->addOperand( (assignID (&CI, ++count)) );  
+  MD->addOperand( (assignID (&CI, ++count)) );
 }
 
 bool dg::LoadStoreNumberPass::runOnModule (Module & M) {

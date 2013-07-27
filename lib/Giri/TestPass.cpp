@@ -1,10 +1,10 @@
 //===- Giri.cpp - Find dynamic backwards slice analysis pass -------------- --//
-// 
+//
 //                          Giri: Dynamic Slicing in LLVM
 //
 // This file was developed by the LLVM research group and is distributed under
 // the University of Illinois Open Source License. See LICENSE.TXT for details.
-// 
+//
 //===----------------------------------------------------------------------===//
 //
 // This file implements an analysis pass that allows clients to find the
