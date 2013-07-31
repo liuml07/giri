@@ -2,7 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-main(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
   char *input1=NULL, *input2=NULL, *input3=NULL;
   int length1, length2, length3;
