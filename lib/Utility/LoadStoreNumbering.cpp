@@ -13,7 +13,8 @@
 
 #define DEBUG_TYPE "giri-lsn"
 
-#include "defs.h"
+#define MAX_PROGRAM_POINTS 2000000
+
 #include "Utility/LoadStoreNumbering.h"
 #include "Utility/Utils.h"
 
