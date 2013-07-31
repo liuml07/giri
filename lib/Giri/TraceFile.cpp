@@ -30,16 +30,17 @@
 
 //===----------------------------------------------------------------------===//
 // Pass Statistics
+//===----------------------------------------------------------------------===//
 namespace {
   STATISTIC (StaticBuggyValuesCount, "Number of Possible static values which are possibly missing matching entries in trace");
   STATISTIC (DynBuggyValuesCount, "Number of Possible dynamic values which are possibly missing matching entries in trace");
 }
 
 giri::TraceFile::TraceFile (std::string Filename,
-                            const QueryBasicBlockNumbers * bbNums,
-                            const QueryLoadStoreNumbers  * lsNums)
-                           : bbNumPass (bbNums), lsNumPass (lsNums), trace(0),
-                             totalLoadsTraced(0), lostLoadsTraced(0) {
+                            const QueryBasicBlockNumbers *bbNums,
+                            const QueryLoadStoreNumbers  *lsNums) :
+  bbNumPass(bbNums), lsNumPass(lsNums),
+  trace(0), totalLoadsTraced(0), lostLoadsTraced(0) {
   //
   // Open the trace file for read-only access.
   //
@@ -322,10 +323,10 @@ unsigned long giri::TraceFile::findPreviousID (unsigned long start_index,
   return index;
 }
 
-unsigned long giri::TraceFile::findPreviousNestedID (unsigned long start_index,
-                                       const unsigned char type,
-                                       const unsigned id,
-                                       const unsigned nestedID) {
+unsigned long giri::TraceFile::findPreviousNestedID(unsigned long start_index,
+                                                    const unsigned char type,
+                                                    const unsigned id,
+                                                    const unsigned nestedID) {
   //
   // Assert that we're starting our backwards scan on a basic block entry.
   //

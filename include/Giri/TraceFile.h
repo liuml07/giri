@@ -51,10 +51,6 @@ public:
     return V;
   }
 
-  bool getInvFail (void) const {
-    return invFail;
-  }
-
   unsigned long getIndex (void) const {
     return index;
   }
@@ -63,20 +59,8 @@ public:
     return parent;
   }
 
-  int getCounter (void) const {
-    return counter;
-  }
-
-  void setInvFail (void) {
-    invFail = true;
-  }
-
   void setParent (DynValue *p) {
     parent = p;
-  }
-
-  void setCounter (int c) {
-    counter = c;
   }
 
   void print (const QueryLoadStoreNumbers  *lsNumPass) {
@@ -87,8 +71,7 @@ public:
       DEBUG(dbgs() << "[ " << I->getParent()->getParent()->getName().str() << " ]");
       DEBUG(dbgs() << "< " << lsNumPass->getID(I) << " >");
     }
-    DEBUG(dbgs() << " )" << " " << index  << " " << invFail << " " << " "
-                 << counter << "\n");
+    DEBUG(dbgs() << " )" << " " << index  << "\n");
 #endif
   }
 
@@ -103,9 +86,7 @@ public:
     else
       index = i;
 
-    invFail = false;
     parent = NULL;
-    counter = -1;
 
     return;
   }
@@ -114,22 +95,13 @@ private:
   // LLVM instruction
   Value * V;
 
-  // Record index within the trace indicating to which dynamic execution of
-  // the instruction this dynamic instruction refers
+  /// Record index within the trace indicating to which dynamic execution of
+  /// the instruction this dynamic instruction refers
   unsigned long index;
 
-  // Record its parent in the current depth first search path
-  // during DFS search of the data flow graph to filter invariants.
+  /// Record its parent in the current depth first search path during DFS search
+  /// of the data flow graph to filter invariants.
   DynValue *parent;
-
-  // Record if the invariant corresponding to this dynamic
-  // instance of the instruction failed or not.
-  bool invFail;
-
-  // Counts the the number of successful invariants from the
-  // current invariant/instruction to the last failed invariant up in the data
-  // flow chain.
-  int counter;
 };
 
 /// This class represents a dynamic basic block within the dynamic trace.
