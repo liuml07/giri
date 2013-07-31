@@ -12,20 +12,20 @@ CC = clang
 GIRI_LIB_DIR = $(GIRI_DIR)/$(VERSION)/lib
 GIRI_BIN_DIR = $(GIRI_DIR)/$(VERSION)/bin
 
-.PHONY: all lib
+.PHONY: all lib slice
 
-all: lib $(NAME).slice
+all: lib slice
 
 lib:
 	$(MAKE) -s -C $(GIRI_DIR)
 
-$(NAME).slice : $(NAME).bc $(NAME).trace
+slice : $(NAME).bc $(NAME).trace
 	opt -load $(GIRI_LIB_DIR)/libdgutility.so \
 		-load $(GIRI_LIB_DIR)/libgiri.so \
 		-bbnum -lsnum \
 		-dgiri -tf $(NAME).trace -dfs=true -trace-cd=true \
 		-remove-bbnum -remove-lsnum \
-		-select-origin-as-main -stats $(DEBUGFLAGS) $< -f -o $@
+		-select-origin-as-main -stats $(DEBUGFLAGS) $< -f -o /dev/null
 
 $(NAME).trace: $(NAME).trace.exe
 	- echo "$(INPUT)" | ./$<
