@@ -22,9 +22,11 @@
 
 #include <vector>
 
-char dg::BasicBlockNumberPass::ID    = 0;
-char dg::QueryBasicBlockNumbers::ID  = 0;
-char dg::RemoveBasicBlockNumbers::ID = 0;
+using namespace dg;
+
+char BasicBlockNumberPass::ID    = 0;
+char QueryBasicBlockNumbers::ID  = 0;
+char RemoveBasicBlockNumbers::ID = 0;
 
 static const char *mdKindName = "dg";
 
@@ -37,7 +39,7 @@ Y ("query-bbnum", "Query Unique Identifiers of Basic Blocks");
 static RegisterPass<dg::RemoveBasicBlockNumbers>
 Z ("remove-bbnum", "Remove Unique Identifiers of Basic Blocks");
 
-MDNode* dg::BasicBlockNumberPass::assignIDToBlock (BasicBlock * BB, unsigned id) {
+MDNode* BasicBlockNumberPass::assignIDToBlock (BasicBlock * BB, unsigned id) {
   // Fetch the context in which the enclosing module was defined.  We'll need
   // it for creating practically everything.
   LLVMContext & Context = BB->getParent()->getParent()->getContext();
@@ -51,7 +53,7 @@ MDNode* dg::BasicBlockNumberPass::assignIDToBlock (BasicBlock * BB, unsigned id)
   return MD;
 }
 
-bool dg::BasicBlockNumberPass::runOnModule (Module & M) {
+bool BasicBlockNumberPass::runOnModule(Module &M) {
   // Now create a named metadata node that links all of this metadata together.
   NamedMDNode * MD = M.getOrInsertNamedMetadata(mdKindName);
 
@@ -68,7 +70,7 @@ bool dg::BasicBlockNumberPass::runOnModule (Module & M) {
   return true;
 }
 
-bool dg::QueryBasicBlockNumbers::runOnModule (Module & M) {
+bool QueryBasicBlockNumbers::runOnModule(Module &M) {
   DEBUG(dbgs() << "Inside QueryBasicBlockNumbers for module "
                << M.getModuleIdentifier()
                << "\n");
@@ -112,7 +114,7 @@ bool dg::QueryBasicBlockNumbers::runOnModule (Module & M) {
   return false;
 }
 
-bool dg::RemoveBasicBlockNumbers::runOnModule (Module & M) {
+bool RemoveBasicBlockNumbers::runOnModule(Module &M) {
   // Get the basic block metadata. If there isn't any metadata, then no basic
   // blocks have been numbered.
   NamedMDNode * MD = M.getNamedMetadata (mdKindName);

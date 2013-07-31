@@ -54,6 +54,6 @@ public:
   };
 };
 
-}
+} // END namespace dg
 
 #endif

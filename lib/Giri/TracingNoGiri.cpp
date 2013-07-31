@@ -30,15 +30,17 @@
 
 #include <vector>
 
+using namespace giri;
+
 //
 // Command line arguments.
 //
 static cl::opt<std::string>
 TraceFilename ("t", cl::desc("Trace filename"), cl::init("bbrecord"));
 
-char giri::TracingNoGiri::ID = 0;
+char TracingNoGiri::ID = 0;
 
-static RegisterPass<giri::TracingNoGiri>
+static RegisterPass<TracingNoGiri>
 X ("trace-giri", "Instrument code to trace basic block execution");
 
 //===----------------------------------------------------------------------===//
@@ -67,7 +69,7 @@ static bool hasPHI (const BasicBlock & BB) {
   return false;
 }
 
-bool giri::TracingNoGiri::doInitialization (Module & M) {
+bool TracingNoGiri::doInitialization (Module & M) {
   //
   // Get references to the different types that we'll need.
   //
@@ -188,7 +190,7 @@ bool giri::TracingNoGiri::doInitialization (Module & M) {
   return true;
 }
 
-Function* giri::TracingNoGiri::createCtor (Module & M) {
+Function* TracingNoGiri::createCtor(Module &M) {
   //
   // Create the ctor function.
   //
@@ -218,7 +220,7 @@ Function* giri::TracingNoGiri::createCtor (Module & M) {
   return RuntimeCtor;
 }
 
-void giri::TracingNoGiri::insertIntoGlobalCtorList (Function * RuntimeCtor) {
+void TracingNoGiri::insertIntoGlobalCtorList(Function *RuntimeCtor) {
   //
   // Insert the run-time ctor into the ctor list.
   //
@@ -279,7 +281,7 @@ void giri::TracingNoGiri::insertIntoGlobalCtorList (Function * RuntimeCtor) {
                       "llvm.global_ctors");
 }
 
-bool giri::TracingNoGiri::doFinalization (Module & M) {
+bool TracingNoGiri::doFinalization(Module &M) {
   //
   // Create a global constructor function that will initialize the run-time.
   //
@@ -305,7 +307,7 @@ bool giri::TracingNoGiri::doFinalization (Module & M) {
   return true;
 }
 
-void giri::TracingNoGiri::instrumentBasicBlock (BasicBlock & BB) {
+void TracingNoGiri::instrumentBasicBlock(BasicBlock &BB) {
 
   Value *LastBB;
 
@@ -351,7 +353,7 @@ void giri::TracingNoGiri::instrumentBasicBlock (BasicBlock & BB) {
   return;
 }
 
-void giri::TracingNoGiri::visitLoadInst (LoadInst & LI) {
+void TracingNoGiri::visitLoadInst(LoadInst &LI) {
   //
   // Cast the pointer into a void pointer type.
   //
@@ -379,7 +381,7 @@ void giri::TracingNoGiri::visitLoadInst (LoadInst & LI) {
   ++Loads;
 }
 
-void giri::TracingNoGiri::visitSelectInst (SelectInst & SI) {
+void TracingNoGiri::visitSelectInst(SelectInst &SI) {
   //
   // Cast the predicate (boolean) value into an 8-bit value.
   //
@@ -402,7 +404,7 @@ void giri::TracingNoGiri::visitSelectInst (SelectInst & SI) {
   return;
 }
 
-void giri::TracingNoGiri::visitStoreInst (StoreInst & SI) {
+void TracingNoGiri::visitStoreInst(StoreInst &SI) {
   //
   // Cast the pointer into a void pointer type.
   //
@@ -430,7 +432,7 @@ void giri::TracingNoGiri::visitStoreInst (StoreInst & SI) {
   ++Stores;
 }
 
-bool giri::TracingNoGiri::visitSpecialCall (CallInst & CI) {
+bool TracingNoGiri::visitSpecialCall(CallInst &CI) {
   //
   // We do not support indirect calls to special functions.
   //
@@ -687,7 +689,7 @@ bool giri::TracingNoGiri::visitSpecialCall (CallInst & CI) {
   return false;
 }
 
-void giri::TracingNoGiri::visitCallInst  (CallInst & CI) {
+void TracingNoGiri::visitCallInst(CallInst &CI) {
 
   CallInst *ClInst;
 
@@ -840,7 +842,7 @@ void giri::TracingNoGiri::visitCallInst  (CallInst & CI) {
   return;
 }
 
-void giri::TracingNoGiri::instrumentLoadsAndStores (BasicBlock & BB) {
+void TracingNoGiri::instrumentLoadsAndStores(BasicBlock &BB) {
   //
   // Scan through all instructions in the basic block and instrument them as
   // necessary.  Use a worklist to contain the instructions to avoid any
@@ -854,7 +856,7 @@ void giri::TracingNoGiri::instrumentLoadsAndStores (BasicBlock & BB) {
   return;
 }
 
-void giri::TracingNoGiri::instrumentPthreadCreatedFunctions (Function *F) {
+void TracingNoGiri::instrumentPthreadCreatedFunctions(Function *F) {
 
   // If no such handler function exist, the return
   if( F == NULL )
@@ -872,7 +874,7 @@ void giri::TracingNoGiri::instrumentPthreadCreatedFunctions (Function *F) {
   return;
 }
 
-bool giri::TracingNoGiri::runOnBasicBlock (BasicBlock & BB) {
+bool TracingNoGiri::runOnBasicBlock(BasicBlock &BB) {
   //
   // Fetch the analysis results for numbering basic blocks.
   //
@@ -908,7 +910,7 @@ bool giri::TracingNoGiri::runOnBasicBlock (BasicBlock & BB) {
   return true;
 }
 
-void giri::TracingNoGiri::initialize (Module & M)
+void TracingNoGiri::initialize(Module &M)
 {
   /*** Create the type variables ***/
   ////////////////////  Right now treat all unsigned values as signed
@@ -926,7 +928,7 @@ void giri::TracingNoGiri::initialize (Module & M)
   DoubleTy = Type::getDoubleTy(M.getContext());
 }
 
-bool  giri::TracingNoGiri::checkType(const Type *T) {
+bool TracingNoGiri::checkType(const Type *T) {
   if( T == SInt64Ty || T == SInt32Ty || T == SInt16Ty || T == SInt8Ty )
     return true;
   //if( !NO_UNSIGNED_CHECK )
@@ -939,7 +941,7 @@ bool  giri::TracingNoGiri::checkType(const Type *T) {
   return false;
 }
 
-bool giri::TracingNoGiri::checkForInvariantInst(Value *V)
+bool TracingNoGiri::checkForInvariantInst(Value *V)
 {
   Value *CheckVal;
 

@@ -57,8 +57,6 @@ public:
     AU.setPreservesAll();
   };
 
-  void initialize (Module & M);
-
   void countLines(const std::string & bbrecord_file);
 
   std::unordered_set<unsigned> readBB(const std::string & bbrecord_file);
@@ -69,6 +67,6 @@ private:
 
 };
 
-}
+} // END namespace dg
 
 #endif
