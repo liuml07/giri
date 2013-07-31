@@ -30,6 +30,7 @@
 #include <unistd.h>
 
 using namespace llvm;
+using namespace dg;
 
 //
 // Command line arguments.
@@ -38,7 +39,7 @@ static cl::opt<std::string>
 TraceFilename ("tr", cl::desc("Trace filename"), cl::init("bbrecord"));
 
 // ID Variable to identify the pass
-char dg::CountSrcLines::ID = 0;
+char CountSrcLines::ID = 0;
 
 //
 // Pass registration
@@ -55,20 +56,7 @@ namespace {
 }
 
 
-//
-// Method: initialize()
-//
-// Description:
-//  Initialize type objects used for invarint inst checking.
-//
-// Inputs:
-//  M - The module to analyze.
-void dg::CountSrcLines::initialize (Module & M)
-{
-
-}
-
-void dg::CountSrcLines::countLines(const std::string & bbrecord_file) {
+void CountSrcLines::countLines(const std::string &bbrecord_file) {
 	std::unordered_set<unsigned> bb_set = readBB(TraceFilename);
         std::string srcLineInfo;
         std::set<std::string> srcLines;
@@ -119,7 +107,7 @@ void dg::CountSrcLines::countLines(const std::string & bbrecord_file) {
                  << "\n");
 }
 
-std::unordered_set<unsigned> dg::CountSrcLines::readBB(const std::string & bbrecord_file) {
+std::unordered_set<unsigned> CountSrcLines::readBB(const std::string &bbrecord_file) {
         int NumOfDynamicBBs = 0;
 
 	int bb_fd = open(bbrecord_file.c_str(), O_RDONLY);
@@ -161,8 +149,7 @@ std::unordered_set<unsigned> dg::CountSrcLines::readBB(const std::string & bbrec
 // Return value:
 //  false - The module was not modified.
 //
-bool
-dg::CountSrcLines::runOnModule (Module & M) {
+bool CountSrcLines::runOnModule(Module &M) {
 
   //
   // Get references to other passes used by this pass.
@@ -180,6 +167,3 @@ dg::CountSrcLines::runOnModule (Module & M) {
   //
   return false;
 }
-
-
-

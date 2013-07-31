@@ -237,10 +237,6 @@ public:
   /// For store, we already point to BB end accounting for recursion.
   long normalize (DynValue & DV);
 
-  /// Search the trace file and mark the dynamic instruction, if
-  /// the corresponding invariant has failed.
-  void markInvFailure (DynValue & DV);
-
   /// @TODO Remove this function later
   /// Add the control dependence to worklist since we can't directly call the
   /// private addToWorklist

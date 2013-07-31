@@ -25,9 +25,11 @@
 
 #include <vector>
 
-char dg::LoadStoreNumberPass::ID    = 0;
-char dg::QueryLoadStoreNumbers::ID  = 0;
-char dg::RemoveLoadStoreNumbers::ID = 0;
+using namespace dg;
+
+char LoadStoreNumberPass::ID    = 0;
+char QueryLoadStoreNumbers::ID  = 0;
+char RemoveLoadStoreNumbers::ID = 0;
 
 static const char * mdKindName = "dgls";
 
@@ -40,7 +42,7 @@ Y ("query-lsnum", "Query Unique Identifiers of Loads and Stores");
 static RegisterPass<dg::RemoveLoadStoreNumbers>
 Z ("remove-lsnum", "Remove Unique Identifiers of Loads and Stores");
 
-MDNode* dg::LoadStoreNumberPass::assignID (Instruction *I, unsigned id) {
+MDNode* LoadStoreNumberPass::assignID(Instruction *I, unsigned id) {
   // Fetch the context in which the enclosing module was defined.  We'll need
   // it for creating practically everything.
   Module *M = I->getParent()->getParent()->getParent();
@@ -54,19 +56,19 @@ MDNode* dg::LoadStoreNumberPass::assignID (Instruction *I, unsigned id) {
   return MDNode::getWhenValsUnresolved(Context, ArrayRef<Value*>(ID, 2), false);
 }
 
-void dg::LoadStoreNumberPass::visitLoadInst (LoadInst &I) {
-  MD->addOperand((assignID (&I, ++count)));
+void LoadStoreNumberPass::visitLoadInst(LoadInst &I) {
+  MD->addOperand(assignID (&I, ++count));
 }
 
-void dg::LoadStoreNumberPass::visitStoreInst (StoreInst &I) {
-  MD->addOperand((assignID (&I, ++count)));
+void LoadStoreNumberPass::visitStoreInst(StoreInst &I) {
+  MD->addOperand(assignID (&I, ++count));
 }
 
-void dg::LoadStoreNumberPass::visitSelectInst (SelectInst &SI) {
-  MD->addOperand((assignID (&SI, ++count)));
+void LoadStoreNumberPass::visitSelectInst(SelectInst &SI) {
+  MD->addOperand(assignID (&SI, ++count));
 }
 
-void dg::LoadStoreNumberPass::visitCallInst (CallInst &CI) {
+void LoadStoreNumberPass::visitCallInst(CallInst &CI) {
   //
   // Do not add an identifier for this call instruction if it is a run-time
   // function.
@@ -80,10 +82,10 @@ void dg::LoadStoreNumberPass::visitCallInst (CallInst &CI) {
     if (isTracerFunction(CalledFunc))
       return;
   }
-  MD->addOperand( (assignID (&CI, ++count)) );
+  MD->addOperand(assignID(&CI, ++count));
 }
 
-bool dg::LoadStoreNumberPass::runOnModule (Module & M) {
+bool LoadStoreNumberPass::runOnModule(Module &M) {
   // Now create a named metadata node that links all of this metadata together.
   MD = M.getOrInsertNamedMetadata(mdKindName);
 
@@ -98,7 +100,7 @@ bool dg::LoadStoreNumberPass::runOnModule (Module & M) {
   return true;
 }
 
-bool dg::QueryLoadStoreNumbers::runOnModule (Module & M) {
+bool QueryLoadStoreNumbers::runOnModule(Module &M) {
   DEBUG(dbgs() << "Inside QueryLoadStoreNumbers for module "
                << M.getModuleIdentifier()
                << "\n");
@@ -132,7 +134,7 @@ bool dg::QueryLoadStoreNumbers::runOnModule (Module & M) {
   return false;
 }
 
-bool dg::RemoveLoadStoreNumbers::runOnModule (Module & M) {
+bool RemoveLoadStoreNumbers::runOnModule(Module &M) {
   // Get the basic block metadata. If there isn't any metadata, then no basic
   // blocks have been numbered.
   NamedMDNode * MD = M.getNamedMetadata (mdKindName);

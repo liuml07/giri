@@ -28,6 +28,7 @@
 #include <fstream>
 
 using namespace llvm;
+using namespace giri;
 
 // Command line arguments.
 static cl::opt<std::string>
@@ -46,10 +47,10 @@ static cl::opt<bool>
 ExprTree ("expr-tree", cl::desc("Build expression tree from the root causes and map to source lines"), cl::init(false));
 
 // ID Variable to identify the pass
-char giri::DynamicGiri::ID = 0;
+char DynamicGiri::ID = 0;
 
 // Pass registration
-static RegisterPass<giri::DynamicGiri>
+static RegisterPass<DynamicGiri>
             X ("dgiri", "Dynamic Backwards Slice Analysis");
 /*
 using namespace giri;
@@ -122,7 +123,7 @@ FindFlows::addSource (const Value * V, const Function * F) {
 }
 #endif
 
-bool giri::DynamicGiri::findExecForcers (BasicBlock * BB,
+bool DynamicGiri::findExecForcers (BasicBlock * BB,
                                     std::set<unsigned> & bbNums) {
   //
   // Get the parent function containing this basic block.  We'll need it for
@@ -199,7 +200,7 @@ bool giri::DynamicGiri::findExecForcers (BasicBlock * BB,
   return (findExecForcers (BB, bbNums));
 }
 
-void giri::DynamicGiri::findSlice (DynValue & Initial,
+void DynamicGiri::findSlice (DynValue & Initial,
                               std::unordered_set<DynValue> & Slice,
                               std::set<DynValue *> & DataFlowGraph) {
   // Worklist
@@ -650,7 +651,7 @@ FindFlows::findArgSources (Argument * Arg,
 }
 #endif
 
-void giri::DynamicGiri::printBackwardsSlice (std::set<Value *> & Slice,
+void DynamicGiri::printBackwardsSlice (std::set<Value *> & Slice,
                                         std::unordered_set<DynValue> & dynamicSlice,
                                         std::set<DynValue *> & DataFlowGraph) {
 
@@ -717,7 +718,7 @@ void giri::DynamicGiri::printBackwardsSlice (std::set<Value *> & Slice,
 
 }
 
-void giri::DynamicGiri::getBackwardsSlice (Instruction * I,
+void DynamicGiri::getBackwardsSlice (Instruction * I,
                                       std::set<Value *> & Slice,
                                       std::unordered_set<DynValue > & dynamicSlice,
                                       std::set<DynValue *> & DataFlowGraph) {
@@ -746,14 +747,14 @@ void giri::DynamicGiri::getBackwardsSlice (Instruction * I,
   return;
 }
 
-void giri::DynamicGiri::getExprTree ( std::set<Value *> & Slice,
+void DynamicGiri::getExprTree ( std::set<Value *> & Slice,
                                       std::unordered_set<DynValue > & dynamicSlice,
                                       std::set<DynValue *> & DataFlowGraph) {
 
 
 }
 
-void giri::DynamicGiri::initialize (Module & M)
+void DynamicGiri::initialize (Module & M)
 {
   /*** Create the type variables ***/
   ////////////////////  Right now treat all unsigned values as signed
@@ -771,7 +772,7 @@ void giri::DynamicGiri::initialize (Module & M)
   DoubleTy = Type::getDoubleTy(M.getContext());
 }
 
-bool giri::DynamicGiri::checkType(const Type *T) {
+bool DynamicGiri::checkType(const Type *T) {
   if( T == SInt64Ty || T == SInt32Ty || T == SInt16Ty || T == SInt8Ty )
     return true;
   //if( !NO_UNSIGNED_CHECK )
@@ -784,7 +785,7 @@ bool giri::DynamicGiri::checkType(const Type *T) {
   return false;
 }
 
-bool giri::DynamicGiri::checkForInvariantInst(Value *V)
+bool DynamicGiri::checkForInvariantInst(Value *V)
 {
   Value *CheckVal;
 
@@ -825,7 +826,7 @@ bool giri::DynamicGiri::checkForInvariantInst(Value *V)
   return false; // All other instructions do not have invariants
 }
 
-bool giri::DynamicGiri::runOnModule (Module & M) {
+bool DynamicGiri::runOnModule (Module & M) {
 
   std::set<Value *> mySliceOfLife;
   std::unordered_set<DynValue> myDynSliceOfLife;

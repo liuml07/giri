@@ -34,6 +34,7 @@
 #include <string>
 
 using namespace llvm;
+using namespace dg;
 
 static cl::opt<bool>
 CompleteFile ("CompleteFile", cl::desc("Map all LLVM instructions in the source file"), cl::init(false));
@@ -42,7 +43,7 @@ static cl::opt<bool>
 OneFunction("OneFunction", cl::desc("Map LLVM instructions in only one function"), cl::init(true));
 
 // ID Variable to identify the pass
-char dg::SourceLineMappingPass::ID = 0;
+char SourceLineMappingPass::ID = 0;
 
 // Pass registration
 static RegisterPass<dg::SourceLineMappingPass>
@@ -57,7 +58,7 @@ namespace {
   STATISTIC (QueriedSrcInfo, "Number of Source Information Locations Queried Including Ignored LLVM Insts");
 }
 
-std::string dg::SourceLineMappingPass::locateSrcInfo (Instruction *I) {
+std::string SourceLineMappingPass::locateSrcInfo(Instruction *I) {
   // Update the number of source locations queried.
   ++QueriedSrcInfo;
 
@@ -142,7 +143,7 @@ std::string dg::SourceLineMappingPass::locateSrcInfo (Instruction *I) {
 
 }
 
-void dg::SourceLineMappingPass::locateSrcInfoForCheckingOptimizations (Instruction *I) {
+void SourceLineMappingPass::locateSrcInfoForCheckingOptimizations(Instruction *I) {
 
   //
   // Update the number of source locations queried.
@@ -231,7 +232,7 @@ void dg::SourceLineMappingPass::locateSrcInfoForCheckingOptimizations (Instructi
 
 }
 
-void dg::SourceLineMappingPass::mapCompleteFile(Module & M) {
+void SourceLineMappingPass::mapCompleteFile(Module &M) {
   Function * F;
 
   for (Module::iterator MI = M.begin(), ME = M.end(); MI != ME; ++MI) {
@@ -247,7 +248,7 @@ void dg::SourceLineMappingPass::mapCompleteFile(Module & M) {
 
 }
 
-void dg::SourceLineMappingPass::mapOneFunction(Module & M) {
+void SourceLineMappingPass::mapOneFunction(Module &M) {
 
   int instCount = 0, bbCount = 0, lastInst;
   std::string startFunction;
@@ -280,7 +281,7 @@ void dg::SourceLineMappingPass::mapOneFunction(Module & M) {
   LLVMInstLineNum.close();
 }
 
-bool dg::SourceLineMappingPass::runOnModule (Module & M) {
+bool SourceLineMappingPass::runOnModule(Module &M) {
   if (CompleteFile)
     mapCompleteFile(M);
   else if (OneFunction)
