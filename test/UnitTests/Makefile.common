@@ -25,7 +25,7 @@ slice : $(NAME).bc $(NAME).trace
 		-bbnum -lsnum \
 		-dgiri -tf $(NAME).trace -dfs=true -trace-cd=true \
 		-remove-bbnum -remove-lsnum \
-		-select-origin-as-main -stats $(DEBUGFLAGS) $< -f -o /dev/null
+		-select-origin-as-main -stats $(DEBUGFLAGS) $< -o /dev/null
 
 $(NAME).trace: $(NAME).trace.exe
 	- echo "$(INPUT)" | ./$<
@@ -42,10 +42,10 @@ $(NAME).trace.bc : $(NAME).bc
 		-bbnum -lsnum \
 		-trace-giri -t $(NAME).trace \
 		-remove-bbnum -remove-lsnum \
-		-stats $(DEBUGFLAGS) $< -f -o $@
+		-stats $(DEBUGFLAGS) $< -o $@
 
 %.opt.bc: %.bc
-	opt -mem2reg -mergereturn -instnamer -f -o $@ $<
+	opt -mem2reg -mergereturn -instnamer -o $@ $<
 
 %.bc : %.c
 	$(CC) $(CFLAGS) $+ -o $@
