@@ -30,8 +30,8 @@ slice : $(NAME).bc $(NAME).trace
 $(NAME).trace: $(NAME).trace.exe
 	- ./$< $(INPUT)
 
-$(NAME).trace.exe : $(NAME).trace.s $(GIRI_DIR)/runtime/Giri/$(VERSION)/Tracing.o
-	$(CC) -fno-strict-aliasing $+ -o $@ $(LDFLAGS)
+$(NAME).trace.exe : $(NAME).trace.s
+	$(CC) -fno-strict-aliasing $+ -o $@ $(LDFLAGS) -L$(GIRI_LIB_DIR) -lrtgiri
 
 $(NAME).trace.s : $(NAME).trace.bc
 	llc -asm-verbose=false -O0 $< -o $@
