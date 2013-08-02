@@ -5,7 +5,7 @@ int main(int argc, char *argv[])
 {
     int x, y, z;
 
-    scanf("%d", &x);
+    x = atoi(argv[1]);
 
     if (x < 0)
     {
