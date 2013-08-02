@@ -28,7 +28,7 @@ slice : $(NAME).bc $(NAME).trace
 		-select-origin-as-main -stats $(DEBUGFLAGS) $< -o /dev/null
 
 $(NAME).trace: $(NAME).trace.exe
-	- echo "$(INPUT)" | ./$<
+	- ./$< $(INPUT)
 
 $(NAME).trace.exe : $(NAME).trace.s $(GIRI_DIR)/runtime/Giri/$(VERSION)/Tracing.o
 	$(CC) -fno-strict-aliasing $+ -o $@ $(LDFLAGS)
