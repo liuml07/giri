@@ -1,6 +1,6 @@
 ##===- giri/test/UnitTests/test3/Makefile ------------------*- Makefile -*-===##
 
-NAME = rec-calls
-INPUT = 15 20
+NAME = fibonacci
+INPUT = 15
 
 include ../Makefile.common
