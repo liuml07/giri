@@ -48,7 +48,7 @@ public:
   virtual bool doInitialization(Module &M);
 
   /// This method is called after all the basic blocks have been transformed.
-  /// Itinserts code to initialize the run-time of the tracing library.
+  /// It inserts code to initialize the run-time of the tracing library.
   virtual bool doFinalization(Module &M);
   virtual bool doFinalization(Function &F) { return false; }
 
@@ -77,7 +77,7 @@ public:
   /// Visit a store instruction. This method instruments the store instruction
   /// with a call to the tracing run-time that will record, in the dynamic
   /// trace, the memory written by this store instruction.
-  void visitStoreInst(StoreInst &LI);
+  void visitStoreInst(StoreInst &SI);
 
   /// Visit a call instruction. For most call instructions, we will instrument
   /// the call so that the trace contains enough information to track back from
