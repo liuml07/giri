@@ -194,9 +194,9 @@ Function* TracingNoGiri::createCtor(Module &M) {
   //
   // Create the ctor function.
   //
-  Type * VoidTy = Type::getVoidTy (M.getContext());
+  Type * VoidTy = Type::getVoidTy(M.getContext());
   Function * RuntimeCtor = dyn_cast<Function>(M.getOrInsertFunction ("giriCtor", VoidTy, NULL));
-  assert (RuntimeCtor && "Somehow created a non-function function!\n");
+  assert(RuntimeCtor && "Somehow created a non-function function!\n");
 
   //
   // Make the ctor function internal and non-throwing.
@@ -208,10 +208,10 @@ Function* TracingNoGiri::createCtor(Module &M) {
   // Add a call in the new constructor function to the Giri initialization
   // function.
   //
-  BasicBlock * BB = BasicBlock::Create (M.getContext(), "entry", RuntimeCtor);
-  Constant * Name = stringToGV (TraceFilename, &M);
+  BasicBlock * BB = BasicBlock::Create(M.getContext(), "entry", RuntimeCtor);
+  Constant * Name = stringToGV(TraceFilename, &M);
   Name = ConstantExpr::getZExtOrBitCast (Name, VoidPtrType);
-  CallInst::Create (Init, Name, "", BB);
+  CallInst::Create(Init, Name, "", BB);
 
   //
   // Add a return instruction at the end of the basic block.
@@ -221,20 +221,16 @@ Function* TracingNoGiri::createCtor(Module &M) {
 }
 
 void TracingNoGiri::insertIntoGlobalCtorList(Function *RuntimeCtor) {
-  //
   // Insert the run-time ctor into the ctor list.
-  //
   LLVMContext & Context = RuntimeCtor->getParent()->getContext();
-  Type * Int32Type = IntegerType::getInt32Ty (Context);
+  Type *Int32Type = IntegerType::getInt32Ty (Context);
   std::vector<Constant *> CtorInits;
-  CtorInits.push_back (ConstantInt::get (Int32Type, 65535));
-  CtorInits.push_back (RuntimeCtor);
-  Constant * RuntimeCtorInit=ConstantStruct::getAnon(Context,CtorInits, false);
+  CtorInits.push_back(ConstantInt::get (Int32Type, 65535));
+  CtorInits.push_back(RuntimeCtor);
+  Constant *RuntimeCtorInit=ConstantStruct::getAnon(Context, CtorInits, false);
 
-  //
   // Get the current set of static global constructors and add the new ctor
   // to the list.
-  //
   std::vector<Constant *> CurrentCtors;
   Module & M = *(RuntimeCtor->getParent());
   GlobalVariable * GVCtor = M.getNamedGlobal ("llvm.global_ctors");
@@ -252,27 +248,21 @@ void TracingNoGiri::insertIntoGlobalCtorList(Function *RuntimeCtor) {
     GVCtor->setName ("removed");
   }
 
-  //
   // The ctor list seems to be initialized in different orders on different
   // platforms, and the priority settings don't seem to work.  Examine the
   // module's platform string and take a best guess to the order.
-  //
   if (M.getTargetTriple().find ("linux") == std::string::npos)
-    CurrentCtors.insert (CurrentCtors.begin(), RuntimeCtorInit);
+    CurrentCtors.insert(CurrentCtors.begin(), RuntimeCtorInit);
   else
-    CurrentCtors.push_back (RuntimeCtorInit);
+    CurrentCtors.push_back(RuntimeCtorInit);
 
-  //
   // Create a new initializer.
-  //
-  ArrayType * AT = ArrayType::get (RuntimeCtorInit-> getType(),
-                                         CurrentCtors.size());
-  Constant * NewInit=ConstantArray::get (AT, CurrentCtors);
+  ArrayType *AT = ArrayType::get(RuntimeCtorInit->getType(),
+                                 CurrentCtors.size());
+  Constant *NewInit=ConstantArray::get(AT, CurrentCtors);
 
-  //
   // Create the new llvm.global_ctors global variable and replace all uses of
   // the old global variable with the new one.
-  //
   new GlobalVariable (M,
                       NewInit->getType(),
                       false,
@@ -282,17 +272,12 @@ void TracingNoGiri::insertIntoGlobalCtorList(Function *RuntimeCtor) {
 }
 
 bool TracingNoGiri::doFinalization(Module &M) {
-  //
   // Create a global constructor function that will initialize the run-time.
-  //
-  Function * RuntimeCtor = createCtor (M);
+  Function *RuntimeCtor = createCtor(M);
 
-  //
   // Insert the constructor into the list of global constructor functions.
-  //
-  insertIntoGlobalCtorList (RuntimeCtor);
+  insertIntoGlobalCtorList(RuntimeCtor);
 
-  //
   // Instrument the function to record it's thread id,
   // if it is a function started from pthread_create
   //
@@ -301,9 +286,7 @@ bool TracingNoGiri::doFinalization(Module &M) {
   // MySQL handler Function
   instrumentPthreadCreatedFunctions ( M.getFunction("handle_one_connection") );
 
-  //
   // Indicate that we've changed the module.
-  //
   return true;
 }
 
