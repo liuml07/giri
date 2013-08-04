@@ -9,7 +9,7 @@
 test::
 
 LEVEL = ..
-include $(LEVEL)/Makefile.common
+#include $(LEVEL)/Makefile.common
 
 ifndef NO_STABLE_NUMBERS
 STABLERUN := GET_STABLE_NUMBERS=1
@@ -191,3 +191,7 @@ cputrack::
                    report report.csv)
 	@printf "\a"; sleep 1; printf "\a"; sleep 1; printf "\a"
 
+clean:
+	@for u in $(shell ls UnitTests); do \
+		[[ -d UnitTests/$$u ]] && make clean -C UnitTests/$$u;\
+		done
