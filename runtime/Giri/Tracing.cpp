@@ -229,12 +229,6 @@ static bool checkForNonHandlerThread()
 static void cleanup_only_tracing(int signum)
 {
   ERROR("Abnormal termination, signal number %d\n", signum);
-
-  // Right now call exit and do all cleaning operations through atexit
-  #if 0   // Define only when doing slicing
-      closeCacheFile (); // Make sure to close the file properly and flush the file cache
-  #endif
-
   exit(signum);
 }
 
