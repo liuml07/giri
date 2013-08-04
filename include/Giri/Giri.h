@@ -163,8 +163,6 @@ private:
 
   bool checkType(const Type *T);
 
-  bool checkForInvariantInst(Value *V);
-
   /// Initialize type objects used for invarint inst checking.
   void initialize(Module &M);
 
@@ -264,8 +262,6 @@ private:
   void initDataFlowFitler(void);
 
   bool checkType(const Type *T);
-
-  bool checkForInvariantInst(Value *V);
 
   ///  Initialize type objects used for invarint inst checking.
   void initialize(Module &M);

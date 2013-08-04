@@ -733,7 +733,7 @@ void TracingNoGiri::visitCallInst(CallInst &CI) {
      // Do not instrument calls to intrinsic functions as it is giving an assert failure.
      // FIX ME!!!! may miss some invariant failures, not likely as none of the intrinsics
      // have invariants
-    if ( CalledFunc->isIntrinsic () || !checkForInvariantInst(&CI)  ) {
+    if (CalledFunc->isIntrinsic()) {
        // Instrument special external calls which loads/stores
        // like strlen, strcpy, memcpy etc.
        visitSpecialCall (CI);
@@ -939,45 +939,4 @@ bool TracingNoGiri::checkType(const Type *T) {
       return true;
 
   return false;
-}
-
-bool TracingNoGiri::checkForInvariantInst(Value *V)
-{
-  Value *CheckVal;
-
-  if( CallInst *ClInst = dyn_cast<CallInst>(V) )
-    {
-      CheckVal = ClInst; // Get the value to be checked
-
-      if ( ClInst->getCalledFunction() != NULL )
-        {
-         if (isTracerFunction(ClInst->getCalledFunction())) // Don't count and check the tracer/inv functions
-            return false;
-        }
-
-      // If this instruction is in the slice, then the corresponding invariant must have executed successfully or failed
-      if( checkType(CheckVal->getType()) && isa<Constant>(*CheckVal) == false )
-        return true;
-    }
-
-  else if( StoreInst *StInst = dyn_cast<StoreInst>(V) )
-    {
-      DEBUG( std::cerr << "Handling store instruction \n" );
-      CheckVal = StInst->getOperand(0);  // Get value operand
-
-      // If this instruction is in the slice, then the corresponding invariant must have executed successfully or failed
-      if( checkType(CheckVal->getType()) && isa<Constant>(*CheckVal) == false )
-        return true;
-    }
-  else if( LoadInst *LdInst = dyn_cast<LoadInst>(V) )
-    {
-      DEBUG( std::cerr << "Handling load instruction \n" );
-      CheckVal = LdInst;  // Get value operand
-
-      // If this instruction is in the slice, then the corresponding invariant must have executed successfully or failed
-      if( checkType(CheckVal->getType()) && isa<Constant>(*CheckVal) == false )
-        return true;
-    }
-
-  return false; // All other instructions do not have invariants
 }
