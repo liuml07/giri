@@ -202,29 +202,6 @@ void updateThreadID( )
    pthread_mutex_unlock(&mutexRecordThreadID);
 }
 
-/// Check if current thread is the Main thread / Connection Handler Thread or not
-static bool checkForNonHandlerThread()
-{
-  return false;
-  // Only used for MySQL
-#if 0
-   bool flag;
-
-   pthread_mutex_lock(&mutexRecordThreadID);
-   if (pthread_self() == handlerThreadID) {
-     //printf("Yes, Connection thread handler\n");
-     flag = false;
-   }
-   else {
-     //printf("No, Not a Connection thread handler\n");
-     flag = true;
-   }
-   pthread_mutex_unlock(&mutexRecordThreadID);
-
-   return flag;
-#endif
-}
-
 /// Signal handler to write only tracing data to file
 static void cleanup_only_tracing(int signum)
 {
@@ -331,10 +308,6 @@ void recordInit(const char *name) {
 /// block termination if the program terminates before the basic blocks
 /// complete execution.
 void recordStartBB(unsigned id, unsigned char *fp) {
-  // Don't record, if it is not the main thread or connection handler thread
-  if( checkForNonHandlerThread() )
-    return;
-
   if (id >= 190525 && id <= 190532)
     DEBUG("At BasicBlock start, BBid %u between 190525 and 190532\n", id);
 
@@ -363,10 +336,6 @@ void recordStartBB(unsigned id, unsigned char *fp) {
 /// \param id - The ID of the basic block that has finished execution.
 /// \param fp - The pointer to the function in which the basic block belongs.
 void recordBB(unsigned id, unsigned char *fp, unsigned lastBB) {
-  // Don't record, if it is not the main thread or connection handler thread
-  if( checkForNonHandlerThread() )
-    return;
-
   if (id >= 190525 && id <= 190532)
     DEBUG("At BasicBlock end, BBid %u between 190525 and 190532\n", id);
 
@@ -407,10 +376,6 @@ void recordBB(unsigned id, unsigned char *fp, unsigned lastBB) {
 // TODO: delete this (**Not needed anymore as we don't add external function call records**)
 ///  Record that a external function has finished execution by updating function call stack.
 void recordExtCallRet(unsigned callID, unsigned char *fp) {
-  // Don't record, if it is not the main thread or connection handler thread
-  if (checkForNonHandlerThread())
-    return;
-
   assert(FNStackIndex > 0);
 
   DEBUG("Inside %s: %u %s %s\n", __func__, callID, fp,
@@ -424,10 +389,6 @@ void recordExtCallRet(unsigned callID, unsigned char *fp) {
 }
 
 void recordLoad(unsigned id, unsigned char *p, uintptr_t length) {
-  // Don't record, if it is not the main thread or connection handler thread
-  if( checkForNonHandlerThread() )
-    return;
-
   // Record that a load has been executed.
   addToEntryCache(Entry(LDType, id, p, length));
 }
@@ -437,20 +398,12 @@ void recordLoad(unsigned id, unsigned char *p, uintptr_t length) {
 /// \param p      - The starting address of the store.
 /// \param length - The length, in bytes, of the stored data.
 void recordStore(unsigned id, unsigned char *p, uintptr_t length) {
-  // Don't record, if it is not the main thread or connection handler thread
-  if( checkForNonHandlerThread() )
-    return;
-
   // Record that a store has been executed.
   addToEntryCache(Entry(STType, id, p, length));
 }
 
 ///  Record that a string has been read.
 void recordStrLoad(unsigned id, char *p) {
-  // Don't record, if it is not the main thread or connection handler thread
-  if( checkForNonHandlerThread() )
-    return;
-
   // First determine the length of the string.  Add one byte to include the
   // string terminator character.
   uintptr_t length = strlen(p) + 1;
@@ -463,10 +416,6 @@ void recordStrLoad(unsigned id, char *p) {
 /// \param id - The ID of the instruction that wrote to the string.
 /// \param p  - A pointer to the string.
 void recordStrStore(unsigned id, char *p) {
-  // Don't record, if it is not the main thread or connection handler thread
-  if( checkForNonHandlerThread() )
-    return;
-
   // First determine the length of the string.  Add one byte to include the
   // string terminator character.
   uintptr_t length = strlen(p) + 1;
@@ -480,10 +429,6 @@ void recordStrStore(unsigned id, char *p) {
 /// \param id - The ID of the instruction that wrote to the string.
 /// \param  p  - A pointer to the string.
 void recordStrcatStore(unsigned id, char *p, char *s) {
-  // Don't record, if it is not the main thread or connection handler thread
-  if( checkForNonHandlerThread() )
-    return;
-
   // Determine where the new string will be added Don't. add one byte
   // to include the string terminator character, as write will start
   // from there. Then determine the length of the written string.
@@ -500,10 +445,6 @@ void recordStrcatStore(unsigned id, char *p, char *s) {
 /// \param id - The ID of the call instruction.
 /// \param fp - The address of the function that was called.
 void recordCall(unsigned id, unsigned char *fp) {
-  // Don't record, if it is not the main thread or connection handler thread
-  if( checkForNonHandlerThread() )
-    return;
-
   // Record that a call has been executed.
   addToEntryCache(Entry(CLType, id, fp));
 
@@ -520,10 +461,6 @@ void recordCall(unsigned id, unsigned char *fp) {
 /// \param id - The ID of the call instruction.
 /// \param fp - The address of the function that was called.
 void recordExtCall(unsigned id, unsigned char *fp) {
-  // Don't record, if it is not the main thread or connection handler thread
-  if( checkForNonHandlerThread() )
-    return;
-
   DEBUG("Inside %s: %u %s\n", __func__, id, fp);
 
   // Record that a call has been executed.
@@ -532,10 +469,6 @@ void recordExtCall(unsigned id, unsigned char *fp) {
 
 /// Record that a function has finished execution by adding a return trace entry
 void recordReturn(unsigned id, unsigned char *fp) {
-  // Don't record, if it is not the main thread or connection handler thread
-  if( checkForNonHandlerThread() )
-    return;
-
   // Record that a call has returned.
   addToEntryCache(Entry(RTType, id, fp));
 }
@@ -543,10 +476,6 @@ void recordReturn(unsigned id, unsigned char *fp) {
 /// Record id of the failed invariant.
 /// \param id - The ID assigned to the corresponding instruction in the LLVM IR
 void recordInvFailure(unsigned id) {
-  // Don't record, if it is not the main thread or connection handler thread
-  if (checkForNonHandlerThread())
-    return;
-
   // Record that an invariant has failed.
   addToEntryCache(Entry(INVType, id));
 }
@@ -556,10 +485,6 @@ void recordInvFailure(unsigned id) {
 /// \param flag - The boolean value (true or false) used to determine the select
 ///               instruction's output.
 void recordSelect(unsigned id, unsigned char flag) {
-  // Don't record, if it is not the main thread or connection handler thread
-  if( checkForNonHandlerThread() )
-    return;
-
   // Record that a store has been executed.
   addToEntryCache(Entry(PDType, id, (unsigned char *)flag));
 }
