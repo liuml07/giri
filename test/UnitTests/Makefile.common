@@ -39,13 +39,10 @@ $(NAME).trace.s : $(NAME).trace.bc
 $(NAME).trace.bc : $(NAME).bc
 	@ opt -load $(GIRI_LIB_DIR)/libdgutility.so \
 		-load $(GIRI_LIB_DIR)/libgiri.so \
-		-bbnum -lsnum \
+		-mergereturn -bbnum -lsnum \
 		-trace-giri -t $(NAME).trace \
 		-remove-bbnum -remove-lsnum \
 		-stats $(DEBUGFLAGS) $< -o $@
-
-%.opt.bc: %.bc
-	opt -mem2reg -mergereturn -instnamer -o $@ $<
 
 %.bc : %.c
 	$(CC) $(CFLAGS) $+ -o $@
