@@ -1,6 +1,6 @@
 //===- SourceLineMapping.h - Provide BB identifiers -----------*- C++ -*-===//
 //
-//                     The LLVM Compiler Infrastructure
+//                     Giri: Dynamic Slicing in LLVM
 //
 // This file was developed by the LLVM research group and is distributed under
 // the University of Illinois Open Source License. See LICENSE.TXT for details.
@@ -12,22 +12,21 @@
 //
 //===----------------------------------------------------------------------===//
 
+#include "Utility/SourceLineMapping.h"
+#include "Utility/Utils.h"
+
+#include "llvm/ADT/Statistic.h"
+#include "llvm/Analysis/DebugInfo.h"
+#include "llvm/Instructions.h"
+#include "llvm/IntrinsicInst.h"
 #include "llvm/Function.h"
 #include "llvm/Module.h"
-#include "llvm/Pass.h"
 #include "llvm/LLVMContext.h"
-
-#include "llvm/Analysis/DebugInfo.h"
+#include "llvm/Pass.h"
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/CallSite.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/raw_os_ostream.h"
-#include "llvm/ADT/Statistic.h"
-#include "llvm/IntrinsicInst.h"
-#include "llvm/Instructions.h"
-
-#include "Utility/Utils.h"
-#include "Utility/SourceLineMapping.h"
 
 #include <iostream>
 #include <fstream>
@@ -47,24 +46,20 @@ char SourceLineMappingPass::ID = 0;
 
 // Pass registration
 static RegisterPass<dg::SourceLineMappingPass>
-X ("SrcLineMapping", "Mapping LLVM inst to source line number");
+X("SrcLineMapping", "Mapping LLVM inst to source line number");
 
-namespace {
-  //===--------------------------------------------------------------------===//
-  // Pass Statistics
-  //===--------------------------------------------------------------------===//
-  STATISTIC (FoundSrcInfo,   "Number of Source Information Locations Found");
-  STATISTIC (NotFoundSrcInfo,   "Number of Source Information Locations Not Found");
-  STATISTIC (QueriedSrcInfo, "Number of Source Information Locations Queried Including Ignored LLVM Insts");
-}
+//===--------------------------------------------------------------------===//
+// Pass Statistics
+//===--------------------------------------------------------------------===//
+STATISTIC(FoundSrcInfo, "Number of Source Information Locations Found");
+STATISTIC(NotFoundSrcInfo, "Number of Source Information Locations Not Found");
+STATISTIC(QueriedSrcInfo, "Number of Source Information Locations Queried Including Ignored LLVM Insts");
 
 std::string SourceLineMappingPass::locateSrcInfo(Instruction *I) {
   // Update the number of source locations queried.
   ++QueriedSrcInfo;
 
-  // const DbgStopPointInst *StopPt = findStopPoint (I);
   unsigned LineNumber, ColumnNumber;
-  //Value *SourceFile, *SourceDir;
   std::string FileName, DirName;
 
   // Get the ID number for debug metadata.
@@ -72,12 +67,7 @@ std::string SourceLineMappingPass::locateSrcInfo(Instruction *I) {
   unsigned dbgKind = M->getContext().getMDKindID("dbg");
 
   // Get the line number and source file information for the call.
-  //  if (StopPt) {
   if (MDNode *Dbg = I->getMetadata(dbgKind)) {
-    //    LineNumber = StopPt->getLine();
-    //    ColumnNumber = StopPt->getColumn();
-    //    SourceFile = StopPt->getFileName();
-    //    SourceDir = StopPt->getDirectory();
     DILocation Loc (Dbg);
     LineNumber = Loc.getLineNumber();
     ColumnNumber = Loc.getColumnNumber();
@@ -103,12 +93,10 @@ std::string SourceLineMappingPass::locateSrcInfo(Instruction *I) {
     char LineInfo[10];
     sprintf(LineInfo, "%d", LineNumber);
     return DirName + " " + FileName + " " + LineInfo;
-
   } else {
-
     // Get the called function and determine if it's a debug function
     // or our instrumentation function
-    if ( isa<CallInst>(I) || isa<InvokeInst>(I) ) {
+    if (isa<CallInst>(I) || isa<InvokeInst>(I)) {
        CallSite CS (I);
        Function * CalledFunc = CS.getCalledFunction();
        if (CalledFunc) {
@@ -121,7 +109,7 @@ std::string SourceLineMappingPass::locateSrcInfo(Instruction *I) {
     }
 
     // Don't count if its a PHI node or alloca inst
-    if( isa<PHINode>(I) || isa<AllocaInst>(I) ) {
+    if (isa<PHINode>(I) || isa<AllocaInst>(I)) {
       return "NoSourceLineInfo: This category of instructions don't map to any source lines. Ignored.";
     }
 
@@ -140,36 +128,22 @@ std::string SourceLineMappingPass::locateSrcInfo(Instruction *I) {
     //I->dump();
     return "";
   }
-
 }
 
 void SourceLineMappingPass::locateSrcInfoForCheckingOptimizations(Instruction *I) {
 
-  //
   // Update the number of source locations queried.
-  //
   ++QueriedSrcInfo;
 
-  //
   // Get the line number and source file information for the call.
-  //
-  //const DbgStopPointInst *StopPt = findStopPoint (I);
   unsigned LineNumber, ColumnNumber;
-  //Value *SourceFile, *SourceDir;
   std::string FileName, DirName;
 
-  //
   // Get the ID number for debug metadata.
-  //
   Module *M = I->getParent()->getParent()->getParent();
   unsigned dbgKind = M->getContext().getMDKindID("dbg");
 
-  //if (StopPt) {
   if (MDNode *Dbg = I->getMetadata(dbgKind)) {
-    //    LineNumber = StopPt->getLine();
-    //    ColumnNumber = StopPt->getColumn();
-    //    SourceFile = StopPt->getFileName();
-    //    SourceDir = StopPt->getDirectory();
     DILocation Loc (Dbg);
     LineNumber = Loc.getLineNumber();
     ColumnNumber = Loc.getColumnNumber();
@@ -191,18 +165,15 @@ void SourceLineMappingPass::locateSrcInfoForCheckingOptimizations(Instruction *I
     DirName = temp2->getAsString();
     */
 
-    if ( OneFunction ) {
+    if (OneFunction)
        DEBUG(dbgs() << DirName << " " << FileName << " " << LineNumber << " "
                     << ColumnNumber << "\n");
-    }
-
   } else {
-
     // Get the called function and determine if it's a debug function
     // or our instrumentation function
-    if ( isa<CallInst>(I) || isa<InvokeInst>(I) ) {
-       CallSite CS (I);
-       Function * CalledFunc = CS.getCalledFunction();
+    if (isa<CallInst>(I) || isa<InvokeInst>(I)) {
+       CallSite CS(I);
+       Function *CalledFunc = CS.getCalledFunction();
        if (CalledFunc) {
           if (isTracerFunction(CalledFunc))
              return;
@@ -213,7 +184,7 @@ void SourceLineMappingPass::locateSrcInfoForCheckingOptimizations(Instruction *I
     }
 
     // Don't count if its a PHI node or alloca inst
-    if( isa<PHINode>(I) || isa<AllocaInst>(I) ) {
+    if (isa<PHINode>(I) || isa<AllocaInst>(I)) {
       return;
     }
 
@@ -223,33 +194,31 @@ void SourceLineMappingPass::locateSrcInfoForCheckingOptimizations(Instruction *I
       return;
 
     NotFoundSrcInfo++;
-    llvm::outs() << "Cannot find source line of function - "  << I->getParent()->getParent()->getName().str() << \
-                           " , Basic Block - " << I->getParent()->getName().str() << " . " ;
-    // I->print(llvm::outs());
-    llvm::outs() << "\n";
+    errs() << "Cannot find source line of function - "
+           << I->getParent()->getParent()->getName().str()
+           << " , Basic Block - "
+           << I->getParent()->getName().str()
+           << " .\n " ;
+    //I->print(llvm::outs());
+    //llvm::outs() << "\n";
     //I->dump();
   }
-
 }
 
 void SourceLineMappingPass::mapCompleteFile(Module &M) {
-  Function * F;
-
   for (Module::iterator MI = M.begin(), ME = M.end(); MI != ME; ++MI) {
-      F = MI;
-      for (Function::iterator BB = F->begin(); BB != F->end(); ++BB) {
-          for (BasicBlock::iterator I = BB->begin(); I != BB->end(); ++I) {
-              DEBUG(I->print(dbgs()));
-              DEBUG(dbgs() << "\n");
-              locateSrcInfoForCheckingOptimizations (&(*I));
-          }
+    Function *F = MI;
+    for (Function::iterator BB = F->begin(); BB != F->end(); ++BB) {
+      for (BasicBlock::iterator I = BB->begin(); I != BB->end(); ++I) {
+        DEBUG(I->print(dbgs()));
+        DEBUG(dbgs() << "\n");
+        locateSrcInfoForCheckingOptimizations (&(*I));
       }
+    }
   }
-
 }
 
 void SourceLineMappingPass::mapOneFunction(Module &M) {
-
   int instCount = 0, bbCount = 0, lastInst;
   std::string startFunction;
   std::ifstream LLVMInstLineNum;
@@ -258,11 +227,11 @@ void SourceLineMappingPass::mapOneFunction(Module &M) {
   LLVMInstLineNum >> startFunction >> lastInst;
   DEBUG(dbgs() << startFunction << " " << lastInst << "\n");
 
-  Function * F = M.getFunction (startFunction); // ("find_allowdeny");
+  Function *F = M.getFunction (startFunction); // ("find_allowdeny");
   assert (F);
 
   bbCount = 0; instCount = 0;
-  for (Function::iterator BB = F->begin(); BB != F->end(); ++BB) {
+  for (Function::iterator BB = F->begin(); BB != F->end(); ++BB, bbCount++) {
     DEBUG(dbgs() << BB->getName().str() << "\n");
     //BB->dump();
 
@@ -274,8 +243,6 @@ void SourceLineMappingPass::mapOneFunction(Module &M) {
       DEBUG(dbgs() << "\n");
       locateSrcInfoForCheckingOptimizations (&(*I));
     }
-
-    bbCount++;
   }
 
   LLVMInstLineNum.close();
