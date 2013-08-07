@@ -1,6 +1,6 @@
 //===- SourceLineMapping.h - Map instructions to source lines -*- C++ -*-===//
 //
-//                     The LLVM Compiler Infrastructure
+//                     Giri: Dynamic Slicing in LLVM
 //
 // This file was developed by the LLVM research group and is distributed under
 // the University of Illinois Open Source License. See LICENSE.TXT for details.
@@ -12,9 +12,10 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef DG_SourceLineMapping_H
-#define DG_SourceLineMapping_H
+#ifndef DG_SOURCELINEMAPPING_H
+#define DG_SOURCELINEMAPPING_H
 
+#include "llvm/Instruction.h"
 #include "llvm/Pass.h"
 
 using namespace llvm;
@@ -33,20 +34,20 @@ public:
     return "Mapping LLVM instructions to source line numbers";
   }
 
-  void locateSrcInfoForCheckingOptimizations (Instruction *I);
+  void locateSrcInfoForCheckingOptimizations(Instruction *I);
 
-  static std::string locateSrcInfo (Instruction *I);
+  static std::string locateSrcInfo(Instruction *I);
 
   /// Map all instruction in Module M to source lines
-  void mapCompleteFile(Module & M);
+  void mapCompleteFile(Module &M);
 
   /// Map all instruction in one function Module M to source lines
-  void mapOneFunction(Module & M);
+  void mapOneFunction(Module &M);
 
   /// \brief Using debug information, find the source line number corresponding
   /// to a specified LLVM instruction.
   /// @return false - The module was not modified.
-  virtual bool runOnModule (Module & M);
+  virtual bool runOnModule(Module &M);
 
   virtual void getAnalysisUsage(AnalysisUsage &AU) const {
     AU.setPreservesCFG();
