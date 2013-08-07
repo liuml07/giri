@@ -16,8 +16,8 @@
 #define DEBUG_TYPE "giri"
 
 #include "Giri/Giri.h"
-#include "Utility/Utils.h"
 #include "Utility/SourceLineMapping.h"
+#include "Utility/Utils.h"
 
 #include "llvm/ADT/Statistic.h"
 #include "llvm/IntrinsicInst.h"
@@ -32,28 +32,27 @@ using namespace giri;
 
 // Command line arguments.
 static cl::opt<std::string>
-TraceFilename ("tf", cl::desc("Trace filename"), cl::init("bbrecord"));
+TraceFilename("tf", cl::desc("Trace filename"), cl::init("bbrecord"));
 
 static cl::opt<bool>
-TraceCD ("trace-cd", cl::desc("Trace control dependence"), cl::init(false));
+TraceCD("trace-cd", cl::desc("Trace control dependence"), cl::init(false));
 
 static cl::opt<bool>
-DFS ("dfs", cl::desc("Do a depth first search"), cl::init(false));
+DFS("dfs", cl::desc("Do a depth first search"), cl::init(false));
 
 static cl::opt<bool>
-SelectOriginAsMain ("select-origin-as-main", cl::desc("Select the starting point of slicing as return from main or any particular instruction"), cl::init(false));
+SelectOriginAsMain("select-origin-as-main", cl::desc("Select the starting point of slicing as return from main or any particular instruction"), cl::init(false));
 
 static cl::opt<bool>
-ExprTree ("expr-tree", cl::desc("Build expression tree from the root causes and map to source lines"), cl::init(false));
+ExprTree("expr-tree", cl::desc("Build expression tree from the root causes and map to source lines"), cl::init(false));
 
 // ID Variable to identify the pass
 char DynamicGiri::ID = 0;
 
 // Pass registration
-static RegisterPass<DynamicGiri>
-            X ("dgiri", "Dynamic Backwards Slice Analysis");
+static RegisterPass<DynamicGiri> X("dgiri", "Dynamic Backwards Slice Analysis");
+
 /*
-using namespace giri;
 INITIALIZE_PASS_BEGIN(DynamicGiri, "dgiri",
                 "Dynamic Backwards Slice Analysis", false, false)
 INITIALIZE_PASS_DEPENDENCY(PostDominanceFrontier)
@@ -65,12 +64,15 @@ INITIALIZE_PASS_END(DynamicGiri, "DynamicGiri",
 //===----------------------------------------------------------------------===//
 //                        Giri Pass Statistics
 //===----------------------------------------------------------------------===//
-STATISTIC (DynValueCount, "Number of Dynamic Values in Slice");
-STATISTIC (DynSourcesCount, "Number of Dynamic Sources Queried");
-STATISTIC (DynValsSkipped, "Number of Dynamic Values Skipped");
-STATISTIC (TotalLoadsTraced, "Number of Dynamic Loads Traced");
-STATISTIC (LostLoadsTraced, "Number of Dynamic Loads Lost");
+STATISTIC(DynValueCount, "Number of Dynamic Values in Slice");
+STATISTIC(DynSourcesCount, "Number of Dynamic Sources Queried");
+STATISTIC(DynValsSkipped, "Number of Dynamic Values Skipped");
+STATISTIC(TotalLoadsTraced, "Number of Dynamic Loads Traced");
+STATISTIC(LostLoadsTraced, "Number of Dynamic Loads Lost");
 
+//===----------------------------------------------------------------------===//
+//                        DynamicGiri Implementations
+//===----------------------------------------------------------------------===//
 /// This function determines whether the specified value is a source of
 /// information (something that has a label independent of its input SSA values.
 /// \param V - The value to analyze.
@@ -286,7 +288,6 @@ void DynamicGiri::findSlice(DynValue &Initial,
 void DynamicGiri::printBackwardsSlice(std::set<Value *> &Slice,
                                       std::unordered_set<DynValue> &DynamicSlice,
                                       std::set<DynValue *> &DataFlowGraph) {
-#if 0
   // Print out the dynamic backwards slice.
   llvm::outs() << "==================================================\n";
   llvm::outs() << " Static Slice \n";
@@ -300,16 +301,14 @@ void DynamicGiri::printBackwardsSlice(std::set<Value *> &Slice,
       llvm::outs() << " Source Line Info : " << srcLineInfo << "\n";
     }
   }
-#endif
 
-#if 0
   // Print out the instructions in the dynamic backwards slice that
   // failed their invariants.
   llvm::outs() << "==================================================\n";
   llvm::outs() << " Dynamic Slice \n";
   llvm::outs() << "==================================================\n";
-  for (std::unordered_set<DynValue>::iterator i = dynamicSlice.begin();
-       i != dynamicSlice.end();
+  for (std::unordered_set<DynValue>::iterator i = DynamicSlice.begin();
+       i != DynamicSlice.end();
        ++i) {
     DynValue DV = *i;
     DV.print(lsNumPass);
@@ -318,7 +317,6 @@ void DynamicGiri::printBackwardsSlice(std::set<Value *> &Slice,
       DEBUG(dbgs() << " Source Line Info : " << srcLineInfo <<  "\n");
     }
   }
-#endif
 }
 
 void DynamicGiri::getBackwardsSlice (Instruction *I,
@@ -417,7 +415,7 @@ bool DynamicGiri::runOnModule(Module &M) {
         if ( dyn_cast<ReturnInst>(I) ) {
           I->dump();
           getBackwardsSlice (I, mySliceOfLife, myDynSliceOfLife, myDataFlowGraph);
-          printBackwardsSlice (mySliceOfLife, myDynSliceOfLife, myDataFlowGraph);
+          printBackwardsSlice(mySliceOfLife, myDynSliceOfLife, myDataFlowGraph);
           break;
         }
       }
@@ -432,7 +430,7 @@ bool DynamicGiri::runOnModule(Module &M) {
     startOfSlice >> startFunction >> startInst;
     llvm::outs() << "\n" << startFunction << " " << startInst << "\n";
 
-    Function *F = M.getFunction (startFunction);
+    Function *F = M.getFunction(startFunction);
     assert(F);
 
     // Scan through the function and find the instruction from which to begin the
@@ -452,9 +450,9 @@ bool DynamicGiri::runOnModule(Module &M) {
           //
           // Get the dynamic backwards slice.
           //
-          getBackwardsSlice (&(*INST), mySliceOfLife, myDynSliceOfLife, myDataFlowGraph);
+          getBackwardsSlice(&(*INST), mySliceOfLife, myDynSliceOfLife, myDataFlowGraph);
 
-          printBackwardsSlice (mySliceOfLife, myDynSliceOfLife, myDataFlowGraph);
+          printBackwardsSlice(mySliceOfLife, myDynSliceOfLife, myDataFlowGraph);
 
         }
         //llvm::outs() << *INST;
@@ -464,7 +462,7 @@ bool DynamicGiri::runOnModule(Module &M) {
     }
 
     if (!Found)
-      llvm::outs() << "Didin't find the starting instruction to slice " << "\n";
+      errs() << "Didin't find the starting instruction to slice " << "\n";
 
     startOfSlice.close();
   }
