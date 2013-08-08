@@ -80,7 +80,7 @@ TraceFile::TraceFile (std::string Filename,
 
 void TraceFile::buildTraceFunAddrMap (void) {
 
-  Function *calledFun = NULL;
+  Function *calledFun = nullptr;
   CallInst *CI;
 
   //
@@ -537,7 +537,7 @@ unsigned long TraceFile::findPreviousIDWithRecursion(Function *fun,
     }
 
     // Determine the address of the called/Return function;
-    /* Function *calledFun = NULL;
+    /* Function *calledFun = nullptr;
     CallInst *CI;
     if( (CI = dyn_cast<CallInst>(lsNumPass->getInstforID(trace[index].id))) ) {
       // For recursion through indirect function calls it'll be 0 and it will not work
@@ -635,7 +635,7 @@ unsigned long TraceFile::findPreviousIDWithRecursion(Function *fun,
     assert (nesting >= 0);
 
     // Determine the address of the called/Return function;
-    /* Function *calledFun = NULL;
+    /* Function *calledFun = nullptr;
     CallInst *CI;
     if( (CI = dyn_cast<CallInst>(lsNumPass->getInstforID(trace[index].id))) ) {
       // For recursion through indirect function calls it'll be 0 and it will not work
@@ -883,7 +883,7 @@ Instruction* TraceFile::getCallInstForFormalArg(DynValue &DV) {
   // possible.  Don't trace any further.
   //
   if (Arg->getParent()->getName().str() == "main") {
-    return NULL;
+    return nullptr;
   }
 
   //
@@ -893,7 +893,7 @@ Instruction* TraceFile::getCallInstForFormalArg(DynValue &DV) {
   // we don't require that the caller normalized the dynamic value.
   //
   if ( normalize (DV) )
-     return NULL;
+     return nullptr;
   //
   // Now look for the call entry that calls this function.  The basic block
   // contains the address of the function to which the argument belongs, so
@@ -1923,7 +1923,7 @@ DynBasicBlock TraceFile::getExecForcer(DynBasicBlock DBB,
                                        const std::set<unsigned> & bbnums) {
   // Normalize the dynamic basic block.
   if( normalize (DBB) )
-    return DynBasicBlock (NULL, maxIndex);
+    return DynBasicBlock (nullptr, maxIndex);
 
   //
   // Find the execution of the basic block that forced execution of the
@@ -1933,7 +1933,7 @@ DynBasicBlock TraceFile::getExecForcer(DynBasicBlock DBB,
   unsigned long index = findPreviousIDWithRecursion(DBB.BB->getParent(), DBB.index - 1, BBType, bbnums);
 
   if( index == maxIndex ) { // We did not find the record due to some reason
-    return DynBasicBlock (NULL, maxIndex);
+    return DynBasicBlock (nullptr, maxIndex);
   }
 
   // Assert that we have found the entry.
