@@ -12,6 +12,8 @@
 //
 //===----------------------------------------------------------------------===//
 
+#define DEBUG_TYPE "giri-util"
+
 #include "Utility/SourceLineMapping.h"
 #include "Utility/Utils.h"
 

@@ -13,7 +13,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#define DEBUG_TYPE "test-giri"
+#define DEBUG_TYPE "giri-test"
 
 #include "Giri/Giri.h"
 
