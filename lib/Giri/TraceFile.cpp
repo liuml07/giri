@@ -15,11 +15,11 @@
 
 #include "Giri/TraceFile.h"
 
+#include "llvm/ADT/Statistic.h"
 #include "llvm/Instructions.h"
 #include "llvm/IntrinsicInst.h"
 #include "llvm/Support/CallSite.h"
 #include "llvm/Support/Debug.h"
-#include "llvm/ADT/Statistic.h"
 
 #include <cassert>
 #include <vector>
@@ -33,16 +33,17 @@
 using namespace giri;
 
 //===----------------------------------------------------------------------===//
-// Pass Statistics
+//                          Pass Statistics
 //===----------------------------------------------------------------------===//
-namespace {
-  STATISTIC (StaticBuggyValuesCount, "Number of Possible static values which are possibly missing matching entries in trace");
-  STATISTIC (DynBuggyValuesCount, "Number of Possible dynamic values which are possibly missing matching entries in trace");
-}
+STATISTIC (StaticBuggyValuesCount, "Number of Possible static values which are possibly missing matching entries in trace");
+STATISTIC (DynBuggyValuesCount, "Number of Possible dynamic values which are possibly missing matching entries in trace");
 
-TraceFile::TraceFile (std::string Filename,
-                      const QueryBasicBlockNumbers *bbNums,
-                      const QueryLoadStoreNumbers  *lsNums) :
+//===----------------------------------------------------------------------===//
+//                          TraceFile Implementations
+//===----------------------------------------------------------------------===//
+TraceFile::TraceFile(std::string Filename,
+                     const QueryBasicBlockNumbers *bbNums,
+                     const QueryLoadStoreNumbers *lsNums) :
   bbNumPass(bbNums), lsNumPass(lsNums),
   trace(0), totalLoadsTraced(0), lostLoadsTraced(0) {
   //
