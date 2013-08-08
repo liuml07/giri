@@ -11,7 +11,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#define DEBUG_TYPE "giri-bbn"
+#define DEBUG_TYPE "giri-util"
 
 #include "Utility/BasicBlockNumbering.h"
 

@@ -13,7 +13,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#define DEBUG_TYPE "CountSrcLines"
+#define DEBUG_TYPE "giri-util"
 
 #include "Utility/CountSrcLines.h"
 #include "Utility/SourceLineMapping.h"

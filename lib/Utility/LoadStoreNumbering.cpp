@@ -11,7 +11,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#define DEBUG_TYPE "giri-lsn"
+#define DEBUG_TYPE "giri-util"
 
 #define MAX_PROGRAM_POINTS 2000000
 

@@ -11,6 +11,8 @@
 //
 //===----------------------------------------------------------------------===//
 
+#define DEBUG_TYPE "giri"
+
 #include "Giri/TraceFile.h"
 
 #include "llvm/Instructions.h"

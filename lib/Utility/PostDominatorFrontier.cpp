@@ -11,7 +11,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#define DEBUG_TYPE "postdomfrontier"
+#define DEBUG_TYPE "giri-util"
 
 #include "Utility/PostDominanceFrontier.h"
 
