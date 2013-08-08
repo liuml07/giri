@@ -39,35 +39,35 @@ public:
   friend class TraceFile;
   friend class DynBasicBlock;
 
-  bool operator < (const DynValue & DI) const {
+  bool operator<(const DynValue &DI) const {
     return (index < DI.index) || ((index == DI.index) && (V < DI.V));
   }
 
-  bool operator== (const DynValue & DI) const {
+  bool operator==(const DynValue &DI) const {
     return ((index == DI.index) && (V == DI.V));
   }
 
-  Value * getValue (void) const {
+  Value *getValue(void) const {
     return V;
   }
 
-  unsigned long getIndex (void) const {
+  unsigned long getIndex(void) const {
     return index;
   }
 
-  DynValue * getParent (void) const {
+  DynValue *getParent(void) const {
     return parent;
   }
 
-  void setParent (DynValue *p) {
+  void setParent(DynValue *p) {
     parent = p;
   }
 
-  void print (const QueryLoadStoreNumbers  *lsNumPass) {
+  void print(const QueryLoadStoreNumbers *lsNumPass) {
 #ifndef NDEBUG
     DEBUG(V->print(dbgs()));
     DEBUG(dbgs() << "( ");
-    if (Instruction * I = dyn_cast<Instruction>(V)) {
+    if (Instruction *I = dyn_cast<Instruction>(V)) {
       DEBUG(dbgs() << "[ " << I->getParent()->getParent()->getName().str() << " ]");
       DEBUG(dbgs() << "< " << lsNumPass->getID(I) << " >");
     }
@@ -75,7 +75,7 @@ public:
 #endif
   }
 
-  DynValue (Value * Val, unsigned long i) : V(Val) {
+  DynValue(Value *Val, unsigned long i) : V(Val) {
     //
     // If the value is a constant, set the index to zero.  Constants don't
     // have multiple instances due to dynamic execution, so we want
@@ -92,8 +92,8 @@ public:
   }
 
 private:
-  // LLVM instruction
-  Value * V;
+  /// LLVM instruction
+  Value *V;
 
   /// Record index within the trace indicating to which dynamic execution of
   /// the instruction this dynamic instruction refers
@@ -111,7 +111,7 @@ public:
 
   /// Create and initialize a dynamic basic block given a dynamic value
   /// that resides within the dynamic basic block.
-  DynBasicBlock (const DynValue & DV) : BB(0), index (0) {
+  DynBasicBlock(const DynValue &DV) : BB(0), index (0) {
     // If the dynamic value represents a dynamic instruction, get the basic
     // block for it and set our index to match that of the dynamic value.
     if (Instruction * I = dyn_cast<Instruction>(DV.getValue())) {
@@ -124,45 +124,45 @@ private:
   /// Create and initialize a dynamic basic block.  Note that the
   /// constructor is private; only dynamic tracing code should be creating
   /// these values explicitly.
-  DynBasicBlock (BasicBlock * bb, unsigned long i) : BB(bb), index (i) { }
-  bool operator < (const DynBasicBlock & DBB) const {
-    return (index < DBB.index) || ((index == DBB.index) && (BB < DBB.BB));
+  DynBasicBlock(BasicBlock *bb, unsigned long i) : BB(bb), index (i) { }
+  bool operator<(const DynBasicBlock & DBB) const {
+    return (index < DBB.index) ||
+           ((index == DBB.index) && (BB < DBB.BB));
   }
 
 public:
-  bool operator == (const DynBasicBlock & DBB) const {
+  bool operator==(const DynBasicBlock &DBB) const {
     return ((index == DBB.index) && (BB == DBB.BB));
   }
 
-  BasicBlock * getBasicBlock (void) const {
+  BasicBlock *getBasicBlock(void) const {
     return BB;
   }
 
-  unsigned long getIndex (void) const {
+  unsigned long getIndex(void) const {
     return index;
   }
 
-  bool isNull (void) {
-    return ((BB == 0) && (index == 0));
+  bool isNull(void) {
+    return (BB == 0 && index == 0);
   }
 
   ///  Get the dynamic terminator instruction for this dynamic basic block.
-  DynValue getTerminator (void) {
-    assert (!isNull());
-    return DynValue (BB->getTerminator(), index);
+  DynValue getTerminator(void) {
+    assert(!isNull());
+    return DynValue(BB->getTerminator(), index);
   }
 
-  Function * getParent (void) {
+  Function *getParent (void) {
     return (BB) ? BB->getParent() : 0;
   }
 
 private:
-  BasicBlock * BB; //< LLVM basic block
+  BasicBlock *BB; ///< LLVM basic block
 
   /// Record index within the trace indicating to which dynamic execution of
   /// the basic block this dynamic basic block refers.
   unsigned long index;
-
 };
 
 /// This class abstracts away searches through the trace file.
@@ -181,13 +181,13 @@ public:
   /// \param[in] Filename - The name of the trace file.
   /// \param[in] bbNums   - A pointer to the analysis pass that numbers basic blocks.
   /// \param[in] lsNums   - A pointer to the analysis pass that numbers loads and stores.
-  TraceFile (std::string Filename,
-             const QueryBasicBlockNumbers * bbNumPass,
-             const QueryLoadStoreNumbers * lsNumPass);
+  TraceFile(std::string Filename,
+            const QueryBasicBlockNumbers *bbNumPass,
+            const QueryLoadStoreNumbers *lsNumPass);
 
   /// Given an LLVM instruction, return a DynValue object that describes
   /// the last dynamic execution of the instruction within the trace.
-  DynValue * getLastDynValue (Value * I);
+  DynValue *getLastDynValue (Value *I);
 
   /// Given a dynamic instance of a value, find all other dynamic values
   /// instances that were used as inputs to this value.
@@ -212,18 +212,18 @@ public:
   /// \param[out] Sources - The dynamic values that are inputs for this
   ///                       instruction are added to a container using this
   ///                       insertion iterator.
-  void getSourcesFor (DynValue & DInst,  Worklist_t & Sources);
+  void getSourcesFor(DynValue &DInst,  Worklist_t &Sources);
 
   /// Given a dynamic execution of a basic block and set of static basic block
   /// identifiers that can force its execution, search back in the trace for a
   /// dynamic basic block execution that forced the specified dynamic basic
   /// block to execute.
-  DynBasicBlock getExecForcer (DynBasicBlock,
-                               const std::set<unsigned> & bbnums);
+  DynBasicBlock getExecForcer(DynBasicBlock,
+                              const std::set<unsigned> &bbnums);
 
   /// Normalize a dynamic basic block. This means that we search for its entry
   /// within the dynamic trace and update its index.
-  long normalize (DynBasicBlock & DDB);
+  long normalize(DynBasicBlock & DDB);
 
   /// Normalize a dynamic value.  This means that we update its index value to
   /// be equal to the basic block entry corresponding to the value's dynamic
@@ -235,14 +235,14 @@ public:
   /// We don't need to take into account nesting struction due to recursive
   /// calls as except stores, all values are propagated through SSA values.
   /// For store, we already point to BB end accounting for recursion.
-  long normalize (DynValue & DV);
+  long normalize(DynValue &DV);
 
   /// @TODO Remove this function later
   /// Add the control dependence to worklist since we can't directly call the
   /// private addToWorklist
-  void addCtrDepToWorklist (DynValue & DV,  Worklist_t & Sources, DynValue & Parent);
+  void addCtrDepToWorklist(DynValue &DV,  Worklist_t &Sources, DynValue &Parent);
 
-  void mapCallsToReturns( DynValue & DV,  Worklist_t & Sources );
+  void mapCallsToReturns(DynValue &DV,  Worklist_t &Sources);
 
   /// Given a dynamic use of a function's formal argument, find the call
   /// Instruction which provides the actual value for this arg.
@@ -251,7 +251,7 @@ public:
   /// \param DV - The dynamic argument value; The LLVM value must be an
   ///             Argument.  DV is not required to be normalized.
   /// \return Corresponding call instruction.
-  Instruction* getCallInstForFormalArg(DynValue & DV);
+  Instruction *getCallInstForFormalArg(DynValue &DV);
 
 private:
   /// \brief Scan forward through the entire trace and record store instructions,
@@ -263,7 +263,7 @@ private:
   ///
   /// This algorithm should be n*log(n) where n is the number of elements in the
   /// trace.
-  void fixupLostLoads (void);
+  void fixupLostLoads(void);
 
   /// Build a map from functions to their runtime trace address
   ///
@@ -274,7 +274,7 @@ private:
   /// in this run to their corresponding trace function addresses which
   /// can possibly be different This algorithm should be n*c where n
   /// is the number of elements in the trace.
-  void buildTraceFunAddrMap (void);
+  void buildTraceFunAddrMap(void);
 
   //===--------------------------------------------------------------------===//
   // Utility methods for scanning through the trace file
@@ -292,8 +292,8 @@ private:
   /// \param type - The type of entry for which the caller searches.
   /// \return The index in the trace of entry with the specified type and ID
   /// is returned.
-  unsigned long findPrevious (unsigned long start_index,
-                              const unsigned char type);
+  unsigned long findPrevious(unsigned long start_index,
+                             const unsigned char type);
 
   /// This method searches backwards in the trace file for an entry of the
   /// specified type and ID.
@@ -304,9 +304,9 @@ private:
   /// \param ids - A set of IDs which the entry in the trace should match.
   /// \return The index in the trace of entry with the specified type and ID is
   /// returned; if no such entry is found, then the end entry is returned.
-  unsigned long findPreviousID (unsigned long start_index,
-                                const unsigned char type,
-                                const std::set<unsigned> & ids);
+  unsigned long findPreviousID(unsigned long start_index,
+                               const unsigned char type,
+                               const std::set<unsigned> &ids);
 
   /// This method searches backwards in the trace file for an entry of the
   /// specified type and ID.
@@ -317,9 +317,9 @@ private:
   /// \param id - The ID field of the entry for which the caller searches.
   /// \return The index in the trace of entry with the specified type and ID is
   /// returned.
-  unsigned long findPreviousID (unsigned long start_index,
-                                const unsigned char type,
-                                const unsigned id);
+  unsigned long findPreviousID(unsigned long start_index,
+                               const unsigned char type,
+                               const unsigned id);
 
   // CHANGE TO USE WithRecursion functionality here and also in recursion
   // handling of loads/stores, calls/returns mapping, and recursion handling
@@ -332,10 +332,10 @@ private:
   /// \param type - The type of entry for which we are looking.
   /// \param id - The ID of the entry for which we are looking.
   /// \param nestedID - The ID of the basic block to use to find nesting levels.
-  unsigned long findPreviousNestedID (unsigned long start_index,
-                                      const unsigned char type,
-                                      const unsigned id,
-                                      const unsigned nestedID);
+  unsigned long findPreviousNestedID(unsigned long start_index,
+                                     const unsigned char type,
+                                     const unsigned id,
+                                     const unsigned nestedID);
 
   /// This method searches forwards in the trace file for an entry of the
   /// specified type and ID.
@@ -349,9 +349,9 @@ private:
   /// \param type - The type of entry for which the caller searches.
   /// \param id - The ID field of the entry for which the caller searches.
   /// \return The index in the trace of entry with the specified type and ID is returned.
-  unsigned long findNextID (unsigned long start_index,
-                            const unsigned char type,
-                            const unsigned id);
+  unsigned long findNextID(unsigned long start_index,
+                           const unsigned char type,
+                           const unsigned id);
 
   // CHANGE TO USE WithRecursion functionality here and also in recursion
   // handling of loads/stores, calls/returns mapping, and recursion handling
@@ -359,10 +359,10 @@ private:
 
   /// This method finds the next entry in the trace file that has the specified
   /// type and ID.  However, it also handles nesting.
-  unsigned long findNextNestedID (unsigned long start_index,
-                                  const unsigned char type,
-                                  const unsigned id,
-                                  const unsigned nestID);
+  unsigned long findNextNestedID(unsigned long start_index,
+                                 const unsigned char type,
+                                 const unsigned id,
+                                 const unsigned nestID);
 
   /// This method searches forwards in the trace file for an entry of the
   /// specified type and ID.
@@ -378,9 +378,9 @@ private:
   ///
   /// \return The index in the trace of entry with the specified type and
   /// address is returned.
-  unsigned long findNextAddress (unsigned long start_index,
-                                 const unsigned char type,
-                                 const uintptr_t address);
+  unsigned long findNextAddress(unsigned long start_index,
+                                const unsigned char type,
+                                const uintptr_t address);
 
   /// Given a call instruction, this method searches backwards in the trace file
   /// to match the return inst with its coressponding call instruction
@@ -395,9 +395,9 @@ private:
   ///
   /// \return The index in the trace of entry with the specified type and ID is
   /// returned; If no such entry is found, then the end entry is returned.
-  unsigned long matchReturnWithCall (unsigned long start_index,
-                                     const unsigned bbID,
-                                     const unsigned callID);
+  unsigned long matchReturnWithCall(unsigned long start_index,
+                                    const unsigned bbID,
+                                    const unsigned callID);
 
   /// This method searches backwards in the trace file for an entry of the
   /// specified type and ID taking recursion into account.
@@ -413,10 +413,10 @@ private:
   /// \return The index in the trace of entry with the specified type and ID is
   /// returned; If it can't find a matching entry it'll return maxIndex as
   /// error code
-  unsigned long findPreviousIDWithRecursion (Function *fun,
-                                     unsigned long start_index,
-                                     const unsigned char type,
-                         const unsigned id);
+  unsigned long findPreviousIDWithRecursion(Function *fun,
+                                            unsigned long start_index,
+                                            const unsigned char type,
+                                            const unsigned id);
 
   /// This method searches backwards in the trace file for an entry of the
   /// specified type and ID taking recursion into account.
@@ -431,17 +431,17 @@ private:
   /// \return The index in the trace of entry with the specified type and ID is
   /// returned; If it can't find a matching entry it'll return maxIndex as error
   /// code.
-  unsigned long findPreviousIDWithRecursion (Function *fun,
-                             unsigned long start_index,
-                             const unsigned char type,
-             const std::set<unsigned> & ids);
+  unsigned long findPreviousIDWithRecursion(Function *fun,
+                                            unsigned long start_index,
+                                            const unsigned char type,
+                                            const std::set<unsigned> &ids);
 
   /// This method, given a dynamic value that reads from memory, will find the
   /// dynamic value(s) that stores into the same memory.
-  void findAllStoresForLoad (DynValue & DV,
-                                   Worklist_t &  Sources,
-                                   long store_index,
-                           Entry load_entry);
+  void findAllStoresForLoad(DynValue &DV,
+                            Worklist_t &Sources,
+                            long store_index,
+                            Entry load_entry);
 
   /// Given a dynamic value representing a phi-node, determine which basic block
   /// was executed before the phi-node's basic block and add the correct dynamic
@@ -451,7 +451,7 @@ private:
   /// \param[out] Sources - An insertion iterator; The dynamic value that
   ///                       becomes the result of the phi-node will be inserted
   ///                       into a container using this iterator.
-  void getSourcesForPHI (DynValue & DV, Worklist_t &  Sources);
+  void getSourcesForPHI(DynValue &DV, Worklist_t &Sources);
 
   /// Given a dynamic use of a function's formal argument, find the dynamic
   /// value that is the corresponding actual argument.
@@ -461,7 +461,7 @@ private:
   /// \param[out] Sources - The dynamic value representing the actual
   ///                       argument is added to a container using this
   ///                       insertion iterator.
-  void getSourcesForArg (DynValue & DV, Worklist_t &  Sources);
+  void getSourcesForArg(DynValue &DV, Worklist_t &Sources);
 
   /// This method, given a dynamic value that reads from memory, will find the
   /// dynamic value(s) that stores into the same memory.
@@ -470,10 +470,9 @@ private:
   /// \param[in] count - The number of loads performed by this instruction.
   /// \param[out] Sources - The dynamic value written to the memory location is
   ///                       added to a container using this insertion iterator.
-  void getSourcesForLoad (DynValue & DV, Worklist_t &  Sources,
-                                              unsigned count = 1);
+  void getSourcesForLoad(DynValue &DV, Worklist_t &Sources, unsigned count = 1);
 
-  void getSourcesForCall (DynValue & DV, Worklist_t &  Sources);
+  void getSourcesForCall(DynValue &DV, Worklist_t &Sources);
 
   /// Determine if the dynamic value is a call to a specially handled function
   /// and, if so, find the sources feeding information into that dynamic
@@ -481,11 +480,11 @@ private:
   ///
   /// \return true  - This is a call to a special function.
   /// \return false - This is not a call to a special function.
-  bool getSourcesForSpecialCall (DynValue & DV, Worklist_t &  Sources);
+  bool getSourcesForSpecialCall(DynValue &DV, Worklist_t &Sources);
 
   /// Examine the trace file to determine which input of a select instruction
   /// was used during dynamic execution.
-  void getSourceForSelect (DynValue & DV, Worklist_t &  Sources);
+  void getSourceForSelect(DynValue &DV, Worklist_t &Sources);
 
   /// This method add a new DynValue to the worklist and updates its parent
   /// pointer.
@@ -496,20 +495,20 @@ private:
   ///                graph.
   /// \return The index in the trace of entry with the specified type and ID
   /// is returned.
-  void addToWorklist (DynValue & DV, Worklist_t & Sources, DynValue & Parent);
+  void addToWorklist(DynValue &DV, Worklist_t &Sources, DynValue &Parent);
 
 private:
   /// The pass that maps basic blocks to identifiers
-  const QueryBasicBlockNumbers * bbNumPass;
+  const QueryBasicBlockNumbers *bbNumPass;
 
   /// The pass that maps loads and stores to identifiers
-  const QueryLoadStoreNumbers * lsNumPass;
+  const QueryLoadStoreNumbers *lsNumPass;
 
   /// Map from functions to their runtime address in trace
   std::map<Function *,  uintptr_t> traceFunAddrMap;
 
   /// Array of entries in the trace
-  Entry * trace;
+  Entry *trace;
 
   /// Maximum index of trace
   unsigned long maxIndex;
@@ -529,7 +528,7 @@ public:
 // Create a specialization of the hash class for DynValue and DynBasicBlock.
 namespace std {
 template <> struct hash<giri::DynValue> {
-  std::size_t operator() (const giri::DynValue & DV) const {
+  std::size_t operator()(const giri::DynValue &DV) const {
     std::size_t index = (std::size_t) DV.getIndex() << 30;
     std::size_t value = (std::size_t) DV.getValue() >> 2;
     return value | index;
@@ -537,8 +536,8 @@ template <> struct hash<giri::DynValue> {
 };
 
 template <> struct hash<giri::DynBasicBlock> {
-  std::size_t operator() (const giri::DynBasicBlock & DBB) const {
-    return (std::size_t) DBB.getIndex();
+  std::size_t operator()(const giri::DynBasicBlock &DBB) const {
+    return (std::size_t)DBB.getIndex();
   }
 };
 
