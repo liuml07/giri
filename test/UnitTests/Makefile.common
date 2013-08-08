@@ -23,7 +23,7 @@ slice : $(NAME).bc $(NAME).trace
 	@ opt -load $(GIRI_LIB_DIR)/libdgutility.so \
 		-load $(GIRI_LIB_DIR)/libgiri.so \
 		-bbnum -lsnum \
-		-dgiri -tf $(NAME).trace -dfs=true -trace-cd=true \
+		-dgiri -tf=$(NAME).trace -slice-file=$(NAME).slice -dfs=true -trace-cd=true \
 		-remove-bbnum -remove-lsnum \
 		-select-origin-as-main -stats $(DEBUGFLAGS) $< -o /dev/null
 
