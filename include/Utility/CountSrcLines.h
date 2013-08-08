@@ -1,6 +1,6 @@
 //===- CountSrcLines.h - Dynamic Slicing Pass -------------------*- C++ -*-===//
 //
-//                     The LLVM Compiler Infrastructure
+//                      Giri: Dynamic Slicing in LLVM
 //
 // This file was developed by the LLVM research group and is distributed under
 // the University of Illinois Open Source License. See LICENSE.TXT for details.
@@ -27,7 +27,6 @@
 #include <unordered_set>
 
 using namespace llvm;
-//using namespace dg;
 
 namespace dg {
 
@@ -40,7 +39,13 @@ public:
   CountSrcLines() : ModulePass (ID) {
     //llvm::initializeDynamicGiriPass(*PassRegistry::getPassRegistry());
   }
-  virtual bool runOnModule(Module & M);
+
+  /// Entry point for this LLVM pass.  Using trace information, find the static
+  /// number of source lines and LLVM instructions in a trace.
+  ///
+  /// \param M - The module to analyze.
+  /// @return false - The module was not modified.
+  virtual bool runOnModule(Module &M);
 
   const char *getPassName() const {
     return "Count static #SourceLines/LLVM Insts in a trace";
@@ -57,13 +62,13 @@ public:
     AU.setPreservesAll();
   };
 
-  void countLines(const std::string & bbrecord_file);
+  void countLines(const std::string &bbrecord_file);
 
-  std::unordered_set<unsigned> readBB(const std::string & bbrecord_file);
+  std::unordered_set<unsigned> readBB(const std::string &bbrecord_file);
 
 private:
-  const QueryBasicBlockNumbers * bbNumPass;
-  const QueryLoadStoreNumbers  * lsNumPass;
+  const QueryBasicBlockNumbers *bbNumPass;
+  const QueryLoadStoreNumbers  *lsNumPass;
 
 };
 
