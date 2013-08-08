@@ -25,5 +25,5 @@ int main(int argc, char *argv[])
     printf("%d\n", y);
     printf("%d\n", z);
 
-    return 0;
+    return y;
 }
