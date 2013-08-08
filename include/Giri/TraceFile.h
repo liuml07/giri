@@ -39,41 +39,7 @@ public:
   friend class TraceFile;
   friend class DynBasicBlock;
 
-  bool operator<(const DynValue &DI) const {
-    return (index < DI.index) || ((index == DI.index) && (V < DI.V));
-  }
-
-  bool operator==(const DynValue &DI) const {
-    return ((index == DI.index) && (V == DI.V));
-  }
-
-  Value *getValue(void) const {
-    return V;
-  }
-
-  unsigned long getIndex(void) const {
-    return index;
-  }
-
-  DynValue *getParent(void) const {
-    return parent;
-  }
-
-  void setParent(DynValue *p) {
-    parent = p;
-  }
-
-  void print(raw_ostream &out, const QueryLoadStoreNumbers *lsNumPass) {
-    V->print(out);
-    out << "( ";
-    if (Instruction *I = dyn_cast<Instruction>(V)) {
-      out << "[ " << I->getParent()->getParent()->getName().str() << " ]";
-      out << "< " << lsNumPass->getID(I) << " >";
-    }
-    out << " )" << " " << index  << "\n";
-  }
-
-  DynValue(Value *Val, unsigned long i) : V(Val) {
+  DynValue(Value *Val, unsigned long i) : V(Val), parent(nullptr) {
     //
     // If the value is a constant, set the index to zero.  Constants don't
     // have multiple instances due to dynamic execution, so we want
@@ -84,9 +50,33 @@ public:
     else
       index = i;
 
-    parent = NULL;
-
     return;
+  }
+
+  bool operator<(const DynValue &DI) const {
+    return (index < DI.index) || ((index == DI.index) && (V < DI.V));
+  }
+
+  bool operator==(const DynValue &DI) const {
+    return ((index == DI.index) && (V == DI.V));
+  }
+
+  Value *getValue(void) const { return V; }
+
+  unsigned long getIndex(void) const { return index; }
+
+  DynValue *getParent(void) const { return parent; }
+
+  void setParent(DynValue *p) { parent = p; }
+
+  void print(raw_ostream &out, const QueryLoadStoreNumbers *lsNumPass) {
+    V->print(out);
+    out << "( ";
+    if (Instruction *I = dyn_cast<Instruction>(V)) {
+      out << "[ " << I->getParent()->getParent()->getName().str() << " ]";
+      out << "< " << lsNumPass->getID(I) << " >";
+    }
+    out << " )" << " " << index  << "\n";
   }
 
 private:
@@ -112,7 +102,7 @@ public:
   DynBasicBlock(const DynValue &DV) : BB(0), index (0) {
     // If the dynamic value represents a dynamic instruction, get the basic
     // block for it and set our index to match that of the dynamic value.
-    if (Instruction * I = dyn_cast<Instruction>(DV.getValue())) {
+    if (Instruction *I = dyn_cast<Instruction>(DV.getValue())) {
       BB = I->getParent();
       index = DV.index;
     }
@@ -123,6 +113,7 @@ private:
   /// constructor is private; only dynamic tracing code should be creating
   /// these values explicitly.
   DynBasicBlock(BasicBlock *bb, unsigned long i) : BB(bb), index (i) { }
+
   bool operator<(const DynBasicBlock & DBB) const {
     return (index < DBB.index) ||
            ((index == DBB.index) && (BB < DBB.BB));
@@ -145,7 +136,7 @@ public:
     return (BB == 0 && index == 0);
   }
 
-  ///  Get the dynamic terminator instruction for this dynamic basic block.
+  /// Get the dynamic terminator instruction for this dynamic basic block.
   DynValue getTerminator(void) {
     assert(!isNull());
     return DynValue(BB->getTerminator(), index);
@@ -172,7 +163,7 @@ protected:
 
 public:
 
-  /// Initialize a new trace file object.  We'll open the trace file and attempt
+  /// Initialize a new trace file object. We'll open the trace file and attempt
   /// to mmap() it into memory. This method may not work on 32-bit systems;
   /// simple trace files are easily 12 GB in size.
   ///
@@ -185,7 +176,7 @@ public:
 
   /// Given an LLVM instruction, return a DynValue object that describes
   /// the last dynamic execution of the instruction within the trace.
-  DynValue *getLastDynValue (Value *I);
+  DynValue *getLastDynValue(Value *I);
 
   /// Given a dynamic instance of a value, find all other dynamic values
   /// instances that were used as inputs to this value.
@@ -198,12 +189,11 @@ public:
   /// work faster than a depth-first search.
   ///
   /// Algorithm:
-  /// This method uses a combination of the trace data and LLVM's def-use chains
-  /// for performing this search.  When all inputs to the value are used, then
-  /// the static SSA graph is consulted.  The dynamic trace is used for
+  /// This method uses a combination of the trace data and LLVM's DEF-USE chains
+  /// for performing this search. When all inputs to the value are used, then
+  /// the static SSA graph is consulted. The dynamic trace is used for
   /// inter-procedural tracing, tracing of data through memory, and for tracing
   /// *only* when a subset of the inputs to a value are used (e.g., phi-nodes).
-  ///
   ///
   /// \param[in] DInst - The dynamic value for which the dynamic inputs need to
   ///                    be found.
@@ -238,9 +228,9 @@ public:
   /// @TODO Remove this function later
   /// Add the control dependence to worklist since we can't directly call the
   /// private addToWorklist
-  void addCtrDepToWorklist(DynValue &DV,  Worklist_t &Sources, DynValue &Parent);
+  void addCtrDepToWorklist(DynValue &DV, Worklist_t &Sources, DynValue &Parent);
 
-  void mapCallsToReturns(DynValue &DV,  Worklist_t &Sources);
+  void mapCallsToReturns(DynValue &DV, Worklist_t &Sources);
 
   /// Given a dynamic use of a function's formal argument, find the call
   /// Instruction which provides the actual value for this arg.
@@ -258,8 +248,7 @@ private:
   /// Along the way, determine if there are load records for which no previous
   /// store record can match.  Mark these load records so that we don't try to
   /// find their matching stores when peforming the dynamic backwards slice.
-  ///
-  /// This algorithm should be n*log(n) where n is the number of elements in the
+  /// This algorithm should be O(n*logn) where n is the number of elements in the
   /// trace.
   void fixupLostLoads(void);
 
@@ -267,6 +256,7 @@ private:
   ///
   /// FIXME: Can we record this during trace generation or similar to lsNumPass
   /// This also doesn't work with indirect calls.
+  ///
   /// Description: Scan forward through the entire trace and record the
   /// runtime function addresses from the trace.  and map the functions
   /// in this run to their corresponding trace function addresses which
