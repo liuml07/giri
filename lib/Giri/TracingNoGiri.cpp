@@ -31,31 +31,38 @@
 #include <vector>
 
 using namespace giri;
+using namespace llvm;
 
-//
-// Command line arguments.
-//
-static cl::opt<std::string>
-TraceFilename ("t", cl::desc("Trace filename"), cl::init("bbrecord"));
+//===----------------------------------------------------------------------===//
+//                     Command Line Arguments
+//===----------------------------------------------------------------------===//
+cl::opt<std::string> TraceFilename("trace-file",
+                                   cl::desc("Trace filename"),
+                                   cl::init("bbrecord"));
+
+//===----------------------------------------------------------------------===//
+//                        Pass Statistics
+//===----------------------------------------------------------------------===//
+
+STATISTIC(NumBBs, "Total number of basic blocks");
+STATISTIC(PHIBBs, "Total number of basic blocks with phi nodes");
+STATISTIC(Loads, "Total number of load instructions processed");
+STATISTIC(Stores, "Total number of store instructions processed");
+STATISTIC(Selects, "Total number of select instructions processed");
+STATISTIC(LoadStrings, "Total number of load instructions processed");
+STATISTIC(StoreStrings, "Total number of store instructions processed");
+STATISTIC(Calls, "Total number of call instructions processed");
+STATISTIC(ExtFuns, "Total number of special external calls like memcpy etc. processed");
+
+//===----------------------------------------------------------------------===//
+//                        TracingNoGiri Implementations
+//===----------------------------------------------------------------------===//
 
 char TracingNoGiri::ID = 0;
 
 static RegisterPass<TracingNoGiri>
 X ("trace-giri", "Instrument code to trace basic block execution");
 
-//===----------------------------------------------------------------------===//
-// Pass Statistics
-namespace {
-  STATISTIC (NumBBs, "Total number of basic blocks");
-  STATISTIC (PHIBBs, "Total number of basic blocks with phi nodes");
-  STATISTIC (Loads,  "Total number of load instructions processed");
-  STATISTIC (Stores, "Total number of store instructions processed");
-  STATISTIC (Selects, "Total number of select instructions processed");
-  STATISTIC (LoadStrings,  "Total number of load instructions processed");
-  STATISTIC (StoreStrings, "Total number of store instructions processed");
-  STATISTIC (Calls,  "Total number of call instructions processed");
-  STATISTIC (ExtFuns,  "Total number of special external calls like memcpy etc. processed");
-}
 
 /// This method determines whether the given basic block contains any PHI
 /// instructions.
