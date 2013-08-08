@@ -12,14 +12,20 @@ CC = clang
 GIRI_LIB_DIR = $(GIRI_DIR)/$(VERSION)/lib
 GIRI_BIN_DIR = $(GIRI_DIR)/$(VERSION)/bin
 
-.PHONY: all lib slice
+.PHONY: all lib
 
-all: lib slice
+all: lib $(NAME).slice
+	@ echo -n "The line numbers of source code slice are: "
+	@ sed -n '/^Source.*[0-9]$$/p' $(NAME).slice |\
+		awk -F: '{print $$3}' |\
+		sort -g |\
+		uniq | xargs\
+		echo
 
 lib:
 	$(MAKE) -s -C $(GIRI_DIR)
 
-slice : $(NAME).bc $(NAME).trace
+$(NAME).slice : $(NAME).bc $(NAME).trace
 	@ opt -load $(GIRI_LIB_DIR)/libdgutility.so \
 		-load $(GIRI_LIB_DIR)/libgiri.so \
 		-bbnum -lsnum \
