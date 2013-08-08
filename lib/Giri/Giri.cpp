@@ -246,7 +246,7 @@ void DynamicGiri::findSlice(DynValue &Initial,
           // no control dependence exists and nothing needs to be done.
           // Otherwise, add the condition of the basic block that forced
           // execution to the worklist.
-          if( Forcer.getBasicBlock() == NULL ) { // error, cudn't find CD
+          if (Forcer.getBasicBlock() == nullptr) { // error, cudn't find CD
             llvm::errs() << " Could not find Control-dep of this Basic Block \n";
           } else if (Forcer.getBasicBlock() != &entryBlock || !atLeastOnce) {
             DynValue DTerminator = Forcer.getTerminator();
