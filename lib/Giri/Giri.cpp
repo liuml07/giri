@@ -34,8 +34,7 @@ using namespace giri;
 //                        Command Line Arguments.
 //===----------------------------------------------------------------------===//
 
-static cl::opt<std::string>
-TraceFilename("tf", cl::desc("Trace filename"), cl::init("bbrecord"));
+extern llvm::cl::opt<std::string> TraceFilename;
 
 static cl::opt<std::string>
 SliceFilename("slice-file", cl::desc("Trace filename"), cl::init("-"));
