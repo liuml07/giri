@@ -30,6 +30,7 @@
 #include "llvm/Support/FileUtilities.h"
 #include "llvm/Support/ManagedStatic.h"
 #include "llvm/Support/Signals.h"
+#include "llvm/Support/raw_os_ostream.h"
 #include "llvm/Target/TargetData.h"
 #include "llvm/Target/TargetMachine.h"
 #include "llvm/Transforms/IPO.h"
@@ -92,7 +93,7 @@ int main(int argc, char **argv) {
     OwningPtr<MemoryBuffer> BuffPtr;
     if (error_code ec = MemoryBuffer::getFileOrSTDIN(InputFilename, BuffPtr, -1)) {
       std::cerr << ec.message() << "\n";
-      return 1; // error
+      return 1;
     }
 
     M.reset(ParseBitcodeFile(BuffPtr.take(), Context, &ErrorMessage));
@@ -106,24 +107,18 @@ int main(int argc, char **argv) {
     PassManager Passes;
     Passes.add(new TargetData(M.get()));
 
-    //
     // Number all basic blocks and instructions.
-    //
     Passes.add(new BasicBlockNumberPass());
     Passes.add(new LoadStoreNumberPass());
 
-    //
     // Either do a trace or do a backwards slice of a trace.
-    //
     if (DoTrace) {
       Passes.add(new TracingNoGiri());
     } else {
       Passes.add(new DynamicGiri());
     }
 
-    //
     // Remove numbering metadata.
-    //
     Passes.add(new RemoveBasicBlockNumbers());
     Passes.add(new RemoveLoadStoreNumbers());
 
@@ -182,13 +177,14 @@ int main(int argc, char **argv) {
 
     raw_os_ostream RawOut(*Out);
     // Add the writing of the output file to the list of passes
-    Passes.add (createBitcodeWriterPass(RawOut));
+    Passes.add(createBitcodeWriterPass(RawOut));
 
     // Run our queue of passes all at once now, efficiently.
     Passes.run(*M.get());
 
     // Delete the ostream if it's not a stdout stream
-    if (Out != &std::cout) delete Out;
+    if (Out != &std::cout)
+      delete Out;
 
     return 0;
   } catch (const std::string & msg) {

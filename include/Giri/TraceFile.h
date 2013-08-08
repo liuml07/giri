@@ -19,7 +19,7 @@
 #include "Utility/LoadStoreNumbering.h"
 
 #include "llvm/Support/Debug.h"
-#include "llvm/Support/raw_os_ostream.h"
+#include "llvm/Support/raw_ostream.h"
 #include "llvm/Value.h"
 
 #include <deque>
@@ -63,16 +63,14 @@ public:
     parent = p;
   }
 
-  void print(const QueryLoadStoreNumbers *lsNumPass) {
-#ifndef NDEBUG
-    DEBUG(V->print(dbgs()));
-    DEBUG(dbgs() << "( ");
+  void print(raw_ostream &out, const QueryLoadStoreNumbers *lsNumPass) {
+    V->print(out);
+    out << "( ";
     if (Instruction *I = dyn_cast<Instruction>(V)) {
-      DEBUG(dbgs() << "[ " << I->getParent()->getParent()->getName().str() << " ]");
-      DEBUG(dbgs() << "< " << lsNumPass->getID(I) << " >");
+      out << "[ " << I->getParent()->getParent()->getName().str() << " ]";
+      out << "< " << lsNumPass->getID(I) << " >";
     }
-    DEBUG(dbgs() << " )" << " " << index  << "\n");
-#endif
+    out << " )" << " " << index  << "\n";
   }
 
   DynValue(Value *Val, unsigned long i) : V(Val) {
