@@ -77,8 +77,6 @@ std::string SourceLineMappingPass::locateSrcInfo(Instruction *I) {
     DirName = Loc.getDirectory().str();
 
     ++FoundSrcInfo;
-    DEBUG(dbgs() << "Found the source line for line number: "
-                 << LineNumber << "\n");
 
     /*
     // Its a GetElementPtrContsantExpr with filename as an operand of type pointer to array
@@ -91,10 +89,9 @@ std::string SourceLineMappingPass::locateSrcInfo(Instruction *I) {
     DirName = temp2->getAsString();
     */
 
-    DEBUG(dbgs() << DirName << " " << FileName << " " << LineNumber << "\n");
     char LineInfo[10];
     sprintf(LineInfo, "%d", LineNumber);
-    return DirName + " " + FileName + " " + LineInfo;
+    return DirName + "/" + FileName + ":" + LineInfo;
   } else {
     // Get the called function and determine if it's a debug function
     // or our instrumentation function
