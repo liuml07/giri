@@ -30,9 +30,15 @@
 using namespace llvm;
 using namespace giri;
 
-// Command line arguments.
+//===----------------------------------------------------------------------===//
+//                        Command Line Arguments.
+//===----------------------------------------------------------------------===//
+
 static cl::opt<std::string>
 TraceFilename("tf", cl::desc("Trace filename"), cl::init("bbrecord"));
+
+static cl::opt<std::string>
+SliceFilename("slice-file", cl::desc("Trace filename"), cl::init("-"));
 
 static cl::opt<bool>
 TraceCD("trace-cd", cl::desc("Trace control dependence"), cl::init(false));
@@ -45,6 +51,20 @@ SelectOriginAsMain("select-origin-as-main", cl::desc("Select the starting point 
 
 static cl::opt<bool>
 ExprTree("expr-tree", cl::desc("Build expression tree from the root causes and map to source lines"), cl::init(false));
+
+//===----------------------------------------------------------------------===//
+//                        Giri Pass Statistics
+//===----------------------------------------------------------------------===//
+
+STATISTIC(DynValueCount, "Number of Dynamic Values in Slice");
+STATISTIC(DynSourcesCount, "Number of Dynamic Sources Queried");
+STATISTIC(DynValsSkipped, "Number of Dynamic Values Skipped");
+STATISTIC(TotalLoadsTraced, "Number of Dynamic Loads Traced");
+STATISTIC(LostLoadsTraced, "Number of Dynamic Loads Lost");
+
+//===----------------------------------------------------------------------===//
+//                        DynamicGiri Implementations
+//===----------------------------------------------------------------------===//
 
 // ID Variable to identify the pass
 char DynamicGiri::ID = 0;
@@ -61,18 +81,6 @@ INITIALIZE_PASS_END(DynamicGiri, "DynamicGiri",
                 "Dynamic Backwards Slice Analysis", false, false)
 */
 
-//===----------------------------------------------------------------------===//
-//                        Giri Pass Statistics
-//===----------------------------------------------------------------------===//
-STATISTIC(DynValueCount, "Number of Dynamic Values in Slice");
-STATISTIC(DynSourcesCount, "Number of Dynamic Sources Queried");
-STATISTIC(DynValsSkipped, "Number of Dynamic Values Skipped");
-STATISTIC(TotalLoadsTraced, "Number of Dynamic Loads Traced");
-STATISTIC(LostLoadsTraced, "Number of Dynamic Loads Lost");
-
-//===----------------------------------------------------------------------===//
-//                        DynamicGiri Implementations
-//===----------------------------------------------------------------------===//
 /// This function determines whether the specified value is a source of
 /// information (something that has a label independent of its input SSA values.
 /// \param V - The value to analyze.
@@ -202,8 +210,8 @@ void DynamicGiri::findSlice(DynValue &Initial,
 
     // Print every 100000th dynamic value to monitor progress
     if (Slice.size() % 100000 == 0) {
-       llvm::errs() << "100000th Dynamic value processed\n";
-       DV->print(lsNumPass);
+       DEBUG(dbgs() << "100000th Dynamic value processed\n");
+       DEBUG(DV->print(dbgs(), lsNumPass));
     }
 
     // *** May need to move this code to TraceFile
@@ -289,32 +297,35 @@ void DynamicGiri::printBackwardsSlice(std::set<Value *> &Slice,
                                       std::unordered_set<DynValue> &DynamicSlice,
                                       std::set<DynValue *> &DataFlowGraph) {
   // Print out the dynamic backwards slice.
-  llvm::outs() << "==================================================\n";
-  llvm::outs() << " Static Slice \n";
-  llvm::outs() << "==================================================\n";
+  std::string errinfo;
+  raw_fd_ostream SliceFile(SliceFilename.c_str(), errinfo);
+  SliceFile << "==================================================\n";
+  SliceFile << " Static Slice \n";
+  SliceFile << "==================================================\n";
   for (std::set<Value *>::iterator i = Slice.begin(); i != Slice.end(); ++i) {
     Value *V = *i;
-    V->print(llvm::outs());
-    llvm::outs() << "\n";
-    if (Instruction * I = dyn_cast<Instruction>(V)) {
-      std::string srcLineInfo = SourceLineMappingPass::locateSrcInfo (I);
-      llvm::outs() << " Source Line Info : " << srcLineInfo << "\n";
-    }
+    V->print(SliceFile);
+    SliceFile << "\n";
+    if (Instruction * I = dyn_cast<Instruction>(V))
+      SliceFile << "Source Line Info: "
+                << SourceLineMappingPass::locateSrcInfo(I)
+                << "\n";
   }
 
   // Print out the instructions in the dynamic backwards slice that
   // failed their invariants.
-  llvm::outs() << "==================================================\n";
-  llvm::outs() << " Dynamic Slice \n";
-  llvm::outs() << "==================================================\n";
+  SliceFile << "==================================================\n";
+  SliceFile << " Dynamic Slice \n";
+  SliceFile << "==================================================\n";
   for (std::unordered_set<DynValue>::iterator i = DynamicSlice.begin();
        i != DynamicSlice.end();
        ++i) {
     DynValue DV = *i;
-    DV.print(lsNumPass);
+    DV.print(SliceFile, lsNumPass);
     if (Instruction *I = dyn_cast<Instruction>(i->getValue())) {
-      std::string srcLineInfo = SourceLineMappingPass::locateSrcInfo(I);
-      DEBUG(dbgs() << " Source Line Info : " << srcLineInfo <<  "\n");
+      SliceFile << "Source Line Info: "
+                << SourceLineMappingPass::locateSrcInfo(I)
+                << "\n";
     }
   }
 }
