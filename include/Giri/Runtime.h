@@ -26,7 +26,6 @@ static const unsigned char STType  = 'S';  // Store record
 static const unsigned char CLType  = 'C';  // Call record
 static const unsigned char RTType  = 'R';  // Call return record
 static const unsigned char ENType  = 'E';  // End record
-static const unsigned char INVType = 'I';  // Invariant Failure record
 static const unsigned char PDType  = 'P';  // Select (predicated) record
 //static const unsigned char EXType = 'X';  // External Function record
 

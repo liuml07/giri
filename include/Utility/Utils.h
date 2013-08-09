@@ -276,14 +276,11 @@ isTracerFunction(Function *fun) {
       (name == "recordStrcatStore") ||
       (name == "recordCall") ||
       (name == "recordInit") ||
-      (name == "recordInvFailure") ||
       (name == "flushEntryCache") ||
       (name == "closeCacheFile") ||
-
       (name == "trace_fn_start") ||
       (name == "trace_fn_end") ||
       (name == "ddgtrace_init") ||
-      (name == "printInvariants") ||
       (name == "trace_long_value") ||
       (name == "trace_int_value") ||
       (name == "trace_short_value") ||
