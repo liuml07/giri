@@ -19,14 +19,13 @@
 #include <cstdio>
 #include <cassert>
 #include <fcntl.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-
 #include <string>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 static cl::opt<std::string>
-InputFilename(cl::Positional, cl::desc("<input trace file>"), cl::init("-"));
+InputFilename(cl::Positional, cl::desc("trace file name"), cl::init("-"));
 
 int main(int argc, char ** argv) {
   // Parse the command line options.
@@ -38,50 +37,58 @@ int main(int argc, char ** argv) {
     fd = STDIN_FILENO;
   else
     fd = open (InputFilename.c_str(), O_RDONLY);
-  assert ((fd != -1) && "Cannot open file!\n");
+  assert((fd != -1) && "Cannot open file!\n");
 
   // Print a header that reminds the user of what the fields mean.
-  printf ("Record Type : ");
-  printf ("%10s: %6s: %16s: %16s\n", "Index", "ID", "Address", "Length");
+  printf("Record Type : ");
+  printf("%10s: %6s: %16s: %16s\n", "Index", "ID", "Address", "Length");
 
   // Read in each entry and print it out.
   Entry entry;
   ssize_t readsize;
   unsigned index = 0;
-  while ((readsize = read (fd, &entry, sizeof (entry))) == sizeof (entry)) {
+  while ((readsize = read(fd, &entry, sizeof(entry))) == sizeof(entry)) {
     // Print the entry's type
     switch (entry.type) {
       case BBType:
-        printf ("Basic Block : ");
+        printf("Basic Block : ");
         break;
       case LDType:
-        printf ("Load        : ");
+        printf("Load        : ");
         break;
       case STType:
-        printf ("Store       : ");
+        printf("Store       : ");
         break;
       case PDType:
-        printf ("Select      : ");
+        printf("Select      : ");
         break;
       case CLType:
-        printf ("Call        : ");
+        printf("Call        : ");
         break;
       case RTType:
-        printf ("Return      : ");
+        printf("Return      : ");
         break;
       case ENType:
-        printf ("End         : ");
+        printf("End         : ");
         break;
       default:
-        printf ("UNKNOWN     : ");
+        printf("UNKNOWN     : ");
         break;
     }
 
     // Print the value associated with the entry.
-    if( entry.type == BBType )
-      printf ("%10u: %6u: %16lx: %16lu\n", index++, entry.id, entry.address, entry.length);
+    if (entry.type == BBType)
+      printf("%10u: %6u: %16lx: %16lu\n",
+             index++,
+             entry.id,
+             entry.address,
+             entry.length);
     else
-      printf ("%10u: %6u: %16lx: %16lx\n", index++, entry.id, entry.address, entry.length);
+      printf("%10u: %6u: %16lx: %16lx\n",
+             index++,
+             entry.id,
+             entry.address,
+             entry.length);
 
     // Stop printing entries if we've hit the end of the log.
     if (entry.type == ENType) {
@@ -91,8 +98,8 @@ int main(int argc, char ** argv) {
   }
 
   if (readsize != 0) {
-    fprintf (stderr, "Read of incorrect size\n");
-    exit (1);
+    fprintf(stderr, "Read of incorrect size\n");
+    exit(1);
   }
 
   return 0;
