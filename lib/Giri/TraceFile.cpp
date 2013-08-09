@@ -62,16 +62,10 @@ TraceFile::TraceFile(std::string Filename,
   trace = (Entry *) mmap (0, finfo.st_size, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0);
   assert ((trace != MAP_FAILED) && "mmap failed!\n");
 
-  //
   // Calculate the index of the last record in the trace.
-  //
   maxIndex = (finfo.st_size / sizeof (Entry)) - 1;
-  //DEBUG( printf("Sizeof(Entry) = %lu\n", sizeof (Entry)) );
-  //DEBUG( printf("B=%x C=%x L=%x S=%x\n", 'B', 'C', 'L', 'S') );
 
-  //
   // Fixup lost loads.
-  //
   fixupLostLoads();
   buildTraceFunAddrMap();
 
@@ -96,7 +90,7 @@ void TraceFile::buildTraceFunAddrMap (void) {
 
         // For recursion through indirect function calls it'll be 0 and it will not work
         if (calledFun) {
-          if ( traceFunAddrMap.find (calledFun) == traceFunAddrMap.end() )
+          if (traceFunAddrMap.find (calledFun) == traceFunAddrMap.end())
 	     traceFunAddrMap[calledFun] = trace[index].address;
         }
       }
@@ -110,7 +104,7 @@ void TraceFile::buildTraceFunAddrMap (void) {
 /// an overlapping entry exists within a std::set.  It doesn't implement
 /// standard less-than semantics.
 struct EntryCompare {
-  bool operator() (const Entry & e1, const Entry & e2) const {
+  bool operator()(const Entry &e1, const Entry &e2) const {
     if ((e1.address < e2.address) &&
         ((e1.address + e1.length - 1) < e2.address))
       return true;
@@ -121,7 +115,7 @@ struct EntryCompare {
 
 void TraceFile::fixupLostLoads (void) {
   // Set of written memory locations
-  std::set<Entry,EntryCompare> Stores;
+  std::set<Entry, EntryCompare> Stores;
 
   // Loop through the entire trace to look for lost loads.
   for (unsigned long index = 0;
@@ -136,12 +130,10 @@ void TraceFile::fixupLostLoads (void) {
         // so continue merging store intervals until there are no more.
         Entry newEntry = trace[index];
         std::set<Entry>::iterator st;
-        while ((st = Stores.find (newEntry)) != Stores.end()) {
-          //
+        while ((st = Stores.find(newEntry)) != Stores.end()) {
           // An overlapping store was performed previous.  Remove it and create
           // a new store record that encompasses this record and the existing
           // record.
-          //
           uintptr_t address = ((*st).address < newEntry.address) ?
                                (*st).address : newEntry.address;
           uintptr_t endst   =  (*st).address + (*st).length - 1;
@@ -150,10 +142,11 @@ void TraceFile::fixupLostLoads (void) {
           uintptr_t length  = maxend - address + 1;
           newEntry.address = address;
           newEntry.length = length;
-          Stores.erase (st);
+          newEntry.tid = st->tid;
+          Stores.erase(st);
         }
 
-        Stores.insert (newEntry);
+        Stores.insert(newEntry);
         break;
       }
       case RecordType::LDType:
@@ -1075,6 +1068,7 @@ void TraceFile::getSourcesForArg(DynValue & DV, Worklist_t &Sources) {
 }
 
 /// Determine whether the two specified entries access overlapping memory
+/// FIXME: Do we need to consider the tid?
 /// regions.
 /// \return true  - The objects have some memory locations in common.
 /// \return false - The objects have no common memory locations.
@@ -1144,9 +1138,10 @@ void TraceFile::findAllStoresForLoad(DynValue & DV,
       //
       // Record the store instruction as a source.
       //
-      // FIXME:
-      //  This should handle *all* stores with the ID.  It is possible that this
-      //  occurs through function cloning.
+      // FIXME: This should handle *all* stores with the ID.  It is possible
+      // that this occurs through function cloning.
+      //
+      // FIXME: Do we need to consider the tid here?
       //
       DynValue newDynValue =  DynValue (V, bbindex);
       addToWorklist( newDynValue, Sources, DV );

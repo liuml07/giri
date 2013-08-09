@@ -40,8 +40,10 @@ int main(int argc, char ** argv) {
   assert((fd != -1) && "Cannot open file!\n");
 
   // Print a header that reminds the user of what the fields mean.
-  printf("Record Type : ");
-  printf("%10s: %6s: %16s: %16s\n", "Index", "ID", "Address", "Length");
+  printf("------------------------------------------------------------------------------\n");
+  printf("Record Type : %10s: %6s: %6s: %16s: %18s\n",
+         "Index", "ID", "TID", "Address", "Length");
+  printf("------------------------------------------------------------------------------\n");
 
   // Read in each entry and print it out.
   Entry entry;
@@ -75,15 +77,17 @@ int main(int argc, char ** argv) {
 
     // Print the value associated with the entry.
     if (entry.type == RecordType::BBType)
-      printf("%10u: %6u: %16lx: %16lu\n",
+      printf("%10u: %6u: %8lu: %16lx: %16lu\n",
              index++,
              entry.id,
+             entry.tid,
              entry.address,
              entry.length);
     else
-      printf("%10u: %6u: %16lx: %16lx\n",
+      printf("%10u: %6u: %8lu: %16lx: %16lx\n",
              index++,
              entry.id,
+             entry.tid,
              entry.address,
              entry.length);
 
