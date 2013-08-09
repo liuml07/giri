@@ -268,8 +268,6 @@ static inline bool isTracerFunction(Function *fun) {
       (name == "recordStrcatStore") ||
       (name == "recordCall") ||
       (name == "recordInit") ||
-      (name == "flushEntryCache") ||
-      (name == "closeCacheFile") ||
       (name == "trace_fn_start") ||
       (name == "trace_fn_end") ||
       (name == "ddgtrace_init") ||
