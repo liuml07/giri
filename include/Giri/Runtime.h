@@ -14,8 +14,9 @@
 #ifndef GIRI_RUNTIME_H
 #define GIRI_RUNTIME_H
 
-#include <sys/types.h>
 #include <inttypes.h>
+#include <pthread.h>
+#include <sys/types.h>
 
 //===----------------------------------------------------------------------===//
 // Identifiers for record types
@@ -38,7 +39,7 @@ enum class RecordType : unsigned {
 ///  page size *and* the size of the in-memory cache of the run-time.  An
 ///  assertion in the run-time library verifies that this condition is met.
 ///  Therefore, be mindful of this when adding or deleting fields from this
-///  structure.
+///  structure. One solution is to adding one padding variable with proper size.
 struct Entry {
   /// The type of entry
   /// For special external functions like memcpy, memset, it is
@@ -47,6 +48,8 @@ struct Entry {
 
   /// The ID number of the basic block to which this entry belongs
   unsigned id;
+
+  pthread_t tid; ///< The thread ID
 
   /// For a load or store, it is the memory address which is read or written.
   /// For special external functions (e.g., memcpy, memset), it is the
@@ -62,22 +65,18 @@ struct Entry {
   /// the id of the function call instruction which invokes it.
   uintptr_t length;
 
-#ifdef __LP64__
-  /// Padding field to ensure compliance with run-time library requirements
-  uintptr_t padding;
-#endif
-
   /// A nice one-line method for initializing the structure
-  explicit Entry(RecordType type, unsigned id) : type(type), id(id) {
-    address = 0;
-    length = 0;
+  explicit Entry(RecordType type, unsigned id) :
+    type(type), id(id), tid(0), address(0), length(0) {
   }
 
   /// A nice one-line constructor for initializing the structure with pointers
   explicit Entry(RecordType type,
-        unsigned id,
-        unsigned char *p,
-        uintptr_t length = 0) : type(type), id(id), length(length) {
+                 unsigned id,
+                 pthread_t tid,
+                 unsigned char *p,
+                 uintptr_t length = 0) :
+    type(type), id(id), tid(tid), length(length) {
     address = reinterpret_cast<uintptr_t>(p);
   }
 

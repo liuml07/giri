@@ -236,7 +236,10 @@ static void closeCacheFile() {
     unsigned char *fp = BBStack[BBStackIndex].address;
 
     // Create a basic block entry for it.
-    entryCache.addToEntryCache(Entry(RecordType::BBType, bbid, fp));
+    entryCache.addToEntryCache(Entry(RecordType::BBType,
+                                     bbid,
+                                     pthread_self(),
+                                     fp));
   }
 
   // Create an end entry to terminate the log.
@@ -350,7 +353,11 @@ void recordBB(unsigned id, unsigned char *fp, unsigned lastBB) {
     callID = 0;
   }
 
-  entryCache.addToEntryCache(Entry(RecordType::BBType, id, fp, callID));
+  entryCache.addToEntryCache(Entry(RecordType::BBType,
+                                   id,
+                                   pthread_self(),
+                                   fp,
+                                   callID));
 
   // Take the basic block off the basic block stack.  We have recorded that it
   // has finished execution.
@@ -382,7 +389,11 @@ void recordExtCallRet(unsigned callID, unsigned char *fp) {
 /// Record that a load has been executed.
 void recordLoad(unsigned id, unsigned char *p, uintptr_t length) {
   DEBUG("[GIRI] Inside %s: id = %u, length = %lx\n", __func__, id, length);
-  entryCache.addToEntryCache(Entry(RecordType::LDType, id, p, length));
+  entryCache.addToEntryCache(Entry(RecordType::LDType,
+                                   id,
+                                   pthread_self(),
+                                   p,
+                                   length));
 }
 
 /// Record that a store has occurred.
@@ -392,7 +403,11 @@ void recordLoad(unsigned id, unsigned char *p, uintptr_t length) {
 void recordStore(unsigned id, unsigned char *p, uintptr_t length) {
   DEBUG("[GIRI] Inside %s: id = %u, length = %lx\n", __func__, id, length);
   // Record that a store has been executed.
-  entryCache.addToEntryCache(Entry(RecordType::STType, id, p, length));
+  entryCache.addToEntryCache(Entry(RecordType::STType,
+                                   id,
+                                   pthread_self(),
+                                   p,
+                                   length));
 }
 
 ///  Record that a string has been read.
@@ -404,7 +419,11 @@ void recordStrLoad(unsigned id, char *p) {
   DEBUG("[GIRI] Inside %s: id = %u, leng = %lx\n", __func__, id, length);
 
   // Record that a load has been executed.
-  entryCache.addToEntryCache(Entry(RecordType::LDType, id, (unsigned char *) p, length));
+  entryCache.addToEntryCache(Entry(RecordType::LDType,
+                                   id,
+                                   pthread_self(),
+                                   (unsigned char *)p,
+                                   length));
 }
 
 /// Record that a string has been written.
@@ -419,7 +438,11 @@ void recordStrStore(unsigned id, char *p) {
 
   // Record that there has been a store starting at the first address of the
   // string and continuing for the length of the string.
-  entryCache.addToEntryCache(Entry(RecordType::STType, id, (unsigned char *) p, length));
+  entryCache.addToEntryCache(Entry(RecordType::STType,
+                                   id,
+                                   pthread_self(),
+                                   (unsigned char *)p,
+                                   length));
 }
 
 /// Record that a string has been written on strcat.
@@ -436,7 +459,11 @@ void recordStrcatStore(unsigned id, char *p, char *s) {
   // Record that there has been a store starting at the firstlast
   // address (the position of null termination char) of the string and
   // continuing for the length of the source string.
-  entryCache.addToEntryCache(Entry(RecordType::STType, id, (unsigned char *)start, length));
+  entryCache.addToEntryCache(Entry(RecordType::STType,
+                                   id,
+                                   pthread_self(),
+                                   (unsigned char *)start,
+                                   length));
 }
 
 /// Record that a call instruction was executed.
@@ -447,7 +474,10 @@ void recordCall(unsigned id, unsigned char *fp) {
   DEBUG("[GIRI] Inside %s: id = %u\n", __func__, id);
 
   // Record that a call has been executed.
-  entryCache.addToEntryCache(Entry(RecordType::CLType, id, fp));
+  entryCache.addToEntryCache(Entry(RecordType::CLType,
+                                   id,
+                                   pthread_self(),
+                                   fp));
 
   assert(FNStackIndex < maxFNStack && "Function call Stack overflowed.\n");
 
@@ -466,7 +496,10 @@ void recordExtCall(unsigned id, unsigned char *fp) {
   DEBUG("[GIRI] Inside %s: id = %u\n", __func__, id);
 
   // Record that a call has been executed.
-  entryCache.addToEntryCache(Entry(RecordType::CLType, id, fp));
+  entryCache.addToEntryCache(Entry(RecordType::CLType,
+                                   id,
+                                   pthread_self(),
+                                   fp));
 }
 
 /// Record that a function has finished execution by adding a return trace entry
@@ -474,7 +507,10 @@ void recordReturn(unsigned id, unsigned char *fp) {
   DEBUG("[GIRI] Inside %s: id = %u\n", __func__, id);
 
   // Record that a call has returned.
-  entryCache.addToEntryCache(Entry(RecordType::RTType, id, fp));
+  entryCache.addToEntryCache(Entry(RecordType::RTType,
+                                   id,
+                                   pthread_self(),
+                                   fp));
 }
 
 /// This function records which input of a select instruction was selected.
@@ -484,5 +520,8 @@ void recordReturn(unsigned id, unsigned char *fp) {
 void recordSelect(unsigned id, unsigned char flag) {
   DEBUG("[GIRI] Inside %s: id = %u, flag = %c\n", __func__, id, flag);
   // Record that a store has been executed.
-  entryCache.addToEntryCache(Entry(RecordType::PDType, id, (unsigned char *)flag));
+  entryCache.addToEntryCache(Entry(RecordType::PDType,
+                                   id,
+                                   pthread_self(),
+                                   (unsigned char *)flag));
 }
