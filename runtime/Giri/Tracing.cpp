@@ -38,7 +38,9 @@
 
 #define ERROR(...) fprintf(stderr, __VA_ARGS__)
 
-// Forward declearation
+//===----------------------------------------------------------------------===//
+//                           Forward declearation
+//===----------------------------------------------------------------------===//
 extern "C" void recordInit(const char *name);
 extern "C" void recordStartBB(unsigned id, unsigned char *fp);
 extern "C" void recordBB(unsigned id, unsigned char *fp, unsigned lastBB);
@@ -53,8 +55,10 @@ extern "C" void recordExtCall(unsigned id, unsigned char *p);
 extern "C" void recordExtFun(unsigned id);
 extern "C" void recordExtCallRet(unsigned callID, unsigned char *fp);
 extern "C" void recordSelect(unsigned id, unsigned char flag);
-extern "C" void flushEntryCache(void);
-extern "C" void closeCacheFile(void);
+
+//===----------------------------------------------------------------------===//
+//                       Basic Block and Function Stack
+//===----------------------------------------------------------------------===//
 
 // File for recording tracing information
 static int record = 0;
@@ -67,6 +71,7 @@ static struct {
   unsigned char *address;
 } BBStack[maxBBStack];
 
+// A stack containing basic blocks currently being executed
 static const unsigned maxFNStack = 4096;
 static unsigned FNStackIndex = 0;
 static struct {
@@ -74,36 +79,36 @@ static struct {
   unsigned char *fnAddress;
 } FNStack[maxFNStack];
 
+//===----------------------------------------------------------------------===//
+//                        Trace Entry Cache
+//===----------------------------------------------------------------------===//
+
 // Size of the entry cache in bytes
-const unsigned entryCacheBytes = 256 * 1024 * 1024;
+static const unsigned entryCacheBytes = 256 * 1024 * 1024;
 
 // Size of the entry cache
-const unsigned entryCacheSize = entryCacheBytes / sizeof(Entry);
+static const unsigned entryCacheSize = entryCacheBytes / sizeof(Entry);
 
-// The current index into the trace file. This points to the next element
-// in which to write the next entry in the trace file.
-unsigned trace_index;
+class EntryCache {
+public:
+  /// Open the file descriptor and mmap the entryCacheBytes bytes to the cache
+  void openFD(int FD);
 
-//===----------------------------------------------------------------------===//
-//                        Struct EntryCache
-//===----------------------------------------------------------------------===//
-struct EntryCache {
+  /// Add one entry to the cache
+  void addToEntryCache(const Entry &entry);
+
+  /// Flush the cache to disk
+  void flushCache(void);
+
+private:
   /// The current index into the entry cache. This points to the next element
   /// in which to write the next entry (cache holds a part of the trace file).
   unsigned index;
-
-  /// A cache of entries that need to be written to disk
-  Entry *cache;
-
-  /// The offset into the file which is cached into memory.
-  off_t fileOffset;
-
-  /// File which is being cached in memory.
-  int fd;
-
-  void openFD(int FD);
-  void flushCache(void);
-} entryCache;
+  Entry *cache; /// A cache of entries that need to be written to disk
+  off_t fileOffset; ///< The offset of the file which is cached into memory.
+  int fd; ///< File which is being cached in memory.
+};
+static EntryCache entryCache;
 
 void EntryCache::openFD(int FD) {
   // Save the file descriptor of the file that we'll use.
@@ -177,21 +182,10 @@ void EntryCache::flushCache(void) {
   index = 0;
 }
 
-//===----------------------------------------------------------------------===//
-//                       Record and Helper Functions
-//===----------------------------------------------------------------------===//
-
-/// Signal handler to write only tracing data to file
-static void cleanup_only_tracing(int signum)
-{
-  ERROR("[GIRI] Abnormal termination, signal number %d\n", signum);
-  exit(signum);
-}
-
-static inline void addToEntryCache(const Entry &entry) {
+void EntryCache::addToEntryCache(const Entry &entry) {
   // Flush the cache if necessary.
   if (entryCache.index == entryCacheSize) {
-    flushEntryCache();
+    entryCache.flushCache();
   }
 
   // Add the entry to the entry cache.
@@ -199,9 +193,6 @@ static inline void addToEntryCache(const Entry &entry) {
 
   // Increment the index for the next entry.
   ++entryCache.index;
-
-  // Increment the index for entry in the trace file
-  ++trace_index;
 
 #if 0
   // Initial experiments show that this increases overhead (user + system time).
@@ -214,18 +205,14 @@ static inline void addToEntryCache(const Entry &entry) {
   return;
 }
 
-void flushEntryCache(void) {
-  // Flush the in-memory cache to disk.
-  entryCache.flushCache();
-  return;
-}
-
-void closeCacheFile(void) {
+/// Close the cache file, this will call the flushCache
+void closeCacheFile() {
   DEBUG("[GIRI] Writing cache data to trace file and closing.\n");
 
   // Create basic block termination entries for each basic block on the stack.
   // These were the basic blocks that were active when the program terminated.
   // **** Should we print the return records for active functions as well?????????
+  // FIXME: do we need the lock here? This function is registered by the atexit()
   while (BBStackIndex > 0) {
     // Remove the item from the stack.
     --BBStackIndex;
@@ -235,14 +222,25 @@ void closeCacheFile(void) {
     unsigned char *fp = BBStack[BBStackIndex].address;
 
     // Create a basic block entry for it.
-    addToEntryCache(Entry(RecordType::BBType, bbid, fp));
+    entryCache.addToEntryCache(Entry(RecordType::BBType, bbid, fp));
   }
 
   // Create an end entry to terminate the log.
-  addToEntryCache(Entry(RecordType::ENType, 0));
+  entryCache.addToEntryCache(Entry(RecordType::ENType, 0));
 
   // Flush the entry cache.
-  flushEntryCache();
+  entryCache.flushCache();
+}
+
+//===----------------------------------------------------------------------===//
+//                       Record and Helper Functions
+//===----------------------------------------------------------------------===//
+
+/// Signal handler to write only tracing data to file
+static void cleanup_only_tracing(int signum)
+{
+  ERROR("[GIRI] Abnormal termination, signal number %d\n", signum);
+  exit(signum);
 }
 
 void recordInit(const char *name) {
@@ -338,13 +336,11 @@ void recordBB(unsigned id, unsigned char *fp, unsigned lastBB) {
     callID = 0;
   }
 
-  addToEntryCache(Entry(RecordType::BBType, id, fp, callID));
+  entryCache.addToEntryCache(Entry(RecordType::BBType, id, fp, callID));
 
   // Take the basic block off the basic block stack.  We have recorded that it
   // has finished execution.
   --BBStackIndex;
-
-  return;
 }
 
 /// Record that a external function has finished execution by updating function
@@ -367,7 +363,7 @@ void recordExtCallRet(unsigned callID, unsigned char *fp) {
 /// Record that a load has been executed.
 void recordLoad(unsigned id, unsigned char *p, uintptr_t length) {
   DEBUG("[GIRI] Inside %s: id = %u, length = %lx\n", __func__, id, length);
-  addToEntryCache(Entry(RecordType::LDType, id, p, length));
+  entryCache.addToEntryCache(Entry(RecordType::LDType, id, p, length));
 }
 
 /// Record that a store has occurred.
@@ -377,7 +373,7 @@ void recordLoad(unsigned id, unsigned char *p, uintptr_t length) {
 void recordStore(unsigned id, unsigned char *p, uintptr_t length) {
   DEBUG("[GIRI] Inside %s: id = %u, length = %lx\n", __func__, id, length);
   // Record that a store has been executed.
-  addToEntryCache(Entry(RecordType::STType, id, p, length));
+  entryCache.addToEntryCache(Entry(RecordType::STType, id, p, length));
 }
 
 ///  Record that a string has been read.
@@ -389,7 +385,7 @@ void recordStrLoad(unsigned id, char *p) {
   DEBUG("[GIRI] Inside %s: id = %u, leng = %lx\n", __func__, id, length);
 
   // Record that a load has been executed.
-  addToEntryCache(Entry(RecordType::LDType, id, (unsigned char *) p, length));
+  entryCache.addToEntryCache(Entry(RecordType::LDType, id, (unsigned char *) p, length));
 }
 
 /// Record that a string has been written.
@@ -404,7 +400,7 @@ void recordStrStore(unsigned id, char *p) {
 
   // Record that there has been a store starting at the first address of the
   // string and continuing for the length of the string.
-  addToEntryCache(Entry(RecordType::STType, id, (unsigned char *) p, length));
+  entryCache.addToEntryCache(Entry(RecordType::STType, id, (unsigned char *) p, length));
 }
 
 /// Record that a string has been written on strcat.
@@ -421,7 +417,7 @@ void recordStrcatStore(unsigned id, char *p, char *s) {
   // Record that there has been a store starting at the firstlast
   // address (the position of null termination char) of the string and
   // continuing for the length of the source string.
-  addToEntryCache(Entry(RecordType::STType, id, (unsigned char *)start, length));
+  entryCache.addToEntryCache(Entry(RecordType::STType, id, (unsigned char *)start, length));
 }
 
 /// Record that a call instruction was executed.
@@ -431,7 +427,7 @@ void recordCall(unsigned id, unsigned char *fp) {
   DEBUG("[GIRI] Inside %s: id = %u\n", __func__, id);
 
   // Record that a call has been executed.
-  addToEntryCache(Entry(RecordType::CLType, id, fp));
+  entryCache.addToEntryCache(Entry(RecordType::CLType, id, fp));
 
   assert(FNStackIndex < maxFNStack && "Function call Stack overflowed.\n");
 
@@ -449,7 +445,7 @@ void recordExtCall(unsigned id, unsigned char *fp) {
   DEBUG("[GIRI] Inside %s: id = %u\n", __func__, id);
 
   // Record that a call has been executed.
-  addToEntryCache(Entry(RecordType::CLType, id, fp));
+  entryCache.addToEntryCache(Entry(RecordType::CLType, id, fp));
 }
 
 /// Record that a function has finished execution by adding a return trace entry
@@ -457,7 +453,7 @@ void recordReturn(unsigned id, unsigned char *fp) {
   DEBUG("[GIRI] Inside %s: id = %u\n", __func__, id);
 
   // Record that a call has returned.
-  addToEntryCache(Entry(RecordType::RTType, id, fp));
+  entryCache.addToEntryCache(Entry(RecordType::RTType, id, fp));
 }
 
 /// This function records which input of a select instruction was selected.
@@ -467,5 +463,5 @@ void recordReturn(unsigned id, unsigned char *fp) {
 void recordSelect(unsigned id, unsigned char flag) {
   DEBUG("[GIRI] Inside %s: id = %u, flag = %c\n", __func__, id, flag);
   // Record that a store has been executed.
-  addToEntryCache(Entry(RecordType::PDType, id, (unsigned char *)flag));
+  entryCache.addToEntryCache(Entry(RecordType::PDType, id, (unsigned char *)flag));
 }
