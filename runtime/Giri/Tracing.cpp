@@ -87,12 +87,6 @@ pthread_mutex_t fnstack_mutex = PTHREAD_MUTEX_INITIALIZER;
 //                        Trace Entry Cache
 //===----------------------------------------------------------------------===//
 
-// Size of the entry cache in bytes
-static const unsigned entryCacheBytes = 256 * 1024 * 1024;
-
-// Size of the entry cache
-static const unsigned entryCacheSize = entryCacheBytes / sizeof(Entry);
-
 class EntryCache {
 public:
   /// Open the file descriptor and mmap the entryCacheBytes bytes to the cache
@@ -104,6 +98,11 @@ public:
   /// Flush the cache to disk
   void flushCache(void);
 
+  // Size of the entry cache in bytes
+  static const unsigned entryCacheBytes;
+  // Size of the entry cache
+  static const unsigned entryCacheSize;
+
 private:
   /// The current index into the entry cache. This points to the next element
   /// in which to write the next entry (cache holds a part of the trace file).
@@ -112,7 +111,9 @@ private:
   off_t fileOffset; ///< The offset of the file which is cached into memory.
   int fd; ///< File which is being cached in memory.
 };
-static EntryCache entryCache;
+
+const unsigned EntryCache::entryCacheBytes = 256 * 1024 * 1024;
+const unsigned EntryCache::entryCacheSize = entryCacheBytes / sizeof(Entry);
 
 void EntryCache::openFD(int FD) {
   // Save the file descriptor of the file that we'll use.
@@ -190,15 +191,15 @@ void EntryCache::addToEntryCache(const Entry &entry) {
   static pthread_mutex_t entrycache_mutex = PTHREAD_MUTEX_INITIALIZER;
   pthread_mutex_lock(&entrycache_mutex);
   // Flush the cache if necessary.
-  if (entryCache.index == entryCacheSize) {
-    entryCache.flushCache();
+  if (index == entryCacheSize) {
+    flushCache();
   }
 
   // Add the entry to the entry cache.
-  entryCache.cache[entryCache.index] = entry;
+  cache[index] = entry;
 
   // Increment the index for the next entry.
-  ++entryCache.index;
+  ++index;
 
 #if 0
   // Initial experiments show that this increases overhead (user + system time).
@@ -211,8 +212,15 @@ void EntryCache::addToEntryCache(const Entry &entry) {
   pthread_mutex_unlock(&entrycache_mutex);
 }
 
+//===----------------------------------------------------------------------===//
+//                       Record and Helper Functions
+//===----------------------------------------------------------------------===//
+
+/// This is the very entry cache used by all record functions
+static EntryCache entryCache;
+
 /// Close the cache file, this will call the flushCache
-void closeCacheFile() {
+static void closeCacheFile() {
   DEBUG("[GIRI] Writing cache data to trace file and closing.\n");
 
   // Create basic block termination entries for each basic block on the stack.
@@ -238,10 +246,6 @@ void closeCacheFile() {
   entryCache.flushCache();
 }
 
-//===----------------------------------------------------------------------===//
-//                       Record and Helper Functions
-//===----------------------------------------------------------------------===//
-
 /// Signal handler to write only tracing data to file
 static void cleanup_only_tracing(int signum)
 {
@@ -252,7 +256,7 @@ static void cleanup_only_tracing(int signum)
 void recordInit(const char *name) {
   // First assert that the size of an entry evenly divides the cache entry
   // buffer size. The run-time will not work if this is not true.
-  if (entryCacheBytes % sizeof(Entry)) {
+  if (EntryCache::entryCacheBytes % sizeof(Entry)) {
     ERROR("[GIRI] Entry size %lu does not divide cache size!\n", sizeof(Entry));
     abort();
   }
