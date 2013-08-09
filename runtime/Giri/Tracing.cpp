@@ -61,17 +61,9 @@ extern "C" void recordExtCallRet(unsigned callID, unsigned char *fp);
 extern "C" void recordSelect(unsigned id, unsigned char flag);
 extern "C" void flushEntryCache(void);
 extern "C" void closeCacheFile(void);
-extern "C" void recordHandlerThreadID(const char *name);
 
 // File for recording tracing information
 static int record = 0;
-
-// Stores the threadID for the thread which handles incoming connections
-static unsigned long handlerThreadID = 0;
-static int countUpdateThreadID = 0;
-
-// Mutex to protect concurrent read/writes to thread ID
-pthread_mutex_t mutexRecordThreadID;
 
 // A stack containing basic blocks currently being executed
 static const unsigned maxBBStack = 4096;
@@ -195,18 +187,6 @@ void EntryCache::flushCache(void) {
 //                       Record and Helper Functions
 //===----------------------------------------------------------------------===//
 
-/// Update Connection Handler Thread ID
-void updateThreadID()
-{
-   pthread_mutex_lock(&mutexRecordThreadID);
-   DEBUG("Inside %s\n", __func__);
-   handlerThreadID = pthread_self();
-   countUpdateThreadID++;
-   if (countUpdateThreadID > 2)
-     ERROR("WARNING: More threads than 1 handler thread!!\n");
-   pthread_mutex_unlock(&mutexRecordThreadID);
-}
-
 /// Signal handler to write only tracing data to file
 static void cleanup_only_tracing(int signum)
 {
@@ -301,11 +281,6 @@ void recordInit(const char *name) {
   signal(SIGKILL, cleanup_only_tracing);
   signal(SIGILL, cleanup_only_tracing);
   signal(SIGFPE, cleanup_only_tracing);
-
-  pthread_mutex_init(&mutexRecordThreadID, NULL);
-
-  // Update the thread id with the main thread ID
-  updateThreadID();
 }
 
 /// Record that a basic block has started execution. This doesn't generate a
@@ -499,14 +474,4 @@ void recordSelect(unsigned id, unsigned char flag) {
   DEBUG("Inside %s: id = %u, flag = %c\n", __func__, id, flag);
   // Record that a store has been executed.
   addToEntryCache(Entry(RecordType::PDType, id, (unsigned char *)flag));
-}
-
-/// This function keeps track of the main thread id or the connection handler
-/// thread ID.
-/// \param name - The name of the connection handler function.
-void recordHandlerThreadID(const char *name) {
-  DEBUG("Inside Connection Handling function %s: %s\n", __func__, name);
-
-  // Update the thread id with the main or connection handler thread ID
-  updateThreadID();
 }
