@@ -50,34 +50,31 @@ int main(int argc, char ** argv) {
   while ((readsize = read(fd, &entry, sizeof(entry))) == sizeof(entry)) {
     // Print the entry's type
     switch (entry.type) {
-      case BBType:
+      case RecordType::BBType:
         printf("Basic Block : ");
         break;
-      case LDType:
+      case RecordType::LDType:
         printf("Load        : ");
         break;
-      case STType:
+      case RecordType::STType:
         printf("Store       : ");
         break;
-      case PDType:
+      case RecordType::PDType:
         printf("Select      : ");
         break;
-      case CLType:
+      case RecordType::CLType:
         printf("Call        : ");
         break;
-      case RTType:
+      case RecordType::RTType:
         printf("Return      : ");
         break;
-      case ENType:
+      case RecordType::ENType:
         printf("End         : ");
-        break;
-      default:
-        printf("UNKNOWN     : ");
         break;
     }
 
     // Print the value associated with the entry.
-    if (entry.type == BBType)
+    if (entry.type == RecordType::BBType)
       printf("%10u: %6u: %16lx: %16lu\n",
              index++,
              entry.id,
@@ -91,7 +88,7 @@ int main(int argc, char ** argv) {
              entry.length);
 
     // Stop printing entries if we've hit the end of the log.
-    if (entry.type == ENType) {
+    if (entry.type == RecordType::ENType) {
       readsize = 0;
       break;
     }

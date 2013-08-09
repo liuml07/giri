@@ -261,11 +261,11 @@ void closeCacheFile(void) {
     unsigned char *fp = BBStack[BBStackIndex].address;
 
     // Create a basic block entry for it.
-    addToEntryCache(Entry(BBType, bbid, fp));
+    addToEntryCache(Entry(RecordType::BBType, bbid, fp));
   }
 
   // Create an end entry to terminate the log.
-  addToEntryCache(Entry(ENType, 0));
+  addToEntryCache(Entry(RecordType::ENType, 0));
 
   // Flush the entry cache.
   flushEntryCache();
@@ -369,7 +369,7 @@ void recordBB(unsigned id, unsigned char *fp, unsigned lastBB) {
     callID = 0;
   }
 
-  addToEntryCache(Entry(BBType, id, fp, callID));
+  addToEntryCache(Entry(RecordType::BBType, id, fp, callID));
 
   // Take the basic block off the basic block stack.  We have recorded that it
   // has finished execution.
@@ -398,7 +398,7 @@ void recordExtCallRet(unsigned callID, unsigned char *fp) {
 /// Record that a load has been executed.
 void recordLoad(unsigned id, unsigned char *p, uintptr_t length) {
   DEBUG("Inside %s: id = %u, length = %lx\n", __func__, id, length);
-  addToEntryCache(Entry(LDType, id, p, length));
+  addToEntryCache(Entry(RecordType::LDType, id, p, length));
 }
 
 /// Record that a store has occurred.
@@ -408,7 +408,7 @@ void recordLoad(unsigned id, unsigned char *p, uintptr_t length) {
 void recordStore(unsigned id, unsigned char *p, uintptr_t length) {
   DEBUG("Inside %s: id = %u, length = %lx\n", __func__, id, length);
   // Record that a store has been executed.
-  addToEntryCache(Entry(STType, id, p, length));
+  addToEntryCache(Entry(RecordType::STType, id, p, length));
 }
 
 ///  Record that a string has been read.
@@ -420,7 +420,7 @@ void recordStrLoad(unsigned id, char *p) {
   DEBUG("Inside %s: id = %u, leng = %lx\n", __func__, id, length);
 
   // Record that a load has been executed.
-  addToEntryCache(Entry(LDType, id, (unsigned char *) p, length));
+  addToEntryCache(Entry(RecordType::LDType, id, (unsigned char *) p, length));
 }
 
 /// Record that a string has been written.
@@ -435,7 +435,7 @@ void recordStrStore(unsigned id, char *p) {
 
   // Record that there has been a store starting at the first address of the
   // string and continuing for the length of the string.
-  addToEntryCache(Entry(STType, id, (unsigned char *) p, length));
+  addToEntryCache(Entry(RecordType::STType, id, (unsigned char *) p, length));
 }
 
 /// Record that a string has been written on strcat.
@@ -452,7 +452,7 @@ void recordStrcatStore(unsigned id, char *p, char *s) {
   // Record that there has been a store starting at the firstlast
   // address (the position of null termination char) of the string and
   // continuing for the length of the source string.
-  addToEntryCache(Entry(STType, id, (unsigned char *)start, length));
+  addToEntryCache(Entry(RecordType::STType, id, (unsigned char *)start, length));
 }
 
 /// Record that a call instruction was executed.
@@ -462,7 +462,7 @@ void recordCall(unsigned id, unsigned char *fp) {
   DEBUG("Inside %s: id = %u\n", __func__, id);
 
   // Record that a call has been executed.
-  addToEntryCache(Entry(CLType, id, fp));
+  addToEntryCache(Entry(RecordType::CLType, id, fp));
 
   assert(FNStackIndex < maxFNStack && "Function call Stack overflowed.\n");
 
@@ -480,7 +480,7 @@ void recordExtCall(unsigned id, unsigned char *fp) {
   DEBUG("Inside %s: id = %u\n", __func__, id);
 
   // Record that a call has been executed.
-  addToEntryCache(Entry(CLType, id, fp));
+  addToEntryCache(Entry(RecordType::CLType, id, fp));
 }
 
 /// Record that a function has finished execution by adding a return trace entry
@@ -488,7 +488,7 @@ void recordReturn(unsigned id, unsigned char *fp) {
   DEBUG("Inside %s: id = %u\n", __func__, id);
 
   // Record that a call has returned.
-  addToEntryCache(Entry(RTType, id, fp));
+  addToEntryCache(Entry(RecordType::RTType, id, fp));
 }
 
 /// This function records which input of a select instruction was selected.
@@ -498,7 +498,7 @@ void recordReturn(unsigned id, unsigned char *fp) {
 void recordSelect(unsigned id, unsigned char flag) {
   DEBUG("Inside %s: id = %u, flag = %c\n", __func__, id, flag);
   // Record that a store has been executed.
-  addToEntryCache(Entry(PDType, id, (unsigned char *)flag));
+  addToEntryCache(Entry(RecordType::PDType, id, (unsigned char *)flag));
 }
 
 /// This function keeps track of the main thread id or the connection handler

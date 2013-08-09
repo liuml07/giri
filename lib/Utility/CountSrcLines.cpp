@@ -116,12 +116,12 @@ std::unordered_set<unsigned> CountSrcLines::readBB(const std::string &bbrecord_f
 	// Read in each entry from the file
 	Entry entry;
 	while (read(bb_fd, &entry, sizeof(entry)) == sizeof(entry)) {
-	  if (entry.type == BBType) {
+	  if (entry.type == RecordType::BBType) {
 	    bb_set.insert(entry.id);
         NumOfDynamicBBs ++;
 	  }
 
-	  if (entry.type == ENType)
+	  if (entry.type == RecordType::ENType)
 	    break;
 	}
 

@@ -20,14 +20,16 @@
 //===----------------------------------------------------------------------===//
 // Identifiers for record types
 //===----------------------------------------------------------------------===//
-static const unsigned char BBType  = 'B';  // Basic block record
-static const unsigned char LDType  = 'L';  // Load record
-static const unsigned char STType  = 'S';  // Store record
-static const unsigned char CLType  = 'C';  // Call record
-static const unsigned char RTType  = 'R';  // Call return record
-static const unsigned char ENType  = 'E';  // End record
-static const unsigned char PDType  = 'P';  // Select (predicated) record
+enum RecordType : unsigned {
+  BBType  = 'B',  // Basic block record
+  LDType  = 'L',  // Load record
+  STType  = 'S',  // Store record
+  CLType  = 'C',  // Call record
+  RTType  = 'R',  // Call return record
+  ENType  = 'E',  // End record
+  PDType  = 'P'   // Select (predicated) record
 //static const unsigned char EXType = 'X';  // External Function record
+};
 
 /// \class This is the format for one entry in the tracing log file.
 ///
@@ -41,7 +43,7 @@ struct Entry {
   /// The type of entry
   /// For special external functions like memcpy, memset, it is
   /// type + #elements to transfer
-  unsigned type;
+  RecordType type;
 
   /// The ID number of the basic block to which this entry belongs
   unsigned id;
@@ -66,13 +68,13 @@ struct Entry {
 #endif
 
   /// A nice one-line method for initializing the structure
-  Entry(unsigned char type, unsigned id) : type(type), id(id) {
+  explicit Entry(RecordType type, unsigned id) : type(type), id(id) {
     address = 0;
     length = 0;
   }
 
   /// A nice one-line constructor for initializing the structure with pointers
-  Entry(unsigned char type,
+  explicit Entry(RecordType type,
         unsigned id,
         unsigned char *p,
         uintptr_t length = 0) : type(type), id(id), length(length) {
