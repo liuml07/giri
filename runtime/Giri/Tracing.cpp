@@ -31,12 +31,18 @@
 #include <unistd.h>
 
 #ifndef NDEBUG
-#define DEBUG(...) fprintf(stderr, __VA_ARGS__)
+#define DEBUG(...) do {\
+                     fprintf(stderr, "[GIRI]: ");\
+                     fprintf(stderr, __VA_ARGS__);\
+                   } while (false)
 #else
-#define DEBUG(...) do { } while(false)
+#define DEBUG(...) do {} while(false)
 #endif
 
-#define ERROR(...) fprintf(stderr, __VA_ARGS__)
+#define ERROR(...) do {\
+                     fprintf(stderr, "[GIRI]: ");\
+                     fprintf(stderr, __VA_ARGS__); }\
+                   while (false)
 
 // Forward declearation
 extern "C" void recordInit(const char *name);
@@ -93,7 +99,7 @@ const unsigned entryCacheSize = entryCacheBytes / sizeof(Entry);
 unsigned trace_index;
 
 //===----------------------------------------------------------------------===//
-// EntryCache
+//                        Struct EntryCache
 //===----------------------------------------------------------------------===//
 struct EntryCache {
   /// The current index into the entry cache. This points to the next element
@@ -186,11 +192,11 @@ void EntryCache::flushCache(void) {
 }
 
 //===----------------------------------------------------------------------===//
-// Record and Helper Functions
+//                       Record and Helper Functions
 //===----------------------------------------------------------------------===//
 
 /// Update Connection Handler Thread ID
-void updateThreadID( )
+void updateThreadID()
 {
    pthread_mutex_lock(&mutexRecordThreadID);
    DEBUG("Inside %s\n", __func__);
@@ -372,12 +378,14 @@ void recordBB(unsigned id, unsigned char *fp, unsigned lastBB) {
   return;
 }
 
-// TODO: delete this (**Not needed anymore as we don't add external function call records**)
-///  Record that a external function has finished execution by updating function call stack.
+/// Record that a external function has finished execution by updating function
+/// call stack.
+/// TODO: delete this
+///       Not needed anymore as we don't add external function call records
 void recordExtCallRet(unsigned callID, unsigned char *fp) {
   assert(FNStackIndex > 0);
 
-  DEBUG("Inside %s: %u %s %s\n", __func__, callID, fp,
+  DEBUG("Inside %s: callID = %u, fp = %s\n", __func__, callID,
         FNStack[FNStackIndex - 1].fnAddress);
 
   if (FNStack[FNStackIndex - 1].fnAddress != fp)
@@ -387,8 +395,9 @@ void recordExtCallRet(unsigned callID, unsigned char *fp) {
      --FNStackIndex;
 }
 
+/// Record that a load has been executed.
 void recordLoad(unsigned id, unsigned char *p, uintptr_t length) {
-  // Record that a load has been executed.
+  DEBUG("Inside %s: id = %u, length = %lx\n", __func__, id, length);
   addToEntryCache(Entry(LDType, id, p, length));
 }
 
@@ -397,6 +406,7 @@ void recordLoad(unsigned id, unsigned char *p, uintptr_t length) {
 /// \param p      - The starting address of the store.
 /// \param length - The length, in bytes, of the stored data.
 void recordStore(unsigned id, unsigned char *p, uintptr_t length) {
+  DEBUG("Inside %s: id = %u, length = %lx\n", __func__, id, length);
   // Record that a store has been executed.
   addToEntryCache(Entry(STType, id, p, length));
 }
@@ -406,6 +416,8 @@ void recordStrLoad(unsigned id, char *p) {
   // First determine the length of the string.  Add one byte to include the
   // string terminator character.
   uintptr_t length = strlen(p) + 1;
+
+  DEBUG("Inside %s: id = %u, leng = %lx\n", __func__, id, length);
 
   // Record that a load has been executed.
   addToEntryCache(Entry(LDType, id, (unsigned char *) p, length));
@@ -418,6 +430,8 @@ void recordStrStore(unsigned id, char *p) {
   // First determine the length of the string.  Add one byte to include the
   // string terminator character.
   uintptr_t length = strlen(p) + 1;
+
+  DEBUG("Inside %s: id = %u, length = %lx\n", __func__, id, length);
 
   // Record that there has been a store starting at the first address of the
   // string and continuing for the length of the string.
@@ -434,16 +448,19 @@ void recordStrcatStore(unsigned id, char *p, char *s) {
   char *start = p + strlen(p);
   uintptr_t length = strlen(s) + 1;
 
+  DEBUG("Inside %s: id = %u, length = %lx\n", __func__, id, length);
   // Record that there has been a store starting at the firstlast
   // address (the position of null termination char) of the string and
   // continuing for the length of the source string.
-  addToEntryCache(Entry(STType, id, (unsigned char *) start, length));
+  addToEntryCache(Entry(STType, id, (unsigned char *)start, length));
 }
 
 /// Record that a call instruction was executed.
 /// \param id - The ID of the call instruction.
 /// \param fp - The address of the function that was called.
 void recordCall(unsigned id, unsigned char *fp) {
+  DEBUG("Inside %s: id = %u\n", __func__, id);
+
   // Record that a call has been executed.
   addToEntryCache(Entry(CLType, id, fp));
 
@@ -460,7 +477,7 @@ void recordCall(unsigned id, unsigned char *fp) {
 /// \param id - The ID of the call instruction.
 /// \param fp - The address of the function that was called.
 void recordExtCall(unsigned id, unsigned char *fp) {
-  DEBUG("Inside %s: %u %s\n", __func__, id, fp);
+  DEBUG("Inside %s: id = %u\n", __func__, id);
 
   // Record that a call has been executed.
   addToEntryCache(Entry(CLType, id, fp));
@@ -468,6 +485,8 @@ void recordExtCall(unsigned id, unsigned char *fp) {
 
 /// Record that a function has finished execution by adding a return trace entry
 void recordReturn(unsigned id, unsigned char *fp) {
+  DEBUG("Inside %s: id = %u\n", __func__, id);
+
   // Record that a call has returned.
   addToEntryCache(Entry(RTType, id, fp));
 }
@@ -477,6 +496,7 @@ void recordReturn(unsigned id, unsigned char *fp) {
 /// \param flag - The boolean value (true or false) used to determine the select
 ///               instruction's output.
 void recordSelect(unsigned id, unsigned char flag) {
+  DEBUG("Inside %s: id = %u, flag = %c\n", __func__, id, flag);
   // Record that a store has been executed.
   addToEntryCache(Entry(PDType, id, (unsigned char *)flag));
 }
@@ -485,7 +505,6 @@ void recordSelect(unsigned id, unsigned char flag) {
 /// thread ID.
 /// \param name - The name of the connection handler function.
 void recordHandlerThreadID(const char *name) {
-
   DEBUG("Inside Connection Handling function %s: %s\n", __func__, name);
 
   // Update the thread id with the main or connection handler thread ID
