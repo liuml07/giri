@@ -7,16 +7,6 @@
 #define handle_error_en(en, msg) \
     do { errno = en, perror(msg); exit(EXIT_FAILURE); } while (0)
 
-int increament ( int i )
-{
-  return i + 1;
-}
-
-int add ( int a, int b )
-{
-  return a + b;
-}
-
 void *PrintHello(void *threadid)
 {
    long tid = *(long *)threadid;
