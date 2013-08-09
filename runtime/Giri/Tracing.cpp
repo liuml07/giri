@@ -71,6 +71,8 @@ static struct {
   unsigned char *address;
 } BBStack[maxBBStack];
 
+pthread_mutex_t bbstack_mutex = PTHREAD_MUTEX_INITIALIZER;
+
 // A stack containing basic blocks currently being executed
 static const unsigned maxFNStack = 4096;
 static unsigned FNStackIndex = 0;
@@ -78,6 +80,8 @@ static struct {
   unsigned id;
   unsigned char *fnAddress;
 } FNStack[maxFNStack];
+
+pthread_mutex_t fnstack_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 //===----------------------------------------------------------------------===//
 //                        Trace Entry Cache
@@ -183,6 +187,8 @@ void EntryCache::flushCache(void) {
 }
 
 void EntryCache::addToEntryCache(const Entry &entry) {
+  static pthread_mutex_t entrycache_mutex = PTHREAD_MUTEX_INITIALIZER;
+  pthread_mutex_lock(&entrycache_mutex);
   // Flush the cache if necessary.
   if (entryCache.index == entryCacheSize) {
     entryCache.flushCache();
@@ -202,7 +208,7 @@ void EntryCache::addToEntryCache(const Entry &entry) {
   }
 #endif
 
-  return;
+  pthread_mutex_unlock(&entrycache_mutex);
 }
 
 /// Close the cache file, this will call the flushCache
@@ -283,6 +289,7 @@ void recordStartBB(unsigned id, unsigned char *fp) {
   if (id >= 190525 && id <= 190532)
     DEBUG("[GIRI] At BasicBlock start, BBid %u between 190525 and 190532\n", id);
 
+  pthread_mutex_lock(&bbstack_mutex);
   // Ensure that we have enough space on the basic block stack.
   if (BBStackIndex == maxBBStack) {
     ERROR("[GIRI] Basic Block Stack overflowed in Tracing runtime\n");
@@ -292,6 +299,7 @@ void recordStartBB(unsigned id, unsigned char *fp) {
   // Push the basic block identifier on to the back of the stack.
   BBStack[BBStackIndex].id = id;
   BBStack[BBStackIndex++].address = fp;
+  pthread_mutex_unlock(&bbstack_mutex);
 
   // FIXME: Special handling for clang code
   if (id == 190531) {
@@ -314,6 +322,8 @@ void recordBB(unsigned id, unsigned char *fp, unsigned lastBB) {
   // Record that this basic block as been executed.
   unsigned callID = 0;
 
+  pthread_mutex_lock(&bbstack_mutex);
+  pthread_mutex_lock(&fnstack_mutex);
   // If this is the last BB of this function invocation, take the Function id
   // off the Function stack stack. We have recorded that it has finished
   // execution. Store the call id to record the end of function call at the end
@@ -341,6 +351,9 @@ void recordBB(unsigned id, unsigned char *fp, unsigned lastBB) {
   // Take the basic block off the basic block stack.  We have recorded that it
   // has finished execution.
   --BBStackIndex;
+
+  pthread_mutex_unlock(&bbstack_mutex);
+  pthread_mutex_unlock(&fnstack_mutex);
 }
 
 /// Record that a external function has finished execution by updating function
@@ -348,6 +361,7 @@ void recordBB(unsigned id, unsigned char *fp, unsigned lastBB) {
 /// TODO: delete this
 ///       Not needed anymore as we don't add external function call records
 void recordExtCallRet(unsigned callID, unsigned char *fp) {
+  pthread_mutex_lock(&fnstack_mutex);
   assert(FNStackIndex > 0);
 
   DEBUG("[GIRI] Inside %s: callID = %u, fp = %s\n", __func__, callID,
@@ -358,6 +372,7 @@ void recordExtCallRet(unsigned callID, unsigned char *fp) {
            MAY be due to function call from external code\n", callID);
   else
      --FNStackIndex;
+  pthread_mutex_unlock(&fnstack_mutex);
 }
 
 /// Record that a load has been executed.
@@ -424,6 +439,7 @@ void recordStrcatStore(unsigned id, char *p, char *s) {
 /// \param id - The ID of the call instruction.
 /// \param fp - The address of the function that was called.
 void recordCall(unsigned id, unsigned char *fp) {
+  pthread_mutex_lock(&fnstack_mutex);
   DEBUG("[GIRI] Inside %s: id = %u\n", __func__, id);
 
   // Record that a call has been executed.
@@ -435,6 +451,7 @@ void recordCall(unsigned id, unsigned char *fp) {
   FNStack[FNStackIndex].id = id;
   FNStack[FNStackIndex].fnAddress = fp;
   FNStackIndex++;
+  pthread_mutex_unlock(&fnstack_mutex);
 }
 
 // FIXME: Do we still need it after adding separate return records????
