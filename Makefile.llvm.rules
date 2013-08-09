@@ -204,6 +204,10 @@ endif
 #--------------------------------------------------------------------
 
 CPP.Defines :=
+ifdef DEBUG_RUNTIME
+  CPP.Defines += -DDEBUG_GIRI_RUNTIME
+endif
+
 ifeq ($(ENABLE_OPTIMIZED),1)
   BuildMode := Release
   # Don't use -fomit-frame-pointer on Darwin or FreeBSD.

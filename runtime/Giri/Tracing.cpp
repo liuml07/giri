@@ -30,19 +30,13 @@
 #include <sys/mman.h>
 #include <unistd.h>
 
-#ifndef NDEBUG
-#define DEBUG(...) do {\
-                     fprintf(stderr, "[GIRI]: ");\
-                     fprintf(stderr, __VA_ARGS__);\
-                   } while (false)
+#ifdef DEBUG_GIRI_RUNTIME
+#define DEBUG(...) fprintf(stderr, __VA_ARGS__)
 #else
 #define DEBUG(...) do {} while(false)
 #endif
 
-#define ERROR(...) do {\
-                     fprintf(stderr, "[GIRI]: ");\
-                     fprintf(stderr, __VA_ARGS__); }\
-                   while (false)
+#define ERROR(...) fprintf(stderr, __VA_ARGS__)
 
 // Forward declearation
 extern "C" void recordInit(const char *name);
@@ -190,7 +184,7 @@ void EntryCache::flushCache(void) {
 /// Signal handler to write only tracing data to file
 static void cleanup_only_tracing(int signum)
 {
-  ERROR("Abnormal termination, signal number %d\n", signum);
+  ERROR("[GIRI] Abnormal termination, signal number %d\n", signum);
   exit(signum);
 }
 
@@ -227,7 +221,7 @@ void flushEntryCache(void) {
 }
 
 void closeCacheFile(void) {
-  DEBUG("Writing cache data to trace file and closing.\n");
+  DEBUG("[GIRI] Writing cache data to trace file and closing.\n");
 
   // Create basic block termination entries for each basic block on the stack.
   // These were the basic blocks that were active when the program terminated.
@@ -255,7 +249,7 @@ void recordInit(const char *name) {
   // First assert that the size of an entry evenly divides the cache entry
   // buffer size. The run-time will not work if this is not true.
   if (entryCacheBytes % sizeof(Entry)) {
-    ERROR("Entry size %lu does not divide cache size!\n", sizeof(Entry));
+    ERROR("[GIRI] Entry size %lu does not divide cache size!\n", sizeof(Entry));
     abort();
   }
 
@@ -264,7 +258,7 @@ void recordInit(const char *name) {
   // in the file.
   record = open(name, O_RDWR | O_CREAT | O_TRUNC, 0640u);
   assert((record != -1) && "Failed to open tracing file!\n");
-  DEBUG("Opened trace file: %s\n", name);
+  DEBUG("[GIRI] Opened trace file: %s\n", name);
 
   // Initialize the entry cache by giving it a memory buffer to use.
   entryCache.openFD(record);
@@ -289,11 +283,11 @@ void recordInit(const char *name) {
 /// complete execution.
 void recordStartBB(unsigned id, unsigned char *fp) {
   if (id >= 190525 && id <= 190532)
-    DEBUG("At BasicBlock start, BBid %u between 190525 and 190532\n", id);
+    DEBUG("[GIRI] At BasicBlock start, BBid %u between 190525 and 190532\n", id);
 
   // Ensure that we have enough space on the basic block stack.
   if (BBStackIndex == maxBBStack) {
-    ERROR("Basic Block Stack overflowed in Tracing runtime\n");
+    ERROR("[GIRI] Basic Block Stack overflowed in Tracing runtime\n");
     abort();
   }
 
@@ -303,7 +297,7 @@ void recordStartBB(unsigned id, unsigned char *fp) {
 
   // FIXME: Special handling for clang code
   if (id == 190531) {
-    ERROR("Due to some bug, some entries r missing in trace. \
+    ERROR("[GIRI] Due to some bug, some entries r missing in trace. \
            Hence force writing trace file here at symptom\n");
     closeCacheFile();
     abort();
@@ -317,7 +311,7 @@ void recordStartBB(unsigned id, unsigned char *fp) {
 /// \param fp - The pointer to the function in which the basic block belongs.
 void recordBB(unsigned id, unsigned char *fp, unsigned lastBB) {
   if (id >= 190525 && id <= 190532)
-    DEBUG("At BasicBlock end, BBid %u between 190525 and 190532\n", id);
+    DEBUG("[GIRI] At BasicBlock end, BBid %u between 190525 and 190532\n", id);
 
   // Record that this basic block as been executed.
   unsigned callID = 0;
@@ -329,7 +323,7 @@ void recordBB(unsigned id, unsigned char *fp, unsigned lastBB) {
   if (lastBB) {
     if (FNStackIndex > 0 ) {
       if (FNStack[FNStackIndex - 1].fnAddress != fp ) {
-        ERROR("Function id on stack doesn't match for id %u.\
+        ERROR("[GIRI] Function id on stack doesn't match for id %u.\
                MAY be due to function call from external code\n", id);
       } else {
         --FNStackIndex;
@@ -360,11 +354,11 @@ void recordBB(unsigned id, unsigned char *fp, unsigned lastBB) {
 void recordExtCallRet(unsigned callID, unsigned char *fp) {
   assert(FNStackIndex > 0);
 
-  DEBUG("Inside %s: callID = %u, fp = %s\n", __func__, callID,
+  DEBUG("[GIRI] Inside %s: callID = %u, fp = %s\n", __func__, callID,
         FNStack[FNStackIndex - 1].fnAddress);
 
   if (FNStack[FNStackIndex - 1].fnAddress != fp)
-	ERROR("Function id on stack doesn't match for id %u. \
+	ERROR("[GIRI] Function id on stack doesn't match for id %u. \
            MAY be due to function call from external code\n", callID);
   else
      --FNStackIndex;
@@ -372,7 +366,7 @@ void recordExtCallRet(unsigned callID, unsigned char *fp) {
 
 /// Record that a load has been executed.
 void recordLoad(unsigned id, unsigned char *p, uintptr_t length) {
-  DEBUG("Inside %s: id = %u, length = %lx\n", __func__, id, length);
+  DEBUG("[GIRI] Inside %s: id = %u, length = %lx\n", __func__, id, length);
   addToEntryCache(Entry(RecordType::LDType, id, p, length));
 }
 
@@ -381,7 +375,7 @@ void recordLoad(unsigned id, unsigned char *p, uintptr_t length) {
 /// \param p      - The starting address of the store.
 /// \param length - The length, in bytes, of the stored data.
 void recordStore(unsigned id, unsigned char *p, uintptr_t length) {
-  DEBUG("Inside %s: id = %u, length = %lx\n", __func__, id, length);
+  DEBUG("[GIRI] Inside %s: id = %u, length = %lx\n", __func__, id, length);
   // Record that a store has been executed.
   addToEntryCache(Entry(RecordType::STType, id, p, length));
 }
@@ -392,7 +386,7 @@ void recordStrLoad(unsigned id, char *p) {
   // string terminator character.
   uintptr_t length = strlen(p) + 1;
 
-  DEBUG("Inside %s: id = %u, leng = %lx\n", __func__, id, length);
+  DEBUG("[GIRI] Inside %s: id = %u, leng = %lx\n", __func__, id, length);
 
   // Record that a load has been executed.
   addToEntryCache(Entry(RecordType::LDType, id, (unsigned char *) p, length));
@@ -406,7 +400,7 @@ void recordStrStore(unsigned id, char *p) {
   // string terminator character.
   uintptr_t length = strlen(p) + 1;
 
-  DEBUG("Inside %s: id = %u, length = %lx\n", __func__, id, length);
+  DEBUG("[GIRI] Inside %s: id = %u, length = %lx\n", __func__, id, length);
 
   // Record that there has been a store starting at the first address of the
   // string and continuing for the length of the string.
@@ -423,7 +417,7 @@ void recordStrcatStore(unsigned id, char *p, char *s) {
   char *start = p + strlen(p);
   uintptr_t length = strlen(s) + 1;
 
-  DEBUG("Inside %s: id = %u, length = %lx\n", __func__, id, length);
+  DEBUG("[GIRI] Inside %s: id = %u, length = %lx\n", __func__, id, length);
   // Record that there has been a store starting at the firstlast
   // address (the position of null termination char) of the string and
   // continuing for the length of the source string.
@@ -434,7 +428,7 @@ void recordStrcatStore(unsigned id, char *p, char *s) {
 /// \param id - The ID of the call instruction.
 /// \param fp - The address of the function that was called.
 void recordCall(unsigned id, unsigned char *fp) {
-  DEBUG("Inside %s: id = %u\n", __func__, id);
+  DEBUG("[GIRI] Inside %s: id = %u\n", __func__, id);
 
   // Record that a call has been executed.
   addToEntryCache(Entry(RecordType::CLType, id, fp));
@@ -452,7 +446,7 @@ void recordCall(unsigned id, unsigned char *fp) {
 /// \param id - The ID of the call instruction.
 /// \param fp - The address of the function that was called.
 void recordExtCall(unsigned id, unsigned char *fp) {
-  DEBUG("Inside %s: id = %u\n", __func__, id);
+  DEBUG("[GIRI] Inside %s: id = %u\n", __func__, id);
 
   // Record that a call has been executed.
   addToEntryCache(Entry(RecordType::CLType, id, fp));
@@ -460,7 +454,7 @@ void recordExtCall(unsigned id, unsigned char *fp) {
 
 /// Record that a function has finished execution by adding a return trace entry
 void recordReturn(unsigned id, unsigned char *fp) {
-  DEBUG("Inside %s: id = %u\n", __func__, id);
+  DEBUG("[GIRI] Inside %s: id = %u\n", __func__, id);
 
   // Record that a call has returned.
   addToEntryCache(Entry(RecordType::RTType, id, fp));
@@ -471,7 +465,7 @@ void recordReturn(unsigned id, unsigned char *fp) {
 /// \param flag - The boolean value (true or false) used to determine the select
 ///               instruction's output.
 void recordSelect(unsigned id, unsigned char flag) {
-  DEBUG("Inside %s: id = %u, flag = %c\n", __func__, id, flag);
+  DEBUG("[GIRI] Inside %s: id = %u, flag = %c\n", __func__, id, flag);
   // Record that a store has been executed.
   addToEntryCache(Entry(RecordType::PDType, id, (unsigned char *)flag));
 }
