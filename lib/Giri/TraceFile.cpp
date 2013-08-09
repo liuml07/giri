@@ -1689,8 +1689,8 @@ void TraceFile::getSourcesForCall(DynValue &DV, Worklist_t &Sources) {
   //assert( trace[tempretindex].type == RecordType::BBType &&			
   //      trace[tempretindex].address == trace[retindex].address && "Return and BB record doesn't match");
   // FIX ME!!! why records are not generated inside some calls as in stat,my_stat of mysql????
-  if (!trace[tempretindex].type == RecordType::BBType ||
-      !trace[tempretindex].address == trace[retindex].address) {
+  if (!(trace[tempretindex].type == RecordType::BBType &&
+        trace[tempretindex].address == trace[retindex].address)) {
     DEBUG_WITH_TYPE("giri", errs() << "Return and BB record doesn't match!"
                                    << "May be due to some reason the records "
                                    << "of a called function are not recorded "

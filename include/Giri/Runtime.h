@@ -20,7 +20,7 @@
 //===----------------------------------------------------------------------===//
 // Identifiers for record types
 //===----------------------------------------------------------------------===//
-enum RecordType : unsigned {
+enum class RecordType : unsigned {
   BBType  = 'B',  // Basic block record
   LDType  = 'L',  // Load record
   STType  = 'S',  // Store record
