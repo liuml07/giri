@@ -175,12 +175,6 @@ bool TracingNoGiri::doInitialization (Module & M) {
                                                       VoidPtrType,
                                                       nullptr));
 
-  RecordHandlerThreadID =
-    cast<Function>(M.getOrInsertFunction("recordHandlerThreadID",
-                                         VoidType,
-                                         VoidPtrType,
-                                         nullptr));
-
   // Get a reference to the run-time's initialization function
   Init = cast<Function>(M.getOrInsertFunction("recordInit",
                                               VoidType,
@@ -270,14 +264,6 @@ bool TracingNoGiri::doFinalization(Module &M) {
 
   // Insert the constructor into the list of global constructor functions.
   insertIntoGlobalCtorList(RuntimeCtor);
-
-  // Instrument the function to record it's thread id,
-  // if it is a function started from pthread_create
-  //
-  // Test handler function
-  instrumentPthreadCreatedFunctions(M.getFunction("PrintHello") );
-  // MySQL handler Function
-  instrumentPthreadCreatedFunctions(M.getFunction("handle_one_connection") );
 
   // Indicate that we've changed the module.
   return true;
@@ -728,17 +714,6 @@ void TracingNoGiri::instrumentLoadsAndStores(BasicBlock &BB) {
   }
   visit (Worklist.begin(), Worklist.end());
   return;
-}
-
-void TracingNoGiri::instrumentPthreadCreatedFunctions(Function *F) {
-  // If no such handler function exist, the return
-  if (F == nullptr)
-    return;
-
-  // Insert code at the beginning of the Function to record the thread id.
-  Constant *Name = stringToGV (F->getName().str(), F->getParent());
-  Name = ConstantExpr::getZExtOrBitCast (Name, VoidPtrType);
-  CallInst::Create (RecordHandlerThreadID, Name, "", F->getEntryBlock().getFirstInsertionPt());
 }
 
 bool TracingNoGiri::runOnBasicBlock(BasicBlock &BB) {
