@@ -52,7 +52,6 @@ extern "C" void recordReturn(unsigned id, unsigned char *p);
 extern "C" void recordExtCall(unsigned id, unsigned char *p);
 extern "C" void recordExtFun(unsigned id);
 extern "C" void recordExtCallRet(unsigned callID, unsigned char *fp);
-extern "C" void recordInvFailure(unsigned id);
 extern "C" void recordSelect(unsigned id, unsigned char flag);
 extern "C" void flushEntryCache(void);
 extern "C" void closeCacheFile(void);
@@ -471,13 +470,6 @@ void recordExtCall(unsigned id, unsigned char *fp) {
 void recordReturn(unsigned id, unsigned char *fp) {
   // Record that a call has returned.
   addToEntryCache(Entry(RTType, id, fp));
-}
-
-/// Record id of the failed invariant.
-/// \param id - The ID assigned to the corresponding instruction in the LLVM IR
-void recordInvFailure(unsigned id) {
-  // Record that an invariant has failed.
-  addToEntryCache(Entry(INVType, id));
 }
 
 /// This function records which input of a select instruction was selected.

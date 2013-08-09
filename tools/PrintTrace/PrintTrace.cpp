@@ -72,9 +72,6 @@ int main(int argc, char ** argv) {
       case ENType:
         printf ("End         : ");
         break;
-      case INVType:
-        printf ("Inv Fail    : ");
-        break;
       default:
         printf ("UNKNOWN     : ");
         break;
