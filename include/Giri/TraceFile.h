@@ -280,8 +280,7 @@ private:
   /// \param type - The type of entry for which the caller searches.
   /// \return The index in the trace of entry with the specified type and ID
   /// is returned.
-  unsigned long findPrevious(unsigned long start_index,
-                             const unsigned char type);
+  unsigned long findPrevious(unsigned long start_index, RecordType type);
 
   /// This method searches backwards in the trace file for an entry of the
   /// specified type and ID.
@@ -293,7 +292,7 @@ private:
   /// \return The index in the trace of entry with the specified type and ID is
   /// returned; if no such entry is found, then the end entry is returned.
   unsigned long findPreviousID(unsigned long start_index,
-                               const unsigned char type,
+                               RecordType type,
                                const std::set<unsigned> &ids);
 
   /// This method searches backwards in the trace file for an entry of the
@@ -306,7 +305,7 @@ private:
   /// \return The index in the trace of entry with the specified type and ID is
   /// returned.
   unsigned long findPreviousID(unsigned long start_index,
-                               const unsigned char type,
+                               RecordType type,
                                const unsigned id);
 
   // CHANGE TO USE WithRecursion functionality here and also in recursion
@@ -321,7 +320,7 @@ private:
   /// \param id - The ID of the entry for which we are looking.
   /// \param nestedID - The ID of the basic block to use to find nesting levels.
   unsigned long findPreviousNestedID(unsigned long start_index,
-                                     const unsigned char type,
+                                     RecordType type,
                                      const unsigned id,
                                      const unsigned nestedID);
 
@@ -338,7 +337,7 @@ private:
   /// \param id - The ID field of the entry for which the caller searches.
   /// \return The index in the trace of entry with the specified type and ID is returned.
   unsigned long findNextID(unsigned long start_index,
-                           const unsigned char type,
+                           RecordType type,
                            const unsigned id);
 
   // CHANGE TO USE WithRecursion functionality here and also in recursion
@@ -348,7 +347,7 @@ private:
   /// This method finds the next entry in the trace file that has the specified
   /// type and ID.  However, it also handles nesting.
   unsigned long findNextNestedID(unsigned long start_index,
-                                 const unsigned char type,
+                                 RecordType type,
                                  const unsigned id,
                                  const unsigned nestID);
 
@@ -367,7 +366,7 @@ private:
   /// \return The index in the trace of entry with the specified type and
   /// address is returned.
   unsigned long findNextAddress(unsigned long start_index,
-                                const unsigned char type,
+                                RecordType type,
                                 const uintptr_t address);
 
   /// Given a call instruction, this method searches backwards in the trace file
@@ -403,7 +402,7 @@ private:
   /// error code
   unsigned long findPreviousIDWithRecursion(Function *fun,
                                             unsigned long start_index,
-                                            const unsigned char type,
+                                            RecordType type,
                                             const unsigned id);
 
   /// This method searches backwards in the trace file for an entry of the
@@ -421,7 +420,7 @@ private:
   /// code.
   unsigned long findPreviousIDWithRecursion(Function *fun,
                                             unsigned long start_index,
-                                            const unsigned char type,
+                                            RecordType type,
                                             const std::set<unsigned> &ids);
 
   /// This method, given a dynamic value that reads from memory, will find the
