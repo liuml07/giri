@@ -37,7 +37,7 @@ using namespace giri;
 extern llvm::cl::opt<std::string> TraceFilename;
 
 static cl::opt<std::string>
-SliceFilename("slice-file", cl::desc("Trace filename"), cl::init("-"));
+SliceFilename("slice-file", cl::desc("Slice file name"), cl::init("-"));
 
 static cl::opt<bool>
 TraceCD("trace-cd", cl::desc("Trace control dependence"), cl::init(false));
