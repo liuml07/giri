@@ -93,7 +93,7 @@ public:
   /// Add one entry to the cache
   void addToEntryCache(const Entry &entry);
 
-  /// Close the cache file, this will call the flushCache
+  /// Close the cache file
   void closeCacheFile();
 
 private:
@@ -163,10 +163,10 @@ void EntryCache::init(int FD) {
   assert(cache != MAP_FAILED);
 }
 
-void EntryCache::flushCache(void) {
+void EntryCache::flushCache() {
   // Unmap the data. This should force it to be written to disk.
   msync(cache, entryCacheBytes, MS_SYNC);
-  munmap(cache, sizeof(Entry) * index);
+  munmap(cache, entryCacheBytes);
 
   // Advance the file offset to the next portion of the file.
   fileOffset += entryCacheBytes;
@@ -245,8 +245,9 @@ void EntryCache::closeCacheFile() {
   // Create an end entry to terminate the log.
   addToEntryCache(Entry(RecordType::ENType, 0));
 
-  // Flush the entry cache.
-  flushCache();
+  // Unmap the data. This should force it to be written to disk.
+  msync(cache, index, MS_SYNC);
+  munmap(cache, sizeof(Entry) * index);
 }
 
 //===----------------------------------------------------------------------===//
