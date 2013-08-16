@@ -9,6 +9,7 @@ GIRI_DIR ?= ../../../build/
 NAME ?= main
 
 CC = clang
+CXX = clang++
 GIRI_LIB_DIR = $(GIRI_DIR)/$(VERSION)/lib
 GIRI_BIN_DIR = $(GIRI_DIR)/$(VERSION)/bin
 
@@ -37,7 +38,7 @@ $(NAME).trace: $(NAME).trace.exe
 	- ./$< $(INPUT)
 
 $(NAME).trace.exe : $(NAME).trace.s
-	$(CC) -fno-strict-aliasing $+ -o $@ $(LDFLAGS) -L$(GIRI_LIB_DIR) -lrtgiri
+	$(CXX) -fno-strict-aliasing $+ -o $@ $(LDFLAGS) -L$(GIRI_LIB_DIR) -lrtgiri
 
 $(NAME).trace.s : $(NAME).trace.bc
 	llc -asm-verbose=false -O0 $< -o $@
