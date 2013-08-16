@@ -2,6 +2,6 @@
 
 NAME = example
 LDFLAGS = -lm
-INPUT = 10
+INPUT ?= 10
 
 include ../Makefile.common
