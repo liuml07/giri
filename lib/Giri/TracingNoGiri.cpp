@@ -603,7 +603,7 @@ void TracingNoGiri::visitCallInst(CallInst &CI) {
   // Do not add calls to function call stack for external functions
   // as return records won't be used/needed for them, so call a special record function
   // FIXME!!!! Do we still need it after adding separate return records????
-  if (CalledFunc->getName().str() == "pthread_create")
+  if (CalledFunc->isDeclaration())
     CallInst::Create(RecordExtCall, args, "", &CI);
   else
     CallInst::Create(RecordCall, args, "", &CI);
@@ -620,33 +620,32 @@ void TracingNoGiri::visitCallInst(CallInst &CI) {
   // reset afterwards and restored to its original value before returning to ext code.
   // FIXME!!!! LATER
 
-  if (CalledFunc->isDeclaration()) {
+  if (CalledFunc->isDeclaration() &&
+      CalledFunc->getName().str() == "pthread_create") {
     // If pthread_create is called then handle it specially as it calls
     // functions externally and add an extra call for the externally
     // called functions with the same id so that returns can match with it.
     // In addition to a function call to pthread_create.
-    if(CalledFunc->getName().str() == "pthread_create") {
-      // Get the external function pointer operand and cast it to a void pointer
-      Value *FP = castTo(CI.getOperand(2), VoidPtrType, "", &CI);
-      // Create the call to the run-time to record the call instruction.
-      std::vector<Value *> argsExt = make_vector<Value *>(CallID, FP, 0);
-      CallInst = CallInst::Create(RecordCall, argsExt, "", &CI);
-      CI.moveBefore(CallInst);
+    // Get the external function pointer operand and cast it to a void pointer
+    Value *FP = castTo(CI.getOperand(2), VoidPtrType, "", &CI);
+    // Create the call to the run-time to record the call instruction.
+    std::vector<Value *> argsExt = make_vector<Value *>(CallID, FP, 0);
+    CallInst = CallInst::Create(RecordCall, argsExt, "", &CI);
+    CI.moveBefore(CallInst);
 
-      // Update statistics
-      ++Calls;
+    // Update statistics
+    ++Calls;
 
-      // For, both external functions and internal/ext functions called from
-      // external functions, return records are not useful as they won't be used.
-      // Since, we won't create return records for them, simply update the call
-      // stack to mark the end of function call.
+    // For, both external functions and internal/ext functions called from
+    // external functions, return records are not useful as they won't be used.
+    // Since, we won't create return records for them, simply update the call
+    // stack to mark the end of function call.
 
-      //args = make_vector<Value *>(CallID, FP, 0);
-      //CallInst::Create(RecordExtCallRet, args.begin(), args.end(), "", &CI);
+    //args = make_vector<Value *>(CallID, FP, 0);
+    //CallInst::Create(RecordExtCallRet, args.begin(), args.end(), "", &CI);
 
-      // Create the call to the run-time to record the return of call instruction.
-      CallInst::Create(RecordReturn, argsExt, "", &CI);
-    }
+    // Create the call to the run-time to record the return of call instruction.
+    CallInst::Create(RecordReturn, argsExt, "", &CI);
   }
 
   // Instrument special external calls which loads/stores
