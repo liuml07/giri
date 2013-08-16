@@ -11,8 +11,6 @@
 // It is specifically designed for tracing events needed for performing dynamic
 // slicing.
 //
-// @TODO: make this code thread-safe!
-//
 //===----------------------------------------------------------------------===//
 
 #include "Giri/Runtime.h"
@@ -89,19 +87,20 @@ pthread_mutex_t fnstack_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 class EntryCache {
 public:
+  EntryCache();
+
   /// Open the file descriptor and mmap the entryCacheBytes bytes to the cache
   void openFD(int FD);
 
   /// Add one entry to the cache
   void addToEntryCache(const Entry &entry);
 
+  /// Close the cache file, this will call the flushCache
+  void closeCacheFile();
+
+private:
   /// Flush the cache to disk
   void flushCache(void);
-
-  // Size of the entry cache in bytes
-  static const unsigned entryCacheBytes;
-  // Size of the entry cache
-  static const unsigned entryCacheSize;
 
 private:
   /// The current index into the entry cache. This points to the next element
@@ -110,10 +109,23 @@ private:
   Entry *cache; /// A cache of entries that need to be written to disk
   off_t fileOffset; ///< The offset of the file which is cached into memory.
   int fd; ///< File which is being cached in memory.
+
+  unsigned entryCacheBytes; ///< Size of the entry cache in bytes
+  unsigned entryCacheSize; ///< Size of the entry cache
 };
 
-const unsigned EntryCache::entryCacheBytes = 256 * 1024 * 1024;
-const unsigned EntryCache::entryCacheSize = entryCacheBytes / sizeof(Entry);
+EntryCache::EntryCache() {
+  entryCacheBytes = 256 * 1024 * 1024;
+  entryCacheSize = entryCacheBytes / sizeof(Entry);
+
+  // assert that the size of an entry evenly divides the cache entry
+  // buffer size. The run-time will not work if this is not true.
+  if (entryCacheBytes % sizeof(Entry)) {
+    ERROR("[GIRI] Entry size %lu does not divide cache size!\n", sizeof(Entry));
+    abort();
+  }
+
+}
 
 void EntryCache::openFD(int FD) {
   // Save the file descriptor of the file that we'll use.
@@ -212,17 +224,7 @@ void EntryCache::addToEntryCache(const Entry &entry) {
   pthread_mutex_unlock(&entrycache_mutex);
 }
 
-//===----------------------------------------------------------------------===//
-//                       Record and Helper Functions
-//===----------------------------------------------------------------------===//
-
-/// This is the very entry cache used by all record functions
-static EntryCache entryCache;
-
-/// Close the cache file, this will call the flushCache
-static void closeCacheFile() {
-  DEBUG("[GIRI] Writing cache data to trace file and closing.\n");
-
+void EntryCache::closeCacheFile() {
   // Create basic block termination entries for each basic block on the stack.
   // These were the basic blocks that were active when the program terminated.
   // **** Should we print the return records for active functions as well?????????
@@ -236,17 +238,26 @@ static void closeCacheFile() {
     unsigned char *fp = BBStack[BBStackIndex].address;
 
     // Create a basic block entry for it.
-    entryCache.addToEntryCache(Entry(RecordType::BBType,
-                                     bbid,
-                                     pthread_self(),
-                                     fp));
+    addToEntryCache(Entry(RecordType::BBType, bbid, pthread_self(), fp));
   }
 
   // Create an end entry to terminate the log.
-  entryCache.addToEntryCache(Entry(RecordType::ENType, 0));
+  addToEntryCache(Entry(RecordType::ENType, 0));
 
   // Flush the entry cache.
-  entryCache.flushCache();
+  flushCache();
+}
+
+//===----------------------------------------------------------------------===//
+//                       Record and Helper Functions
+//===----------------------------------------------------------------------===//
+
+/// This is the very entry cache used by all record functions
+static EntryCache entryCache;
+
+static void closeCacheFile() {
+  DEBUG("[GIRI] Writing cache data to trace file and closing.\n");
+  entryCache.closeCacheFile();
 }
 
 /// Signal handler to write only tracing data to file
@@ -257,13 +268,6 @@ static void cleanup_only_tracing(int signum)
 }
 
 void recordInit(const char *name) {
-  // First assert that the size of an entry evenly divides the cache entry
-  // buffer size. The run-time will not work if this is not true.
-  if (EntryCache::entryCacheBytes % sizeof(Entry)) {
-    ERROR("[GIRI] Entry size %lu does not divide cache size!\n", sizeof(Entry));
-    abort();
-  }
-
   // Open the file for recording the trace if it hasn't been opened already.
   // Truncate it in case this dynamic trace is shorter than the last one stored
   // in the file.
