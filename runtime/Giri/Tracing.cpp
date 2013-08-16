@@ -87,10 +87,8 @@ pthread_mutex_t fnstack_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 class EntryCache {
 public:
-  EntryCache();
-
   /// Open the file descriptor and mmap the entryCacheBytes bytes to the cache
-  void openFD(int FD);
+  void init(int FD);
 
   /// Add one entry to the cache
   void addToEntryCache(const Entry &entry);
@@ -110,24 +108,27 @@ private:
   off_t fileOffset; ///< The offset of the file which is cached into memory.
   int fd; ///< File which is being cached in memory.
 
-  unsigned entryCacheBytes; ///< Size of the entry cache in bytes
-  unsigned entryCacheSize; ///< Size of the entry cache
+  unsigned long entryCacheBytes; ///< Size of the entry cache in bytes
+  unsigned long entryCacheSize; ///< Size of the entry cache
+  static const float LOAD_FACTOR; ///< load factor of the system memory
 };
 
-EntryCache::EntryCache() {
-  entryCacheBytes = 256 * 1024 * 1024;
-  entryCacheSize = entryCacheBytes / sizeof(Entry);
+const float EntryCache::LOAD_FACTOR = 0.1;
+
+void EntryCache::init(int FD) {
+  long pages = sysconf(_SC_PHYS_PAGES);
+  long page_size = sysconf(_SC_PAGE_SIZE);
 
   // assert that the size of an entry evenly divides the cache entry
   // buffer size. The run-time will not work if this is not true.
-  if (entryCacheBytes % sizeof(Entry)) {
-    ERROR("[GIRI] Entry size %lu does not divide cache size!\n", sizeof(Entry));
+  if (page_size % sizeof(Entry)) {
+    ERROR("[GIRI] Entry size %lu does not divide page size!\n", sizeof(Entry));
     abort();
   }
 
-}
+  entryCacheBytes = pages * page_size * LOAD_FACTOR;
+  entryCacheSize = entryCacheBytes / sizeof(Entry);
 
-void EntryCache::openFD(int FD) {
   // Save the file descriptor of the file that we'll use.
   fd = FD;
 
@@ -253,6 +254,7 @@ void EntryCache::closeCacheFile() {
 //===----------------------------------------------------------------------===//
 
 /// This is the very entry cache used by all record functions
+/// Call entryCache.init(fd) before usage
 static EntryCache entryCache;
 
 static void closeCacheFile() {
@@ -276,7 +278,7 @@ void recordInit(const char *name) {
   DEBUG("[GIRI] Opened trace file: %s\n", name);
 
   // Initialize the entry cache by giving it a memory buffer to use.
-  entryCache.openFD(record);
+  entryCache.init(record);
 
   // Make sure that we flush the entry cache on exit.
   atexit(closeCacheFile);
