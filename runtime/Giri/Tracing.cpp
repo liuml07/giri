@@ -97,8 +97,8 @@ public:
   void closeCacheFile();
 
 private:
-  /// Flush the cache to disk
-  void flushCache(void);
+  /// Map the trace file to cache
+  void mapCache(void);
 
 private:
   /// The current index into the entry cache. This points to the next element
@@ -137,40 +137,11 @@ void EntryCache::init(int FD) {
   fileOffset = 0;
   cache = 0;
 
-  // Extend the size of the file so that we can access the data within it.
-#ifndef __CYGWIN__
-  char buf[1] = {0};
-  off_t currentPosition = lseek(fd, entryCacheBytes+1, SEEK_CUR);
-  write(fd, buf, 1);
-  lseek(fd, currentPosition, SEEK_SET);
-#endif
-
-  // Map the first portion of the file into memory. It will act as the cache.
-#ifdef __CYGWIN__
-  cache = (Entry *)mmap(0,
-                        entryCacheBytes,
-                        PROT_READ | PROT_WRITE, MAP_SHARED | MAP_AUTOGROW,
-                        fd,
-                        fileOffset);
-#else
-  cache = (Entry *)mmap(0,
-                        entryCacheBytes,
-                        PROT_READ | PROT_WRITE,
-                        MAP_SHARED,
-                        fd,
-                        fileOffset);
-#endif
-  assert(cache != MAP_FAILED);
+  mapCache();
 }
 
-void EntryCache::flushCache() {
-  // Unmap the data. This should force it to be written to disk.
-  msync(cache, entryCacheBytes, MS_SYNC);
-  munmap(cache, entryCacheBytes);
-
-  // Advance the file offset to the next portion of the file.
-  fileOffset += entryCacheBytes;
-
+void EntryCache::mapCache() {
+  
 #ifndef __CYGWIN__
   char buf[1] = {0};
   off_t currentPosition = lseek(fd, entryCacheBytes+1, SEEK_CUR);
@@ -203,9 +174,17 @@ void EntryCache::flushCache() {
 void EntryCache::addToEntryCache(const Entry &entry) {
   static pthread_mutex_t entrycache_mutex = PTHREAD_MUTEX_INITIALIZER;
   pthread_mutex_lock(&entrycache_mutex);
+
   // Flush the cache if necessary.
   if (index == entryCacheSize) {
-    flushCache();
+    DEBUG("[GIRI] Writing the cache to file and remapping...\n");
+    // Unmap the data. This should force it to be written to disk.
+    msync(cache, entryCacheBytes, MS_SYNC);
+    munmap(cache, entryCacheBytes);
+    // Advance the file offset to the next portion of the file.
+    fileOffset += entryCacheBytes;
+    // Remap the cache
+    mapCache();
   }
 
   // Add the entry to the entry cache.
@@ -245,9 +224,10 @@ void EntryCache::closeCacheFile() {
   // Create an end entry to terminate the log.
   addToEntryCache(Entry(RecordType::ENType, 0));
 
+  size_t len = sizeof(Entry) * index;
   // Unmap the data. This should force it to be written to disk.
-  msync(cache, index, MS_SYNC);
-  munmap(cache, sizeof(Entry) * index);
+  msync(cache, len, MS_SYNC);
+  munmap(cache, len);
 }
 
 //===----------------------------------------------------------------------===//
