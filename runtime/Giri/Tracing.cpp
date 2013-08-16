@@ -228,6 +228,9 @@ void EntryCache::closeCacheFile() {
   // Unmap the data. This should force it to be written to disk.
   msync(cache, len, MS_SYNC);
   munmap(cache, len);
+
+  // Truncate the file to be the actual size for small traces
+  ftruncate(fd, len + fileOffset);
 }
 
 //===----------------------------------------------------------------------===//
