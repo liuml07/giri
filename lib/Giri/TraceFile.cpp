@@ -20,6 +20,7 @@
 #include "llvm/IntrinsicInst.h"
 #include "llvm/Support/CallSite.h"
 #include "llvm/Support/Debug.h"
+#include "llvm/Support/raw_ostream.h"
 
 #include <cassert>
 #include <vector>
@@ -476,9 +477,12 @@ unsigned long TraceFile::findNextNestedID (unsigned long start_index,
     ++index;
   }
 
-  //
+  if (!found)
+    DEBUG(dbgs() << "start_index: " << start_index
+                 << " type: " << static_cast<char>(type)
+                 << " id: " << id
+                 << " nestID: " << nestID << "\n");
   // Assert that we've found the entry for which we're looking.
-  //
   assert (found && "Did not find desired subsequent entry in trace!\n");
 
   return index;
