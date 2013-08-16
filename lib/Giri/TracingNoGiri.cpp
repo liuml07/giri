@@ -620,6 +620,8 @@ void TracingNoGiri::visitCallInst(CallInst &CI) {
   // reset afterwards and restored to its original value before returning to ext code.
   // FIXME!!!! LATER
 
+
+#if 0
   if (CalledFunc->isDeclaration() &&
       CalledFunc->getName().str() == "pthread_create") {
     // If pthread_create is called then handle it specially as it calls
@@ -647,6 +649,7 @@ void TracingNoGiri::visitCallInst(CallInst &CI) {
     // Create the call to the run-time to record the return of call instruction.
     CallInst::Create(RecordReturn, argsExt, "", &CI);
   }
+#endif
 
   // Instrument special external calls which loads/stores
   // like strlen, strcpy, memcpy etc.
