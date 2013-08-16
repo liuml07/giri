@@ -12,7 +12,7 @@ long nelems_per_thread; /* number of elements summed by each thread */
 
 int main(int argc, char **argv)
 {
-    long i, nelems, log_nelems, nthreads, result = 0;
+    long i, nelems, log_nelems, nthreads, esum, result = 0;
     pthread_t tid[MAX_THREADS];
     int myid[MAX_THREADS];
 
@@ -25,6 +25,7 @@ int main(int argc, char **argv)
     nthreads = atoi(argv[1]);
     log_nelems = atoi(argv[2]);
     nelems = (1L << log_nelems);
+    esum = nelems * (nelems - 1) / 2;
     nelems_per_thread = nelems / nthreads;
 
     /* Create peer threads and wait for them to finish */
@@ -40,10 +41,12 @@ int main(int argc, char **argv)
         result += psum[i];
 
     /* Check final answer */
-    if (result != (nelems * (nelems - 1)) / 2) {
+    if (result != esum) {
         fprintf(stderr, "Error: result = %ld\n", result);
         exit(EXIT_FAILURE);
     }
+
+    printf("The supposed sum is: %ld\n", esum);
 
     return result % 31;
 }
