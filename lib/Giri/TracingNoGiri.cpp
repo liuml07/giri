@@ -61,7 +61,7 @@ STATISTIC(ExtFuns, "Total number of special external calls like memcpy etc. proc
 char TracingNoGiri::ID = 0;
 
 static RegisterPass<TracingNoGiri>
-X ("trace-giri", "Instrument code to trace basic block execution");
+X("trace-giri", "Instrument code to trace basic block execution");
 
 
 /// This method determines whether the given basic block contains any PHI
@@ -70,16 +70,14 @@ X ("trace-giri", "Instrument code to trace basic block execution");
 /// \param  BB - A reference to the Basic Block to analyze.  It is not modified.
 /// \return true  if the basic block has one or more PHI instructions,
 /// otherwise false.
-static bool hasPHI (const BasicBlock & BB) {
+static bool hasPHI(const BasicBlock & BB) {
   for (BasicBlock::const_iterator I = BB.begin(); I != BB.end(); ++I)
     if (isa<PHINode>(I)) return true;
   return false;
 }
 
-bool TracingNoGiri::doInitialization (Module & M) {
-  //
+bool TracingNoGiri::doInitialization(Module & M) {
   // Get references to the different types that we'll need.
-  //
   Int8Type  = IntegerType::getInt8Ty(M.getContext());
   Int32Type = IntegerType::getInt32Ty(M.getContext());
   Int64Type = IntegerType::getInt64Ty(M.getContext());
@@ -104,12 +102,12 @@ bool TracingNoGiri::doInitialization (Module & M) {
                                                        nullptr));
 
   // Add the functions for recording the execution of loads, stores, and calls.
-  RecordLoad = cast<Function>(M.getOrInsertFunction ("recordLoad",
-                                                     VoidType,
-                                                     Int32Type,
-                                                     VoidPtrType,
-                                                     Int64Type,
-                                                     nullptr));
+  RecordLoad = cast<Function>(M.getOrInsertFunction("recordLoad",
+                                                    VoidType,
+                                                    Int32Type,
+                                                    VoidPtrType,
+                                                    Int64Type,
+                                                    nullptr));
 
   RecordStore = cast<Function>(M.getOrInsertFunction("recordStore",
                                                      VoidType,
@@ -200,11 +198,11 @@ Function *TracingNoGiri::createCtor(Module &M) {
   // function.
   BasicBlock *BB = BasicBlock::Create(M.getContext(), "entry", RuntimeCtor);
   Constant *Name = stringToGV(TraceFilename, &M);
-  Name = ConstantExpr::getZExtOrBitCast (Name, VoidPtrType);
+  Name = ConstantExpr::getZExtOrBitCast(Name, VoidPtrType);
   CallInst::Create(Init, Name, "", BB);
 
   // Add a return instruction at the end of the basic block.
-  ReturnInst::Create (M.getContext(), BB);
+  ReturnInst::Create(M.getContext(), BB);
 
   return RuntimeCtor;
 }
@@ -212,7 +210,7 @@ Function *TracingNoGiri::createCtor(Module &M) {
 void TracingNoGiri::insertIntoGlobalCtorList(Function *RuntimeCtor) {
   // Insert the run-time ctor into the ctor list.
   LLVMContext & Context = RuntimeCtor->getParent()->getContext();
-  Type *Int32Type = IntegerType::getInt32Ty (Context);
+  Type *Int32Type = IntegerType::getInt32Ty(Context);
   std::vector<Constant *> CtorInits;
   CtorInits.push_back(ConstantInt::get(Int32Type, 65535));
   CtorInits.push_back(RuntimeCtor);
@@ -222,11 +220,11 @@ void TracingNoGiri::insertIntoGlobalCtorList(Function *RuntimeCtor) {
   // to the list.
   std::vector<Constant *> CurrentCtors;
   Module & M = *(RuntimeCtor->getParent());
-  GlobalVariable *GVCtor = M.getNamedGlobal ("llvm.global_ctors");
+  GlobalVariable *GVCtor = M.getNamedGlobal("llvm.global_ctors");
   if (GVCtor) {
     if (Constant *C = GVCtor->getInitializer()) {
       for (unsigned index = 0; index < C->getNumOperands(); ++index) {
-        CurrentCtors.push_back(cast<Constant>(C->getOperand (index)));
+        CurrentCtors.push_back(cast<Constant>(C->getOperand(index)));
       }
     }
 
@@ -270,23 +268,20 @@ bool TracingNoGiri::doFinalization(Module &M) {
 }
 
 void TracingNoGiri::instrumentBasicBlock(BasicBlock &BB) {
-
   Value *LastBB;
 
   // Lookup the ID of this basic block and create an LLVM value for it.
-  unsigned id = bbNumPass->getID (&BB);
-  assert (id && "Basic block does not have an ID!\n");
+  unsigned id = bbNumPass->getID(&BB);
+  assert(id && "Basic block does not have an ID!\n");
   Value *BBID = ConstantInt::get(Int32Type, id);
 
   // Get a pointer to the function in which the basic block belongs.
   Value *FP = castTo(BB.getParent(), VoidPtrType, "", BB.getTerminator());
 
-
-  if (dyn_cast<ReturnInst>(BB.getTerminator()) )
+  if (isa<ReturnInst>(BB.getTerminator()))
      LastBB = ConstantInt::get(Int32Type, 1);
   else
      LastBB = ConstantInt::get(Int32Type, 0);
-
 
   // Insert code at the end of the basic block to record that it was executed.
   std::vector<Value *> args = make_vector<Value *>(BBID, FP, LastBB, 0);
@@ -302,24 +297,24 @@ void TracingNoGiri::instrumentBasicBlock(BasicBlock &BB) {
   // Insert code at the beginning of the basic block to record that it started
   // execution.
   args = make_vector<Value *>(BBID, FP, 0);
-  CallInst::Create (RecordStartBB, args, "", BB.getFirstInsertionPt());
+  CallInst::Create(RecordStartBB, args, "", BB.getFirstInsertionPt());
 }
 
 void TracingNoGiri::visitLoadInst(LoadInst &LI) {
   // Cast the pointer into a void pointer type.
   Value *Pointer = LI.getPointerOperand();
-  Pointer = castTo (Pointer, VoidPtrType, Pointer->getName(), &LI);
+  Pointer = castTo(Pointer, VoidPtrType, Pointer->getName(), &LI);
 
   // Get the size of the loaded data.
-  uint64_t size = TD->getTypeStoreSize (LI.getType());
+  uint64_t size = TD->getTypeStoreSize(LI.getType());
   Value * LoadSize = ConstantInt::get(Int64Type, size);
 
   // Get the ID of the load instruction.
-  Value * LoadID = ConstantInt::get(Int32Type, lsNumPass->getID (&LI));
+  Value * LoadID = ConstantInt::get(Int32Type, lsNumPass->getID(&LI));
 
   // Create the call to the run-time to record the load instruction.
   std::vector<Value *> args=make_vector<Value *>(LoadID, Pointer, LoadSize, 0);
-  CallInst::Create (RecordLoad, args, "", &LI);
+  CallInst::Create(RecordLoad, args, "", &LI);
 
   // Update statistics
   ++Loads;
@@ -331,7 +326,7 @@ void TracingNoGiri::visitSelectInst(SelectInst &SI) {
   Predicate = castTo(Predicate, Int8Type, Predicate->getName(), &SI);
 
   // Get the ID of the load instruction.
-  Value * SelectID = ConstantInt::get(Int32Type, lsNumPass->getID (&SI));
+  Value * SelectID = ConstantInt::get(Int32Type, lsNumPass->getID(&SI));
 
   // Create the call to the run-time to record the load instruction.
   std::vector<Value *> args=make_vector<Value *>(SelectID, Predicate, 0);
@@ -347,15 +342,15 @@ void TracingNoGiri::visitStoreInst(StoreInst &SI) {
   Pointer = castTo(Pointer, VoidPtrType, Pointer->getName(), &SI);
 
   // Get the size of the stored data.
-  uint64_t size = TD->getTypeStoreSize (SI.getOperand(0)->getType());
+  uint64_t size = TD->getTypeStoreSize(SI.getOperand(0)->getType());
   Value *StoreSize = ConstantInt::get(Int64Type, size);
 
   // Get the ID of the store instruction.
-  Value *StoreID = ConstantInt::get(Int32Type, lsNumPass->getID (&SI));
+  Value *StoreID = ConstantInt::get(Int32Type, lsNumPass->getID(&SI));
 
   // Create the call to the run-time to record the store instruction.
-  std::vector<Value *> args=make_vector<Value *>(StoreID,Pointer,StoreSize,0);
-  CallInst::Create (RecordStore, args, "", &SI);
+  std::vector<Value *> args=make_vector<Value *>(StoreID, Pointer, StoreSize, 0);
+  CallInst::Create(RecordStore, args, "", &SI);
 
   // Update statistics
   ++Stores;
@@ -441,20 +436,20 @@ bool TracingNoGiri::visitSpecialCall(CallInst &CI) {
     srcPointer  = castTo(srcPointer,  VoidPtrType, srcPointer->getName(), &CI);
 
     // Get the ID of the ext fun call instruction.
-    Value *CallID = ConstantInt::get(Int32Type, lsNumPass->getID (&CI));
+    Value *CallID = ConstantInt::get(Int32Type, lsNumPass->getID(&CI));
 
     // Create the call to the run-time to record the loads and stores of
     // external call instruction.
     // CHECK: If the tracer function should be inserted before or after????
-    std::vector<Value *> args = make_vector (CallID, dstPointer, 0);
-    CallInst::Create (RecordStrLoad, args, "", &CI);
+    std::vector<Value *> args = make_vector(CallID, dstPointer, 0);
+    CallInst::Create(RecordStrLoad, args, "", &CI);
 
-    args = make_vector (CallID, srcPointer, 0);
-    CallInst::Create (RecordStrLoad, args, "", &CI);
+    args = make_vector(CallID, srcPointer, 0);
+    CallInst::Create(RecordStrLoad, args, "", &CI);
 
     // Record the addresses before concat as they will be lost after concat
-    args = make_vector (CallID, dstPointer, srcPointer, 0);
-    CallInst::Create (RecordStrcatStore, args, "", &CI);
+    args = make_vector(CallID, dstPointer, srcPointer, 0);
+    CallInst::Create(RecordStrcatStore, args, "", &CI);
 
     // Update statistics
     ++ExtFuns;
@@ -467,7 +462,7 @@ bool TracingNoGiri::visitSpecialCall(CallInst &CI) {
     // Get the ID of the ext fun call instruction.
     Value *CallID = ConstantInt::get(Int32Type, lsNumPass->getID(&CI));
 
-    std::vector<Value *> args = make_vector (CallID, srcPointer, 0);
+    std::vector<Value *> args = make_vector(CallID, srcPointer, 0);
     CallInst::Create(RecordStrLoad, args, "", &CI);
 
     // Update statistics
@@ -485,7 +480,7 @@ bool TracingNoGiri::visitSpecialCall(CallInst &CI) {
     Value *dstPointer = castTo(&CI, VoidPtrType, CI.getName(), &CI);
 
     /* // To move after call inst, we need to know if cast is a constant expr or inst
-    if ( (dstPointerInst = dyn_cast<Instruction>(dstPointer)) ) {
+    if ((dstPointerInst = dyn_cast<Instruction>(dstPointer))) {
         CI.moveBefore(dstPointerInst); // dstPointerInst->insertAfter(&CI);
         // ((Instruction *)NumElts)->insertAfter(dstPointerInst);
     }
@@ -525,7 +520,7 @@ bool TracingNoGiri::visitSpecialCall(CallInst &CI) {
     dstPointer = castTo(dstPointer, VoidPtrType, dstPointer->getName(), &CI);
 
     // Get the ID of the call instruction.
-    Value *CallID = ConstantInt::get(Int32Type, lsNumPass->getID (&CI));
+    Value *CallID = ConstantInt::get(Int32Type, lsNumPass->getID(&CI));
 
     // Scan through the arguments looking for what appears to be a character
     // string.  Generate load records for each of these strings.
@@ -535,7 +530,7 @@ bool TracingNoGiri::visitSpecialCall(CallInst &CI) {
         // What about other loads??
         Value *Ptr = CI.getOperand(index);
         std::vector<Value *> args = make_vector(CallID, Ptr, 0);
-        CallInst::Create (RecordStrLoad, args, "", &CI);
+        CallInst::Create(RecordStrLoad, args, "", &CI);
 
         // Update statistics
         ++LoadStrings;
@@ -556,7 +551,7 @@ bool TracingNoGiri::visitSpecialCall(CallInst &CI) {
     dstPointer = castTo(dstPointer, VoidPtrType, dstPointer->getName(), &CI);
 
     // Get the ID of the ext fun call instruction.
-    Value * CallID = ConstantInt::get(Int32Type, lsNumPass->getID (&CI));
+    Value * CallID = ConstantInt::get(Int32Type, lsNumPass->getID(&CI));
 
     // Create the call to the run-time to record the external call instruction.
     std::vector<Value *> args = make_vector(CallID, dstPointer, 0);
@@ -595,7 +590,7 @@ void TracingNoGiri::visitCallInst(CallInst &CI) {
   // There are some calls to external functions that we handle specially.
   // Take care of those now.
   //
-  if (visitSpecialCall (CI))
+  if (visitSpecialCall(CI))
     return;
 
   //
@@ -613,7 +608,7 @@ void TracingNoGiri::visitCallInst(CallInst &CI) {
     if (CalledFunc->isIntrinsic()) {
        // Instrument special external calls which loads/stores
        // like strlen, strcpy, memcpy etc.
-       visitSpecialCall (CI);
+       visitSpecialCall(CI);
        return;
     }
 
@@ -687,7 +682,7 @@ void TracingNoGiri::visitCallInst(CallInst &CI) {
     // stack to mark the end of function call.
 
     //args = make_vector<Value *>(CallID, FP, 0);
-    //CallInst::Create (RecordExtCallRet, args.begin(), args.end(), "", &CI);
+    //CallInst::Create(RecordExtCallRet, args.begin(), args.end(), "", &CI);
 
     // Create the call to the run-time to record the return of call instruction.
     CallInst::Create(RecordReturn, argsExt, "", &CI);
@@ -697,7 +692,7 @@ void TracingNoGiri::visitCallInst(CallInst &CI) {
 
   // Instrument special external calls which loads/stores
   // like strlen, strcpy, memcpy etc.
-  visitSpecialCall (CI);
+  visitSpecialCall(CI);
 
   return;
 }
@@ -710,9 +705,9 @@ void TracingNoGiri::instrumentLoadsAndStores(BasicBlock &BB) {
   //
   std::vector<Instruction *> Worklist;
   for (BasicBlock::iterator I = BB.begin(); I != BB.end(); ++I) {
-    Worklist.push_back (I);
+    Worklist.push_back(I);
   }
-  visit (Worklist.begin(), Worklist.end());
+  visit(Worklist.begin(), Worklist.end());
   return;
 }
 
@@ -732,7 +727,7 @@ bool TracingNoGiri::runOnBasicBlock(BasicBlock &BB) {
   instrumentLoadsAndStores(BB);
 
   // Update the number of basic blocks with phis.
-  if (hasPHI (BB)) ++PHIBBs;
+  if (hasPHI(BB)) ++PHIBBs;
 
   // Update the number of basic blocks.
   ++NumBBs;
