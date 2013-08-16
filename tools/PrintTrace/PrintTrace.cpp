@@ -53,7 +53,7 @@ int main(int argc, char ** argv) {
     // Print the entry's type
     switch (entry.type) {
       case RecordType::BBType:
-        printf("Basic Block : ");
+        printf("BasicBlock  : ");
         break;
       case RecordType::LDType:
         printf("Load        : ");
