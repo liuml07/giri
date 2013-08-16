@@ -567,55 +567,26 @@ bool TracingNoGiri::visitSpecialCall(CallInst &CI) {
 }
 
 void TracingNoGiri::visitCallInst(CallInst &CI) {
-  CallInst *ClInst;
 
   // Attempt to get the called function.
-  Function * CalledFunc = CI.getCalledFunction();
+  Function *CalledFunc = CI.getCalledFunction();
+  if (!CalledFunc)
+    return;
 
   // Do not instrument calls to tracing run-time functions or debug functions.
   if (isTracerFunction(CalledFunc))
     return;
 
-  if (CalledFunc) {
-    if(CalledFunc->getName().str().compare(0,9,"llvm.dbg.") == 0 )
-      return;
-  }
-
-  // Now, need to record call and return records of external calls
-  // to mark invariant failures correctly
-  //
-  /*
-
-  //
-  // There are some calls to external functions that we handle specially.
-  // Take care of those now.
-  //
-  if (visitSpecialCall(CI))
+  if (!CalledFunc->getName().str().compare(0,9,"llvm.dbg."))
     return;
 
-  //
-  // If the call is not a special call but directly calls an external function,
-  // don't instrument it.
-  //
-  */
-
   // Instrument external calls which can have invariants on its return value
-  if (CalledFunc && CalledFunc->isDeclaration()) {
-     // No need to record calls of functions on which there are no invariants
-     // Do not instrument calls to intrinsic functions as it is giving an assert failure.
-     // FIXME!!!! may miss some invariant failures, not likely as none of the intrinsics
-     // have invariants
-    if (CalledFunc->isIntrinsic()) {
-       // Instrument special external calls which loads/stores
-       // like strlen, strcpy, memcpy etc.
-       visitSpecialCall(CI);
-       return;
-    }
-
-     //if(CalledFunc->getNameStr() != "pthread_create")
-     // return;
+  if (CalledFunc->isDeclaration() && CalledFunc->isIntrinsic()) {
+     // Instrument special external calls which loads/stores
+     // e.g. strlen(), strcpy(), memcpy() etc.
+     visitSpecialCall(CI);
+     return;
   }
-
 
   // If the called value is inline assembly code, then don't instrument it.
   if (isa<InlineAsm>(CI.getCalledValue()->stripPointerCasts()))
@@ -623,16 +594,8 @@ void TracingNoGiri::visitCallInst(CallInst &CI) {
 
   // Get the ID of the store instruction.
   Value *CallID = ConstantInt::get(Int32Type, lsNumPass->getID(&CI));
-
   // Get the called function value and cast it to a void pointer.
   Value *FP = castTo(CI.getCalledValue(), VoidPtrType, "", &CI);
-
-  // For debugging
-#if 0
-  if( CI.getCalledValue()->getNameStr().compare("ap_rprintf") == 0 ) {
-    printf("Debugging call record: %lu %lx\n", (ulong)CI.getCalledValue(), (ulong)CI.getCalledValue());
-  }
-#endif
 
   // Create the call to the run-time to record the call instruction.
   std::vector<Value *> args = make_vector<Value *>(CallID, FP, 0);
@@ -640,7 +603,7 @@ void TracingNoGiri::visitCallInst(CallInst &CI) {
   // Do not add calls to function call stack for external functions
   // as return records won't be used/needed for them, so call a special record function
   // FIXME!!!! Do we still need it after adding separate return records????
-  if( CalledFunc && CalledFunc->getName().str() == "pthread_create")
+  if (CalledFunc->getName().str() == "pthread_create")
     CallInst::Create(RecordExtCall, args, "", &CI);
   else
     CallInst::Create(RecordCall, args, "", &CI);
@@ -649,52 +612,46 @@ void TracingNoGiri::visitCallInst(CallInst &CI) {
   ++Calls;
 
   // Create the call to the run-time to record the return of call instruction.
-  ClInst = CallInst::Create(RecordReturn, args, "", &CI);
-  CI.moveBefore(ClInst);
+  CallInst *CallInst = CallInst::Create(RecordReturn, args, "", &CI);
+  CI.moveBefore(CallInst);
 
   // The best way to handle external call is to set a flag before calling ext fn and
   // use that to determine if an internal function is called from ext fn. It flag can be
   // reset afterwards and restored to its original value before returning to ext code.
   // FIXME!!!! LATER
 
-  if (CalledFunc && CalledFunc->isDeclaration()) {
+  if (CalledFunc->isDeclaration()) {
     // If pthread_create is called then handle it specially as it calls
     // functions externally and add an extra call for the externally
     // called functions with the same id so that returns can match with it.
     // In addition to a function call to pthread_create.
-
     if(CalledFunc->getName().str() == "pthread_create") {
+      // Get the external function pointer operand and cast it to a void pointer
+      Value *FP = castTo(CI.getOperand(2), VoidPtrType, "", &CI);
+      // Create the call to the run-time to record the call instruction.
+      std::vector<Value *> argsExt = make_vector<Value *>(CallID, FP, 0);
+      CallInst = CallInst::Create(RecordCall, argsExt, "", &CI);
+      CI.moveBefore(CallInst);
 
-    // Get the function pointer operand which will be called externally  and cast it to a void pointer.
-    Value *FP = castTo(CI.getOperand(2), VoidPtrType, "", &CI);
+      // Update statistics
+      ++Calls;
 
-    // Create the call to the run-time to record the call instruction.
-    std::vector<Value *> argsExt = make_vector<Value *>(CallID, FP, 0);
-    ClInst = CallInst::Create(RecordCall, argsExt, "", &CI);
-    CI.moveBefore(ClInst);
+      // For, both external functions and internal/ext functions called from
+      // external functions, return records are not useful as they won't be used.
+      // Since, we won't create return records for them, simply update the call
+      // stack to mark the end of function call.
 
-    // Update statistics
-    ++Calls;
+      //args = make_vector<Value *>(CallID, FP, 0);
+      //CallInst::Create(RecordExtCallRet, args.begin(), args.end(), "", &CI);
 
-    // For, both external functions and internal/ext functions called from
-    // external functions, return records are not useful as they won't be used.
-    // Since, we won't create return records for them, simply update the call
-    // stack to mark the end of function call.
-
-    //args = make_vector<Value *>(CallID, FP, 0);
-    //CallInst::Create(RecordExtCallRet, args.begin(), args.end(), "", &CI);
-
-    // Create the call to the run-time to record the return of call instruction.
-    CallInst::Create(RecordReturn, argsExt, "", &CI);
+      // Create the call to the run-time to record the return of call instruction.
+      CallInst::Create(RecordReturn, argsExt, "", &CI);
     }
-
   }
 
   // Instrument special external calls which loads/stores
   // like strlen, strcpy, memcpy etc.
   visitSpecialCall(CI);
-
-  return;
 }
 
 void TracingNoGiri::instrumentLoadsAndStores(BasicBlock &BB) {
