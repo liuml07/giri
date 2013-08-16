@@ -2,6 +2,6 @@
 
 NAME = hellothreads
 LDFLAGS = -pthread
-INPUT = 8
+INPUT ?= 8
 
 include ../Makefile.common

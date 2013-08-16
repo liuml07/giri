@@ -1,6 +1,6 @@
 ##===- giri/test/UnitTests/test3/Makefile ------------------*- Makefile -*-===##
 
 NAME = sigint
-INPUT =
+INPUT ?=
 
 include ../Makefile.common

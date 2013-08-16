@@ -2,6 +2,6 @@
 
 NAME = psum
 LDFLAGS = -pthread
-INPUT = 16 8
+INPUT ?= 16 8
 
 include ../Makefile.common
