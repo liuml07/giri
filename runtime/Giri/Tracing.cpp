@@ -244,9 +244,14 @@ void EntryCache::closeCacheFile() {
 /// Call entryCache.init(fd) before usage
 static EntryCache entryCache;
 
-static void closeCacheFile() {
+// Make sure that we flush the entry cache on exit.
+static void finish() {
   DEBUG("[GIRI] Writing cache data to trace file and closing.\n");
   entryCache.closeCacheFile();
+
+  // destroy the mutexes
+  pthread_mutex_destroy(&bbstack_mutex);
+  pthread_mutex_destroy(&fnstack_mutex);
 }
 
 /// Signal handler to write only tracing data to file
@@ -267,8 +272,7 @@ void recordInit(const char *name) {
   // Initialize the entry cache by giving it a memory buffer to use.
   entryCache.init(record);
 
-  // Make sure that we flush the entry cache on exit.
-  atexit(closeCacheFile);
+  atexit(finish);
 
   // Register the signal handlers for flushing of diagnosis tracing data to file
   signal(SIGINT, cleanup_only_tracing);
