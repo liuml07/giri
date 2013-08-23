@@ -170,7 +170,7 @@ int main(int argc, char *argv[]) {
     struct stat finfo_A, finfo_B;
     char * fname_A, *fname_B,*fname_out;
     int *matrix_A_ptr, *matrix_B_ptr;
-    int ret;
+    int ret = 0;
 
     struct timeval starttime,endtime;
     
