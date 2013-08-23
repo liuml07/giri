@@ -23,6 +23,8 @@
 #include "llvm/IntrinsicInst.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/Debug.h"
+#include "llvm/Support/InstIterator.h"
+#include "llvm/Support/raw_ostream.h"
 
 #include <iostream>
 #include <fstream>
@@ -33,23 +35,26 @@ using namespace giri;
 //===----------------------------------------------------------------------===//
 //                        Command Line Arguments.
 //===----------------------------------------------------------------------===//
-
+// The trace filename was specified externally in tracing part
 extern llvm::cl::opt<std::string> TraceFilename;
 
-static cl::opt<std::string>
-SliceFilename("slice-file", cl::desc("Slice file name"), cl::init("-"));
+static cl::opt<std::string> SliceFilename("slice-file",
+                                          cl::desc("Slice output file name"),
+                                          cl::init("-"));
 
-static cl::opt<bool>
-TraceCD("trace-cd", cl::desc("Trace control dependence"), cl::init(false));
+static cl::opt<std::string> StartOfSliceFilename("start-slice",
+                                          cl::desc("Start of slice file name"),
+                                          cl::init(""));
 
-static cl::opt<bool>
-DFS("dfs", cl::desc("Do a depth first search"), cl::init(false));
+static cl::opt<bool> TraceCD("trace-cd",
+                             cl::desc("Trace control dependence"),
+                             cl::init(false));
 
-static cl::opt<bool>
-SelectOriginAsMain("select-origin-as-main", cl::desc("Select the starting point of slicing as return from main or any particular instruction"), cl::init(false));
+//static cl::opt<bool>
+//DFS("dfs", cl::desc("Do a depth first search"), cl::init(false));
 
-static cl::opt<bool>
-ExprTree("expr-tree", cl::desc("Build expression tree from the root causes and map to source lines"), cl::init(false));
+//static cl::opt<bool>
+//ExprTree("expr-tree", cl::desc("Build expression tree from the root causes and map to source lines"), cl::init(false));
 
 //===----------------------------------------------------------------------===//
 //                        Giri Pass Statistics
@@ -331,7 +336,7 @@ void DynamicGiri::printBackwardsSlice(std::set<Value *> &Slice,
 
 void DynamicGiri::getBackwardsSlice (Instruction *I,
                                      std::set<Value *> &Slice,
-                                     std::unordered_set<DynValue > &dynamicSlice,
+                                     std::unordered_set<DynValue > &DynamicSlice,
                                      std::set<DynValue *> &DataFlowGraph) {
 
   // Get the last dynamic execution of the specified instruction.
@@ -339,19 +344,19 @@ void DynamicGiri::getBackwardsSlice (Instruction *I,
 
   // Find all instructions in the backwards dynamic slice that contribute to
   // the value of this instruction.
-  findSlice(*DI, dynamicSlice, DataFlowGraph);
+  findSlice(*DI, DynamicSlice, DataFlowGraph);
 
   // Fetch the instructions out of the dynamic slice set.  The caller may be
   // interested in static instructions.
-  std::unordered_set<DynValue>::iterator i = dynamicSlice.begin();
-  while (i != dynamicSlice.end()) {
+  std::unordered_set<DynValue>::iterator i = DynamicSlice.begin();
+  while (i != DynamicSlice.end()) {
     Slice.insert (i->getValue());
     ++i;
   }
 }
 
 void DynamicGiri::getExprTree(std::set<Value *> &Slice,
-                              std::unordered_set<DynValue> &dynamicSlice,
+                              std::unordered_set<DynValue> &DynamicSlice,
                               std::set<DynValue *> &DataFlowGraph) {
 }
 
@@ -387,20 +392,16 @@ bool DynamicGiri::checkType(const Type *T) {
 }
 
 bool DynamicGiri::runOnModule(Module &M) {
-  std::set<Value *> mySliceOfLife;
-  std::unordered_set<DynValue> myDynSliceOfLife;
-  std::set<DynValue *> myDataFlowGraph;
+  std::set<Value *> Slice;
+  std::unordered_set<DynValue> DynamicSlice;
+  std::set<DynValue *> DataFlowGraph;
 
   // Get references to other passes used by this pass.
   bbNumPass = &getAnalysis<QueryBasicBlockNumbers>();
   lsNumPass = &getAnalysis<QueryLoadStoreNumbers>();
 
   // Open the trace file and get ready to start using it.
-  Trace = new TraceFile (TraceFilename, bbNumPass, lsNumPass);
-
-  // To test this pass, get the backwards slice of any return instructions
-  // in the main() function.
-  //
+  Trace = new TraceFile(TraceFilename, bbNumPass, lsNumPass);
 
   initialize(M); // Initialize type variables for invariants
 
@@ -410,71 +411,50 @@ bool DynamicGiri::runOnModule(Module &M) {
   //  queries this pass as an analysis pass.
 
   // Start slicing from returns of main function
-  //
-  if (SelectOriginAsMain) {
+  if (StartOfSliceFilename.empty()) {
     // Get a reference to the function specified by the user.
-    Function *F = M.getFunction ("main");
-    if (!F)
+    Function *Func = M.getFunction("main");
+    if (!Func)
       return false;
 
-    //
-    // Find the instruction referenced by the user and get its backwards slice.
-    //
-    for (Function::iterator BB = F->begin(); BB != F->end(); ++BB) {
-      for (BasicBlock::iterator I = BB->begin(); I != BB->end(); ++I) {
-        if ( dyn_cast<ReturnInst>(I) ) {
-          I->dump();
-          getBackwardsSlice (I, mySliceOfLife, myDynSliceOfLife, myDataFlowGraph);
-          printBackwardsSlice(mySliceOfLife, myDynSliceOfLife, myDataFlowGraph);
-          break;
-        }
+    for (inst_iterator I = inst_begin(Func), E = inst_end(Func); I != E; ++I)
+      if (isa<ReturnInst>(*I)) {
+        DEBUG(dbgs() << "The start of slice instruction is: " << "\n");
+        DEBUG(I->dump());
+        getBackwardsSlice(&*I, Slice, DynamicSlice, DataFlowGraph);
+        printBackwardsSlice(Slice, DynamicSlice, DataFlowGraph);
+        break;
       }
+  } else {
+    // Start slicing from function and instruction from StartOfSliceFilename
+    std::ifstream startOfSlice(StartOfSliceFilename);
+    if (!startOfSlice.is_open()) {
+      errs() << "Error opening start of slice file: " << startOfSlice << "\n";
+      return false;
     }
-  } else { // Start slicing from function and instruction from StartOfSlice.txt file
-    int bbCount = 0;
-    int instCount = 0, startInst;
+
+    int startInst;
     std::string startFunction;
-    std::ifstream startOfSlice;
-    startOfSlice.open("StartOfSlice.txt");
-
     startOfSlice >> startFunction >> startInst;
-    llvm::outs() << "\n" << startFunction << " " << startInst << "\n";
+    startOfSlice.close();
+    DEBUG(dbgs() << "Start slicing Function:Instruction is defined as "
+                 << startFunction << ":" << startInst << "\n");
 
-    Function *F = M.getFunction(startFunction);
-    assert(F);
-
-    // Scan through the function and find the instruction from which to begin the
-    // dynamic backwards slice.
+    // Scan through the function and find the slicing criterion by inst number
+    Function *Func = M.getFunction(startFunction);
+    assert(Func);
     bool Found = false;
-    for (Function::iterator BB = F->begin(); BB != F->end(); ++BB) {
-      // Print out some sort of header for each basic block.
-      //llvm::outs() << "\n" << std::endl << bbCount << " : " << BB->getNameStr();
-      //
-      // Look for the beginning of the slice by scanning through all of the
-      // instructions.
-      for (BasicBlock::iterator INST = BB->begin(); INST != BB->end(); ++INST) {
-        //llvm::outs() << std::endl << bbCount << " : " << instCount << " : ";
-        if (instCount ==  startInst) { // 45, 53, 62
-          INST->dump();
-          Found = true;
-          //
-          // Get the dynamic backwards slice.
-          //
-          getBackwardsSlice(&(*INST), mySliceOfLife, myDynSliceOfLife, myDataFlowGraph);
-
-          printBackwardsSlice(mySliceOfLife, myDynSliceOfLife, myDataFlowGraph);
-
-        }
-        //llvm::outs() << *INST;
-        instCount++;
+    for (inst_iterator I = inst_begin(Func), E = inst_end(Func); I != E; ++I)
+      if (--startInst == 0) {
+        DEBUG(dbgs() << "The start of slice instruction is: " << "\n");
+        DEBUG(I->dump());
+        getBackwardsSlice(&*I, Slice, DynamicSlice, DataFlowGraph);
+        printBackwardsSlice(Slice, DynamicSlice, DataFlowGraph);
+        Found = true;
+        break;
       }
-      bbCount++;
-    }
-
     if (!Found)
       errs() << "Didin't find the starting instruction to slice " << "\n";
-
-    startOfSlice.close();
   }
 
   // This is an analysis pass, so always return false.

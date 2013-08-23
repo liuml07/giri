@@ -179,10 +179,6 @@ public:
   /// \return false - The module was not modified.
   virtual bool runOnModule(Module &M);
 
-  const char *getPassName() const {
-    return "Dynamic Backwards Slice Analysis";
-  }
-
   virtual void getAnalysisUsage(AnalysisUsage &AU) const {
     AU.addRequiredTransitive<QueryBasicBlockNumbers>();
     AU.addRequiredTransitive<QueryLoadStoreNumbers>();
