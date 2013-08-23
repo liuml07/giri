@@ -1,9 +1,13 @@
 ##===- giri/test/matrix_multiply/Makefile -----------------*- Makefile -*-===##
 
+ifeq (pthread,$(VERSION))
+NAME = matrix_multiply-pthread
+LDFLAGS = -lpthread
+else
 NAME = matrix_multiply-seq
-#NAME = matrix_multiply-pthread
+endif
+
 GIRI_DIR = ../../build/
-LDFLAGS = -pthread
 INPUT ?= 16
 
 include ../UnitTests/Makefile.common
