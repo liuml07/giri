@@ -37,11 +37,27 @@
 using namespace llvm;
 using namespace dg;
 
-static cl::opt<bool>
-CompleteFile ("CompleteFile", cl::desc("Map all LLVM instructions in the source file"), cl::init(false));
+//===--------------------------------------------------------------------===//
+//                          Command line options
+//===--------------------------------------------------------------------===//
+static cl::opt<bool> CompleteFile ("CompleteFile",
+                                   cl::desc("Map all instructions in the file"),
+                                   cl::init(false));
 
-static cl::opt<bool>
-OneFunction("OneFunction", cl::desc("Map LLVM instructions in only one function"), cl::init(true));
+static cl::opt<bool> OneFunction("OneFunction",
+                                 cl::desc("Map instructions in one function"),
+                                 cl::init(true));
+
+//===--------------------------------------------------------------------===//
+//                          Pass Statistics
+//===--------------------------------------------------------------------===//
+STATISTIC(FoundSrcInfo, "Number of Source Information Locations Found");
+STATISTIC(NotFoundSrcInfo, "Number of Source Information Locations Not Found");
+STATISTIC(QueriedSrcInfo, "Number of Source Information Locations Queried Including Ignored LLVM Insts");
+
+//===--------------------------------------------------------------------===//
+//                      Source Line Mapping Pass
+//===--------------------------------------------------------------------===//
 
 // ID Variable to identify the pass
 char SourceLineMappingPass::ID = 0;
@@ -49,13 +65,6 @@ char SourceLineMappingPass::ID = 0;
 // Pass registration
 static RegisterPass<dg::SourceLineMappingPass>
 X("SrcLineMapping", "Mapping LLVM inst to source line number");
-
-//===--------------------------------------------------------------------===//
-// Pass Statistics
-//===--------------------------------------------------------------------===//
-STATISTIC(FoundSrcInfo, "Number of Source Information Locations Found");
-STATISTIC(NotFoundSrcInfo, "Number of Source Information Locations Not Found");
-STATISTIC(QueriedSrcInfo, "Number of Source Information Locations Queried Including Ignored LLVM Insts");
 
 std::string SourceLineMappingPass::locateSrcInfo(Instruction *I) {
   // Update the number of source locations queried.
@@ -130,7 +139,6 @@ std::string SourceLineMappingPass::locateSrcInfo(Instruction *I) {
 }
 
 void SourceLineMappingPass::locateSrcInfoForCheckingOptimizations(Instruction *I) {
-
   // Update the number of source locations queried.
   ++QueriedSrcInfo;
 
@@ -150,8 +158,7 @@ void SourceLineMappingPass::locateSrcInfoForCheckingOptimizations(Instruction *I
     DirName = Loc.getDirectory().str();
 
     ++FoundSrcInfo;
-    DEBUG(dbgs() << "Found the source line for line number: "
-                 << LineNumber << "\n");
+    DEBUG(dbgs() << "Found source for line number: " << LineNumber << "\n");
 
     /*
     // Its a GetElementPtrContsantExpr with filename as an operand of type pointer to array
@@ -168,29 +175,25 @@ void SourceLineMappingPass::locateSrcInfoForCheckingOptimizations(Instruction *I
        DEBUG(dbgs() << DirName << " " << FileName << " " << LineNumber << " "
                     << ColumnNumber << "\n");
   } else {
-    // Get the called function and determine if it's a debug function
-    // or our instrumentation function
-    if (isa<CallInst>(I) || isa<InvokeInst>(I)) {
+    if (isa<PHINode>(I) || isa<AllocaInst>(I))
+      return;
+    // Don't count branch instruction, as all previous instructions will be counted
+    // If its a single branch instruction in the BB, we don't need to count
+    else if (isa<BranchInst>(I))
+      return;
+    else if (isa<CallInst>(I) || isa<InvokeInst>(I)) {
+      // Get the called function and determine if it's a debug function
+      // or our instrumentation function
        CallSite CS(I);
        Function *CalledFunc = CS.getCalledFunction();
        if (CalledFunc) {
           if (isTracerFunction(CalledFunc))
              return;
           std::string fnname = CalledFunc->getName().str();
-          if( fnname.compare(0,9,"llvm.dbg.") == 0 )
-	    return;
+          if (fnname.compare(0, 9, "llvm.dbg.") == 0)
+            return;
        }
     }
-
-    // Don't count if its a PHI node or alloca inst
-    if (isa<PHINode>(I) || isa<AllocaInst>(I)) {
-      return;
-    }
-
-    // Don't count branch instruction, as all previous instructions will be counted
-    // If its a single branch instruction in the BB, we don't need to count
-    if( isa<BranchInst>(I) )
-      return;
 
     NotFoundSrcInfo++;
     errs() << "Cannot find source line of function - "
