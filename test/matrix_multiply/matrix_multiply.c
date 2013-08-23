@@ -170,6 +170,7 @@ int main(int argc, char *argv[]) {
     struct stat finfo_A, finfo_B;
     char * fname_A, *fname_B,*fname_out;
     int *matrix_A_ptr, *matrix_B_ptr;
+    int ret;
 
     struct timeval starttime,endtime;
     
@@ -274,14 +275,14 @@ int main(int argc, char *argv[]) {
 
     gettimeofday(&endtime,0);
 
-    int ret = printf("MatrixMult_pthreads: Multiply Completed time = %ld\n", (endtime.tv_sec - starttime.tv_sec));
+    printf("MatrixMult_pthreads: Multiply Completed time = %ld\n", (endtime.tv_sec - starttime.tv_sec));
 
     for(i=0;i<matrix_len*matrix_len;i++)
     {
 	    if(i%matrix_len == 0)
 		    dprintf("\n");
 
-	    dprintf("%d ",mm_data.output[i]);
+	    ret += dprintf("%d ",mm_data.output[i]);
 
 	    //write(fd_out,&(mm_data.output[i]),sizeof(int));
     }

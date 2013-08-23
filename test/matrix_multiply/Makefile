@@ -3,7 +3,7 @@
 NAME = matrix_multiply
 GIRI_DIR = ../../build/
 LDFLAGS = -pthread
-INPUT ?= 64 true
+INPUT ?= 16 true
 
 include ../UnitTests/Makefile.common
 
