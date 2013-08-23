@@ -31,13 +31,13 @@ char RemoveBasicBlockNumbers::ID = 0;
 static const char *mdKindName = "dg";
 
 static RegisterPass<dg::BasicBlockNumberPass>
-X ("bbnum", "Assign Unique Identifiers to Basic Blocks");
+X("bbnum", "Assign Unique Identifiers to Basic Blocks");
 
 static RegisterPass<dg::QueryBasicBlockNumbers>
-Y ("query-bbnum", "Query Unique Identifiers of Basic Blocks");
+Y("query-bbnum", "Query Unique Identifiers of Basic Blocks");
 
 static RegisterPass<dg::RemoveBasicBlockNumbers>
-Z ("remove-bbnum", "Remove Unique Identifiers of Basic Blocks");
+Z("remove-bbnum", "Remove Unique Identifiers of Basic Blocks");
 
 MDNode* BasicBlockNumberPass::assignIDToBlock (BasicBlock * BB, unsigned id) {
   // Fetch the context in which the enclosing module was defined.  We'll need
@@ -78,37 +78,30 @@ bool QueryBasicBlockNumbers::runOnModule(Module &M) {
   // Get the basic block metadata.  If there isn't any metadata, then no basic
   // block has been numbered.
   //
-  const NamedMDNode * MD = M.getNamedMetadata (mdKindName);
-  if (!MD) return false;
+  const NamedMDNode *MD = M.getNamedMetadata(mdKindName);
+  if (!MD)
+    return false;
 
-  //
   // Scan through all of the metadata (should be pairs of basic blocks/IDs) and
   // bring them into our internal data structure.
-  //
   for (unsigned index = 0; index < MD->getNumOperands(); ++index) {
-    //
     // The basic block should be the first element, and the ID should be the
     // second element.
-    //
-    MDNode * Node = dyn_cast<MDNode>(MD->getOperand (index));
-    assert (Node && "Wrong type of meta data!\n");
-    BasicBlock * BB = dyn_cast<BasicBlock>(Node->getOperand (0));
-    ConstantInt * ID = dyn_cast<ConstantInt>(Node->getOperand (1));
+    MDNode *Node = dyn_cast<MDNode>(MD->getOperand(index));
+    assert(Node && "Wrong type of meta data!");
+    BasicBlock *BB = dyn_cast<BasicBlock>(Node->getOperand(0));
+    ConstantInt *ID = dyn_cast<ConstantInt>(Node->getOperand(1));
 
-    //
     // Do some assertions to make sure that everything is sane.
-    //
-    assert (BB && "MDNode first element is not a BasicBlock!\n");
-    assert (ID && "MDNode second element is not a ConstantInt!\n");
+    assert(BB && "MDNode first element is not a BasicBlock!");
+    assert(ID && "MDNode second element is not a ConstantInt!");
 
-    //
     // Add the values into the map.
-    //
-    assert (ID->getZExtValue() && "BB with zero ID!\n");
+    assert(ID->getZExtValue() && "BB with zero ID!");
     IDMap[BB] = ID->getZExtValue();
-    unsigned id = (unsigned) ID->getZExtValue();
-    bool inserted = BBMap.insert (std::make_pair(id,BB)).second;
-    assert (inserted && "Repeated identifier!\n");
+    unsigned id = static_cast<unsigned>(ID->getZExtValue());
+    bool inserted = BBMap.insert(std::make_pair(id,BB)).second;
+    assert(inserted && "Repeated identifier!");
   }
 
   return false;
@@ -117,7 +110,7 @@ bool QueryBasicBlockNumbers::runOnModule(Module &M) {
 bool RemoveBasicBlockNumbers::runOnModule(Module &M) {
   // Get the basic block metadata. If there isn't any metadata, then no basic
   // blocks have been numbered.
-  NamedMDNode * MD = M.getNamedMetadata (mdKindName);
+  NamedMDNode * MD = M.getNamedMetadata(mdKindName);
   if (!MD)
     return false;
 
