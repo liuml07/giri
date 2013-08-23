@@ -1,8 +1,11 @@
 #include <stdio.h>
-#include <math.h>
 
 int main(int argc, char *argv[])
 {
-    printf("Hello World!\n");
-    return 0;
+    int ret;
+
+    printf("Hello ");
+    ret = printf("World!\n");
+
+    return ret;
 }
