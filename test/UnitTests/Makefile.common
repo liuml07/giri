@@ -32,7 +32,7 @@ $(NAME).slice : $(NAME).bc $(NAME).trace
 		-mergereturn -bbnum -lsnum \
 		-dgiri -trace-file=$(NAME).trace -slice-file=$(NAME).slice \
 		-remove-bbnum -remove-lsnum \
-		-select-origin-as-main -stats $(DEBUGFLAGS) $< -o /dev/null
+		-stats $(DEBUGFLAGS) $< -o /dev/null
 
 $(NAME).trace: $(NAME).trace.exe
 	- ./$< $(INPUT)
