@@ -1,11 +1,12 @@
-##===- giri/test/UnitTests/test13/Makefile -----------------*- Makefile -*-===##
+##===- giri/test/matrix_multiply/Makefile -----------------*- Makefile -*-===##
 
-NAME = matrix_multiply
+NAME = matrix_multiply-seq
+#NAME = matrix_multiply-pthread
 GIRI_DIR = ../../build/
 LDFLAGS = -pthread
-INPUT ?= 16 true
+INPUT ?= 16
 
 include ../UnitTests/Makefile.common
 
 clean-all:
-	@ rm -f matrix_file_*
+	@ rm -f matrix_file_out_*.txt
