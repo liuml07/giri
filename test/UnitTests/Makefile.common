@@ -3,14 +3,14 @@
 
 NAME ?= main
 DEBUGFLAGS ?= -debug
-VERSION ?= Release+Debug+Asserts
 GIRI_DIR ?= ../../../build/
+GIRI_VERSION ?= Release+Debug+Asserts
 
 CC = clang
 CXX = clang++
 CFLAGS += -g -O0 -c -emit-llvm
-GIRI_LIB_DIR = $(GIRI_DIR)/$(VERSION)/lib
-GIRI_BIN_DIR = $(GIRI_DIR)/$(VERSION)/bin
+GIRI_LIB_DIR = $(GIRI_DIR)/$(GIRI_VERSION)/lib
+GIRI_BIN_DIR = $(GIRI_DIR)/$(GIRI_VERSION)/bin
 
 .PHONY: all lib
 
@@ -37,7 +37,7 @@ $(NAME).trace: $(NAME).trace.exe
 	- ./$< $(INPUT)
 
 $(NAME).trace.exe : $(NAME).trace.s
-	$(CXX) -fno-strict-aliasing $+ -o $@ $(LDFLAGS) -L$(GIRI_LIB_DIR) -lrtgiri
+	$(CXX) -fno-strict-aliasing $+ -o $@ -L$(GIRI_LIB_DIR) -lrtgiri $(LDFLAGS)
 
 $(NAME).trace.s : $(NAME).trace.bc
 	llc -asm-verbose=false -O0 $< -o $@
