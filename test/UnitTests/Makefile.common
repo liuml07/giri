@@ -1,15 +1,14 @@
 ##===- giri/test/UnitTests/Makefile.common -----------------*- Makefile -*-===##
 #
 
+NAME ?= main
 DEBUGFLAGS ?= -debug
-CFLAGS ?= -g -O0 -c -emit-llvm
-LDFLAGS ?=
 VERSION ?= Release+Debug+Asserts
 GIRI_DIR ?= ../../../build/
-NAME ?= main
 
 CC = clang
 CXX = clang++
+CFLAGS += -g -O0 -c -emit-llvm
 GIRI_LIB_DIR = $(GIRI_DIR)/$(VERSION)/lib
 GIRI_BIN_DIR = $(GIRI_DIR)/$(VERSION)/bin
 
@@ -63,5 +62,7 @@ prtrace: $(NAME).trace
 
 rebuild: clean all
 
-clean:
+clean: clean-all
 	@ rm -f *.ll *.bc *.o *.s *.slice *.exe *.trace
+
+clean-all:
