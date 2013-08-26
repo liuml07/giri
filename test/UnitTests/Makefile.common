@@ -5,6 +5,8 @@ NAME ?= main
 DEBUGFLAGS ?= -debug
 GIRI_DIR ?= ../../../build/
 GIRI_VERSION ?= Release+Debug+Asserts
+SRC_FILES ?= $(wildcard *.c)
+IR_FILES ?= $(SRC_FILES:%.c=%.bc)
 
 CC = clang
 CXX = clang++
@@ -25,7 +27,7 @@ all: lib $(NAME).slice
 lib:
 	$(MAKE) -s -C $(GIRI_DIR)
 
-$(NAME).slice : $(NAME).bc $(NAME).trace
+$(NAME).slice : $(NAME).all.bc $(NAME).trace
 	@ opt -load $(GIRI_LIB_DIR)/libdgutility.so \
 		-load $(GIRI_LIB_DIR)/libgiri.so \
 		-mergereturn -bbnum -lsnum \
@@ -42,7 +44,7 @@ $(NAME).trace.exe : $(NAME).trace.s
 $(NAME).trace.s : $(NAME).trace.bc
 	llc -asm-verbose=false -O0 $< -o $@
 
-$(NAME).trace.bc : $(NAME).bc
+$(NAME).trace.bc : $(NAME).all.bc
 	@ opt -load $(GIRI_LIB_DIR)/libdgutility.so \
 		-load $(GIRI_LIB_DIR)/libgiri.so \
 		-mergereturn -bbnum -lsnum \
@@ -50,12 +52,15 @@ $(NAME).trace.bc : $(NAME).bc
 		-remove-bbnum -remove-lsnum \
 		-stats $(DEBUGFLAGS) $< -o $@
 
-%.bc : %.c
+$(NAME).all.bc: $(IR_FILES)
+	llvm-link $^ -o $@
+$(IR_FILES) : %.bc : %.c
 	$(CC) $(CFLAGS) $+ -o $@
+
 %.ll : %.bc
 	llvm-dis $< -o $@
 
-.PHONY: ptrace rebuild clean
+.PHONY: ptrace rebuild clean clean-all
 
 prtrace: $(NAME).trace
 	$(GIRI_BIN_DIR)/prtrace $<
@@ -64,5 +69,4 @@ rebuild: clean all
 
 clean: clean-all
 	@ rm -f *.ll *.bc *.o *.s *.slice *.exe *.trace
-
 clean-all:
