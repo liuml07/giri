@@ -31,7 +31,7 @@ $(NAME).slice : $(NAME).all.bc $(NAME).trace
 	@ opt -load $(GIRI_LIB_DIR)/libdgutility.so \
 		-load $(GIRI_LIB_DIR)/libgiri.so \
 		-mergereturn -bbnum -lsnum \
-		-dgiri -trace-file=$(NAME).trace -slice-file=$(NAME).slice \
+		-dgiri -trace-file=$(NAME).trace -slice-file=$(NAME).slice $(CRITERION)\
 		-remove-bbnum -remove-lsnum \
 		-stats $(DEBUGFLAGS) $< -o /dev/null
 
