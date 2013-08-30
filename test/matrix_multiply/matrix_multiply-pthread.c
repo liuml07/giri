@@ -170,7 +170,6 @@ int main(int argc, char *argv[]) {
     struct stat finfo_A, finfo_B;
     char * fname_A, *fname_B,*fname_out;
     int *matrix_A_ptr, *matrix_B_ptr;
-    int ret = 0;
 
     struct timeval starttime,endtime;
     
@@ -179,7 +178,7 @@ int main(int argc, char *argv[]) {
     // Make sure a filename is specified
     if (argv[1] == NULL)
     {
-        printf("USAGE: %s [side of matrix] create_file\n", argv[0]);
+        printf("USAGE: %s [side of matrix] [size of Row block]\n", argv[0]);
         exit(1);
     }
 
@@ -282,7 +281,7 @@ int main(int argc, char *argv[]) {
 	    if(i%matrix_len == 0)
 		    dprintf("\n");
 
-	    ret += dprintf("%d ",mm_data.output[i]);
+	    dprintf("%d ",mm_data.output[i]);
 
 	    //write(fd_out,&(mm_data.output[i]),sizeof(int));
     }
@@ -300,5 +299,5 @@ int main(int argc, char *argv[]) {
 
     CHECK_ERROR(close(fd_out) < 0);
 
-    return ret;
+    return 0;
 }

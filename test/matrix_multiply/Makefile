@@ -5,9 +5,13 @@ NAME = matrix_multiply-pthread
 LDFLAGS = -lpthread
 else
 NAME = matrix_multiply-seq
+VERSION = seq
 endif
 
 GIRI_DIR = ../../build/
+SRC_FILES = $(NAME).c
+CRITERION ?= "-criterion-loc=loc-$(VERSION).txt"
+#CRITERION ?= "-criterion-inst=inst-$(VERSION).txt"
 INPUT ?= 16
 
 include ../UnitTests/Makefile.common
