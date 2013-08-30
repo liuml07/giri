@@ -47,6 +47,11 @@ FunctionName("mapping-function",
              cl::desc("The function name to be mapped"),
              cl::init(""));
 
+static cl::opt<std::string>
+MappingFileName("mapping-output",
+                cl::desc("The output filename of the source line mapping"),
+                cl::init("-"));
+
 //===----------------------------------------------------------------------===//
 //                          Pass Statistics
 //===----------------------------------------------------------------------===//
@@ -74,11 +79,9 @@ std::string SourceLineMappingPass::locateSrcInfo(Instruction *I) {
     DILocation Loc(N);
     ++FoundSrcInfo;
     std::stringstream ss;
-    ss << " ["
-       << Loc.getDirectory().str() << "/"
+    ss << Loc.getDirectory().str() << "/"
        << Loc.getFilename().str() << ":"
-       << Loc.getLineNumber()
-       << "] ";
+       << Loc.getLineNumber();
     return ss.str();
   } else {
     if (isa<PHINode>(I) || isa<AllocaInst>(I) || isa<BranchInst>(I))
@@ -97,7 +100,6 @@ std::string SourceLineMappingPass::locateSrcInfo(Instruction *I) {
        }
     }
     NotFoundSrcInfo++;
-    errs() << "No source line found for instruction!";
     return "NIL";
   }
 }
@@ -111,16 +113,19 @@ void SourceLineMappingPass::mapCompleteFile(Module &M) {
 void SourceLineMappingPass::mapOneFunction(Module &M,
                                            Function *F) {
   assert(F && !F->isDeclaration() && F->hasName());
-  errs() << "========================================================\n";
-  errs() << "Source line mapping for function: " << F->getName() << "\n";
-  errs() << "========================================================\n";
+  std::string errinfo;
+  raw_fd_ostream MappingFile(MappingFileName.c_str(), errinfo);
+  MappingFile << "========================================================\n";
+  MappingFile << "Source line mapping for function: " << F->getName() << "\n";
+  MappingFile << "========================================================\n";
 
   int instCount = 0;
   for (inst_iterator I = inst_begin(F); I != inst_end(F); ++I) {
-    errs() << ++instCount << " : ";
-    I->print(errs());
-    errs() << locateSrcInfo(&*I);
-    errs() << "\n";
+    MappingFile << ++instCount << ": ";
+    I->print(MappingFile);
+    MappingFile << ": ";
+    MappingFile << locateSrcInfo(&*I);
+    MappingFile << "\n";
   }
 }
 
