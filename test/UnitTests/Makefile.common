@@ -1,13 +1,18 @@
 ##===- giri/test/UnitTests/Makefile.common -----------------*- Makefile -*-===##
 #
 
+########################### User defined variables ###########################
 NAME ?= main
 DEBUGFLAGS ?= -debug
 GIRI_DIR ?= ../../../build/
 GIRI_VERSION ?= Release+Debug+Asserts
 SRC_FILES ?= $(wildcard *.c)
 IR_FILES ?= $(SRC_FILES:%.c=%.bc)
+INPUT ?=
+CRITERION ?=
+MAPPING ?=
 
+################# Dont' edit the following lines accidently ##################
 CC = clang
 CXX = clang++
 CFLAGS += -g -O0 -c -emit-llvm
@@ -56,6 +61,13 @@ $(NAME).all.bc: $(IR_FILES)
 	llvm-link $^ -o $@
 $(IR_FILES) : %.bc : %.c
 	$(CC) $(CFLAGS) $+ -o $@
+
+mapping: $(NAME).all.bc
+	@ opt -load $(GIRI_LIB_DIR)/libdgutility.so \
+		-load $(GIRI_LIB_DIR)/libgiri.so \
+		-mergereturn \
+		-srcline-mapping $(MAPPING) \
+		-stats $(DEBUGFLAGS) $< -o /dev/null
 
 %.ll : %.bc
 	llvm-dis $< -o $@
