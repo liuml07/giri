@@ -51,9 +51,8 @@ typedef struct {
 /** matrix_mult()
  *  Blocked Matrix Multiply Function
  */
-int matrix_mult(mm_data_t *data_in)
+void matrix_mult(mm_data_t *data_in)
 {
-    int ret = 0;
 	assert(data_in);
 	int i, j, k,a, b, c, end_i, end_j, end_k;
 
@@ -92,23 +91,21 @@ int matrix_mult(mm_data_t *data_in)
    {
       for(j = 0; j < data_in->matrix_len; j++)
       {
-         ret += dprintf("%d  ", data_in->matrix_out[(data_in->matrix_len)*i + j]);
+         dprintf("%d  ", data_in->matrix_out[(data_in->matrix_len)*i + j]);
       }
       
       dprintf("\n");
    }
-
-   return ret;
 }
 
 int main(int argc, char *argv[]) 
 {
+   
    int fd_A, fd_B, fd_out;
    char * fdata_A, *fdata_B, *fdata_out;
    int matrix_len, file_size;
    struct stat finfo_A, finfo_B;
    char * fname_A, *fname_B,*fname_out;
-   int ret;   
 
    srand( (unsigned)time( NULL ) );
 
@@ -166,7 +163,7 @@ int main(int argc, char *argv[])
    
    
    memset(mm_data.matrix_out, 0, file_size);
-   ret = matrix_mult(&mm_data);
+   matrix_mult(&mm_data);
 
 
    //printf("MatrixMult: Multiply Completed time = %ld\n", (endtime.tv_sec - starttime.tv_sec));
@@ -179,5 +176,5 @@ int main(int argc, char *argv[])
 
    CHECK_ERROR(close(fd_out) < 0);
 
-   return ret;
+   return 0;
 }
