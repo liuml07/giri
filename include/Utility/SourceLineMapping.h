@@ -30,19 +30,13 @@ public:
 
   SourceLineMappingPass () : ModulePass (ID) {}
 
-  const char *getPassName() const {
-    return "Mapping LLVM instructions to source line numbers";
-  }
-
-  void locateSrcInfoForCheckingOptimizations(Instruction *I);
-
   static std::string locateSrcInfo(Instruction *I);
 
   /// Map all instruction in Module M to source lines
   void mapCompleteFile(Module &M);
 
   /// Map all instruction in one function Module M to source lines
-  void mapOneFunction(Module &M);
+  void mapOneFunction(Module &M, Function *F);
 
   /// \brief Using debug information, find the source line number corresponding
   /// to a specified LLVM instruction.
