@@ -20,6 +20,7 @@
 #include "Utility/Utils.h"
 
 #include "llvm/ADT/Statistic.h"
+#include "llvm/Analysis/DebugInfo.h"
 #include "llvm/IntrinsicInst.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/Debug.h"
@@ -38,17 +39,21 @@ using namespace giri;
 // The trace filename was specified externally in tracing part
 extern llvm::cl::opt<std::string> TraceFilename;
 
-static cl::opt<std::string> SliceFilename("slice-file",
-                                          cl::desc("Slice output file name"),
-                                          cl::init("-"));
+static cl::opt<std::string>
+SliceFilename("slice-file", cl::desc("Slice output file name"), cl::init("-"));
 
-static cl::opt<std::string> StartOfSliceFilename("start-slice",
-                                          cl::desc("Start of slice file name"),
-                                          cl::init(""));
+static cl::opt<std::string>
+StartOfSliceLoc("criterion-loc",
+                cl::desc("Define slicing criterion by line of source code"),
+                cl::init(""));
 
-static cl::opt<bool> TraceCD("trace-cd",
-                             cl::desc("Trace control dependence"),
-                             cl::init(false));
+static cl::opt<std::string>
+StartOfSliceInst("criterion-inst",
+                 cl::desc("Define slicing criterion by instruction number"),
+                 cl::init(""));
+
+static cl::opt<bool>
+TraceCD("trace-cd", cl::desc("Trace control dependence"), cl::init(false));
 
 //static cl::opt<bool>
 //DFS("dfs", cl::desc("Do a depth first search"), cl::init(false));
@@ -410,9 +415,77 @@ bool DynamicGiri::runOnModule(Module &M) {
   //  This code should not be here.  It should be in a separate pass that
   //  queries this pass as an analysis pass.
 
-  // Start slicing from returns of main function
-  if (StartOfSliceFilename.empty()) {
+  if (!StartOfSliceLoc.empty()) {
+    // User specified the line number of the source code. This is very useful
+    // if the user won't bother to dive into the IR of the program. We compare
+    // the file name and the loc with all the instructions of the module. Note
+    // that there will be more than one instruction in this case, and we'll
+    // treat all of them as the criteria.
+    std::ifstream StartOfSlice(StartOfSliceLoc);
+    if (!StartOfSlice.is_open()) {
+      errs() << "Error opening start of slice file: " << StartOfSlice << "\n";
+      return false;
+    }
+    std::string StartFilename;
+    unsigned StartLoc;
+    StartOfSlice >> StartFilename >> StartLoc;
+    StartOfSlice.close();
+    DEBUG(dbgs() << "Start slicing Filename:Loc is defined as "
+                 << StartFilename << ":" << StartLoc << "\n");
+    bool Found = false;
+    for (Module::iterator F = M.begin(); F != M.end(); ++F)
+      for (inst_iterator I = inst_begin(F); I != inst_end(F); ++I)
+        if (MDNode *N = I->getMetadata("dbg")) { 
+          DILocation l(N);
+          if (l.getFilename().str() == StartFilename &&
+              l.getLineNumber() == StartLoc) {
+            DEBUG(dbgs() << "Found instruction matching the LoC:\n");
+            DEBUG(I->dump());
+            getBackwardsSlice(&*I, Slice, DynamicSlice, DataFlowGraph);
+            Found = true;
+          }
+        }
+    if (!Found)
+      errs() << "Didin't find the starting instruction to slice " << "\n";
+    else
+      printBackwardsSlice(Slice, DynamicSlice, DataFlowGraph);
+  } else if (!StartOfSliceInst.empty()) {
+    // User specified the slicing criterion by the inst command, with the
+    // function name and the instruction count. The instruction count can be
+    // known with the help of SourcceLineMapping pass. We simply count the
+    // number of instructions until the count matches.
+    std::ifstream StartOfSlice(StartOfSliceInst);
+    if (!StartOfSlice.is_open()) {
+      errs() << "Error opening start of slice file: " << StartOfSlice << "\n";
+      return false;
+    }
+    int StartInst;
+    std::string StartFunction;
+    StartOfSlice >> StartFunction >> StartInst;
+    StartOfSlice.close();
+    DEBUG(dbgs() << "Start slicing Function:Instruction is defined as "
+                 << StartFunction << ":" << StartInst << "\n");
     // Get a reference to the function specified by the user.
+    Function *Func = M.getFunction(StartFunction);
+    assert(Func);
+    bool Found = false;
+    for (inst_iterator I = inst_begin(Func), E = inst_end(Func); I != E; ++I)
+      if (--StartInst == 0) {
+        // Scan the function to find the slicing criterion by inst number
+        DEBUG(dbgs() << "The start of slice instruction is: ");
+        DEBUG(I->dump());
+        getBackwardsSlice(&*I, Slice, DynamicSlice, DataFlowGraph);
+        Found = true;
+        break;
+      }
+    if (!Found)
+      errs() << "Didin't find the starting instruction to slice " << "\n";
+    else
+      printBackwardsSlice(Slice, DynamicSlice, DataFlowGraph);
+  } else {
+    // In this case, the user did not specify the slicing criterion, i.e. the
+    // start of the slicing instruction. Thus we simply use the first return
+    // instruction in the main function as the slicing criterion.
     Function *Func = M.getFunction("main");
     if (!Func)
       return false;
@@ -425,36 +498,6 @@ bool DynamicGiri::runOnModule(Module &M) {
         printBackwardsSlice(Slice, DynamicSlice, DataFlowGraph);
         break;
       }
-  } else {
-    // Start slicing from function and instruction from StartOfSliceFilename
-    std::ifstream startOfSlice(StartOfSliceFilename);
-    if (!startOfSlice.is_open()) {
-      errs() << "Error opening start of slice file: " << startOfSlice << "\n";
-      return false;
-    }
-
-    int startInst;
-    std::string startFunction;
-    startOfSlice >> startFunction >> startInst;
-    startOfSlice.close();
-    DEBUG(dbgs() << "Start slicing Function:Instruction is defined as "
-                 << startFunction << ":" << startInst << "\n");
-
-    // Scan through the function and find the slicing criterion by inst number
-    Function *Func = M.getFunction(startFunction);
-    assert(Func);
-    bool Found = false;
-    for (inst_iterator I = inst_begin(Func), E = inst_end(Func); I != E; ++I)
-      if (--startInst == 0) {
-        DEBUG(dbgs() << "The start of slice instruction is: " << "\n");
-        DEBUG(I->dump());
-        getBackwardsSlice(&*I, Slice, DynamicSlice, DataFlowGraph);
-        printBackwardsSlice(Slice, DynamicSlice, DataFlowGraph);
-        Found = true;
-        break;
-      }
-    if (!Found)
-      errs() << "Didin't find the starting instruction to slice " << "\n";
   }
 
   // This is an analysis pass, so always return false.
