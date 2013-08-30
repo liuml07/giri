@@ -1,6 +1,6 @@
 //===- Giri.h - Dynamic Slicing Pass ----------------------------*- C++ -*-===//
 //
-//                          Bug Diagnosis Compiler
+//                          Giri: Dynamic Slicing in LLVM
 //
 // This file was developed by the LLVM research group and is distributed under
 // the University of Illinois Open Source License. See LICENSE.TXT for details.
