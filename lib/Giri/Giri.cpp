@@ -423,13 +423,17 @@ bool DynamicGiri::runOnModule(Module &M) {
     // treat all of them as the criteria.
     std::ifstream StartOfSlice(StartOfSliceLoc);
     if (!StartOfSlice.is_open()) {
-      errs() << "Error opening start of slice file: " << StartOfSlice << "\n";
+      errs() << "Error opening criterion file: " << StartOfSliceLoc << "\n";
       return false;
     }
     std::string StartFilename;
-    unsigned StartLoc;
+    unsigned StartLoc = 0;
     StartOfSlice >> StartFilename >> StartLoc;
     StartOfSlice.close();
+    if (StartLoc == 0) {
+      errs() << "Error reading criterion file: " << StartOfSliceLoc << "\n";
+      return false;
+    }
     DEBUG(dbgs() << "Start slicing Filename:Loc is defined as "
                  << StartFilename << ":" << StartLoc << "\n");
     bool Found = false;
@@ -456,13 +460,17 @@ bool DynamicGiri::runOnModule(Module &M) {
     // number of instructions until the count matches.
     std::ifstream StartOfSlice(StartOfSliceInst);
     if (!StartOfSlice.is_open()) {
-      errs() << "Error opening start of slice file: " << StartOfSlice << "\n";
+      errs() << "Error opening criterion file: " << StartOfSliceInst << "\n";
       return false;
     }
-    int StartInst;
     std::string StartFunction;
+    unsigned StartInst = 0;
     StartOfSlice >> StartFunction >> StartInst;
     StartOfSlice.close();
+    if (StartInst == 0) {
+      errs() << "Error reading criterion file: " << StartOfSliceInst << "\n";
+      return false;
+    }
     DEBUG(dbgs() << "Start slicing Function:Instruction is defined as "
                  << StartFunction << ":" << StartInst << "\n");
     // Get a reference to the function specified by the user.
