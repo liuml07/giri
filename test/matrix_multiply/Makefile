@@ -1,5 +1,7 @@
 ##===- giri/test/matrix_multiply/Makefile -----------------*- Makefile -*-===##
 
+VERSION ?= pthread
+
 ifeq (pthread,$(VERSION))
 NAME = matrix_multiply-pthread
 LDFLAGS = -lpthread
