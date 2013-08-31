@@ -104,36 +104,36 @@ std::string SourceLineMappingPass::locateSrcInfo(Instruction *I) {
   }
 }
 
-void SourceLineMappingPass::mapCompleteFile(Module &M) {
+void SourceLineMappingPass::mapCompleteFile(Module &M, raw_ostream &Output) {
   for (Module::iterator F = M.begin(); F != M.end(); ++F)
     if (!F->isDeclaration() && F->hasName())
-      mapOneFunction(M, &*F);
+      mapOneFunction(&*F, Output);
 }
 
-void SourceLineMappingPass::mapOneFunction(Module &M,
-                                           Function *F) {
+void SourceLineMappingPass::mapOneFunction(Function *F, raw_ostream &Output) {
   assert(F && !F->isDeclaration() && F->hasName());
-  std::string errinfo;
-  raw_fd_ostream MappingFile(MappingFileName.c_str(), errinfo);
-  MappingFile << "========================================================\n";
-  MappingFile << "Source line mapping for function: " << F->getName() << "\n";
-  MappingFile << "========================================================\n";
+  Output << "========================================================\n";
+  Output << "Source line mapping for function: " << F->getName() << "\n";
+  Output << "========================================================\n";
 
   int instCount = 0;
   for (inst_iterator I = inst_begin(F); I != inst_end(F); ++I) {
-    MappingFile << ++instCount << ": ";
-    I->print(MappingFile);
-    MappingFile << ": ";
-    MappingFile << locateSrcInfo(&*I);
-    MappingFile << "\n";
+    Output << ++instCount << ": ";
+    I->print(Output);
+    Output << ": ";
+    Output << locateSrcInfo(&*I);
+    Output << "\n";
   }
 }
 
 bool SourceLineMappingPass::runOnModule(Module &M) {
+  std::string errinfo;
+  raw_fd_ostream MappingFile(MappingFileName.c_str(), errinfo);
+
   if (!FunctionName.empty())
-    mapOneFunction(M, M.getFunction(FunctionName));
+    mapOneFunction(M.getFunction(FunctionName), MappingFile);
   else 
-    mapCompleteFile(M);
+    mapCompleteFile(M, MappingFile);
 
   // This is an analysis pass, so always return false.
   return false;
