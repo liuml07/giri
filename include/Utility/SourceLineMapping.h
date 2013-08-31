@@ -20,6 +20,8 @@
 
 using namespace llvm;
 
+class llvm::raw_ostream;
+
 namespace dg {
 
 /// \class This pass provides the functionality to find the source file and
@@ -33,10 +35,10 @@ public:
   static std::string locateSrcInfo(Instruction *I);
 
   /// Map all instruction in Module M to source lines
-  void mapCompleteFile(Module &M);
+  void mapCompleteFile(Module &M, raw_ostream &Output);
 
   /// Map all instruction in one function Module M to source lines
-  void mapOneFunction(Module &M, Function *F);
+  void mapOneFunction(Function *F, raw_ostream &Output);
 
   /// \brief Using debug information, find the source line number corresponding
   /// to a specified LLVM instruction.
