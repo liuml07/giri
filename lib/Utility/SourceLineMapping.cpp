@@ -55,9 +55,9 @@ MappingFileName("mapping-output",
 //===----------------------------------------------------------------------===//
 //                          Pass Statistics
 //===----------------------------------------------------------------------===//
-STATISTIC(FoundSrcInfo, "Number of Source Information Locations Found");
-STATISTIC(NotFoundSrcInfo, "Number of Source Information Locations Not Found");
-STATISTIC(QueriedSrcInfo, "Number of Queried Including Ignored LLVM Insts");
+STATISTIC(NumFoundSrc, "Number of source information locations found");
+STATISTIC(NumNotFoundSrc, "Number of source information locations not found");
+STATISTIC(NumQueriedSrc, "Number of queried including ignored LLVM insts");
 
 //===----------------------------------------------------------------------===//
 //                      Source Line Mapping Pass
@@ -72,12 +72,12 @@ X("srcline-mapping", "Mapping LLVM inst to source line number");
 
 std::string SourceLineMappingPass::locateSrcInfo(Instruction *I) {
   // Update the number of source locations queried.
-  ++QueriedSrcInfo;
+  ++NumQueriedSrc;
 
   // Get the ID number for debug metadata.
   if (MDNode *N = I->getMetadata("dbg")) {
     DILocation Loc(N);
-    ++FoundSrcInfo;
+    ++NumFoundSrc;
     std::stringstream ss;
     ss << Loc.getDirectory().str() << "/"
        << Loc.getFilename().str() << ":"
@@ -99,7 +99,7 @@ std::string SourceLineMappingPass::locateSrcInfo(Instruction *I) {
             return "";
        }
     }
-    NotFoundSrcInfo++;
+    NumNotFoundSrc++;
     return "NIL";
   }
 }

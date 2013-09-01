@@ -44,15 +44,15 @@ cl::opt<std::string> TraceFilename("trace-file",
 //                        Pass Statistics
 //===----------------------------------------------------------------------===//
 
-STATISTIC(NumBBs, "Total number of basic blocks");
-STATISTIC(PHIBBs, "Total number of basic blocks with phi nodes");
-STATISTIC(Loads, "Total number of load instructions processed");
-STATISTIC(Stores, "Total number of store instructions processed");
-STATISTIC(Selects, "Total number of select instructions processed");
-STATISTIC(LoadStrings, "Total number of load instructions processed");
-STATISTIC(StoreStrings, "Total number of store instructions processed");
-STATISTIC(Calls, "Total number of call instructions processed");
-STATISTIC(ExtFuns, "Total number of special external calls like memcpy etc. processed");
+STATISTIC(NumBBs, "Number of basic blocks");
+STATISTIC(NumPHIBBs, "Number of basic blocks with phi nodes");
+STATISTIC(NumLoads, "Number of load instructions processed");
+STATISTIC(NumStores, "Number of store instructions processed");
+STATISTIC(NumSelects, "Number of select instructions processed");
+STATISTIC(NumLoadStrings, "Number of load instructions processed");
+STATISTIC(NumStoreStrings, "Number of store instructions processed");
+STATISTIC(NumCalls, "Number of call instructions processed");
+STATISTIC(NumExtFuns, "Number of special external calls processed, e.g. memcpy");
 
 //===----------------------------------------------------------------------===//
 //                        TracingNoGiri Implementations
@@ -317,7 +317,7 @@ void TracingNoGiri::visitLoadInst(LoadInst &LI) {
   CallInst::Create(RecordLoad, args, "", &LI);
 
   // Update statistics
-  ++Loads;
+  ++NumLoads;
 }
 
 void TracingNoGiri::visitSelectInst(SelectInst &SI) {
@@ -333,7 +333,7 @@ void TracingNoGiri::visitSelectInst(SelectInst &SI) {
   CallInst::Create(RecordSelect, args, "", &SI);
 
   // Update statistics
-  ++Selects;
+  ++NumSelects;
 }
 
 void TracingNoGiri::visitStoreInst(StoreInst &SI) {
@@ -353,7 +353,7 @@ void TracingNoGiri::visitStoreInst(StoreInst &SI) {
   CallInst::Create(RecordStore, args, "", &SI);
 
   // Update statistics
-  ++Stores;
+  ++NumStores;
 }
 
 bool TracingNoGiri::visitSpecialCall(CallInst &CI) {
@@ -388,7 +388,7 @@ bool TracingNoGiri::visitSpecialCall(CallInst &CI) {
     CallInst::Create(RecordStore, args, "", &CI);
 
     // Update statistics
-    ++ExtFuns;
+    ++NumExtFuns;
     return true;
   } else if (name.substr(0,12) == "llvm.memcpy." ||
              name.substr(0,13) == "llvm.memmove." ||
@@ -425,7 +425,7 @@ bool TracingNoGiri::visitSpecialCall(CallInst &CI) {
     }
 
     // Update statistics
-    ++ExtFuns;
+    ++NumExtFuns;
     return true;
 
   } else if (name == "strcat") { /* Record Load dst, Load Src, Store dst-end before call inst  */
@@ -452,7 +452,7 @@ bool TracingNoGiri::visitSpecialCall(CallInst &CI) {
     CallInst::Create(RecordStrcatStore, args, "", &CI);
 
     // Update statistics
-    ++ExtFuns;
+    ++NumExtFuns;
     return true;
   } else if (name == "strlen") { /* Record Load */
     // Get the destination and source pointers and cast them to void pointers.
@@ -466,7 +466,7 @@ bool TracingNoGiri::visitSpecialCall(CallInst &CI) {
     CallInst::Create(RecordStrLoad, args, "", &CI);
 
     // Update statistics
-    ++ExtFuns;
+    ++NumExtFuns;
     return true;
   } else if (name == "calloc") {
     // Get the number of bytes that will be written into the buffer.
@@ -504,7 +504,7 @@ bool TracingNoGiri::visitSpecialCall(CallInst &CI) {
     CI.moveBefore((Instruction *)NumElts);
 
     // Update statistics
-    ++ExtFuns;
+    ++NumExtFuns;
     return true;
   } else if (name == "tolower" || name == "toupper") {
     // Not needed as there are no loads and stores
@@ -533,7 +533,7 @@ bool TracingNoGiri::visitSpecialCall(CallInst &CI) {
         CallInst::Create(RecordStrLoad, args, "", &CI);
 
         // Update statistics
-        ++LoadStrings;
+        ++NumLoadStrings;
       }
     }
 
@@ -543,7 +543,7 @@ bool TracingNoGiri::visitSpecialCall(CallInst &CI) {
     CI.moveBefore(recStore);
 
     // Update statistics
-    ++StoreStrings;
+    ++NumStoreStrings;
     return true;
   } else if (name == "fgets") {
     // Get the pointer to the destination buffer.
@@ -559,7 +559,7 @@ bool TracingNoGiri::visitSpecialCall(CallInst &CI) {
     CI.moveBefore(recStore);
 
     // Update statistics
-    ++StoreStrings;
+    ++NumStoreStrings;
     return true;
   }
 
@@ -609,7 +609,7 @@ void TracingNoGiri::visitCallInst(CallInst &CI) {
     CallInst::Create(RecordCall, args, "", &CI);
 
   // Update statistics
-  ++Calls;
+  ++NumCalls;
 
   // Create the call to the run-time to record the return of call instruction.
   CallInst *CallInst = CallInst::Create(RecordReturn, args, "", &CI);
@@ -686,7 +686,8 @@ bool TracingNoGiri::runOnBasicBlock(BasicBlock &BB) {
   instrumentLoadsAndStores(BB);
 
   // Update the number of basic blocks with phis.
-  if (hasPHI(BB)) ++PHIBBs;
+  if (hasPHI(BB))
+    ++NumPHIBBs;
 
   // Update the number of basic blocks.
   ++NumBBs;
