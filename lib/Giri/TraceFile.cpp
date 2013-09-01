@@ -36,8 +36,8 @@ using namespace giri;
 //===----------------------------------------------------------------------===//
 //                          Pass Statistics
 //===----------------------------------------------------------------------===//
-STATISTIC (StaticBuggyValuesCount, "Number of Possible static values which are possibly missing matching entries in trace");
-STATISTIC (DynBuggyValuesCount, "Number of Possible dynamic values which are possibly missing matching entries in trace");
+STATISTIC(NumStaticBuggy, "Number of possible missing matched static values");
+STATISTIC(NumDynBuggy, "Number of possible missing matched dynamic values");
 
 //===----------------------------------------------------------------------===//
 //                          TraceFile Implementations
@@ -693,7 +693,7 @@ unsigned long TraceFile::findPreviousIDWithRecursion(Function *fun,
 long TraceFile::normalize (DynBasicBlock &DBB) {
 
   if (BuggyValues.find (DBB.BB) != BuggyValues.end()) {
-    DynBuggyValuesCount++;
+    NumDynBuggy++;
     return 1; // Buggy value, likely to fail again
   }
 
@@ -711,7 +711,7 @@ long TraceFile::normalize (DynBasicBlock &DBB) {
     //llvm::errs() << "DBB Normalization failed due to some reason" << "\n";
     //llvm::errs() << DBB.BB->getParent()->getName().str() << '\n";
     BuggyValues.insert(DBB.BB);
-    StaticBuggyValuesCount++;
+    NumStaticBuggy++;
     return 1;
   }
 
@@ -737,7 +737,7 @@ long TraceFile::normalize (DynValue &DV) {
 #endif
 
   if (BuggyValues.find (DV.V) != BuggyValues.end()) {
-    DynBuggyValuesCount++;
+    NumDynBuggy++;
     return 1; // Buggy value, likely to fail again
   }
 
@@ -774,7 +774,7 @@ long TraceFile::normalize (DynValue &DV) {
     //llvm::errs() << "Normalization failed due to some reason\n";
     //DV.print( lsNumPass );
     BuggyValues.insert(DV.V);
-    StaticBuggyValuesCount++;
+    NumStaticBuggy++;
    return 1;
   }
 

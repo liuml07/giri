@@ -35,10 +35,10 @@ using namespace dg;
 //===----------------------------------------------------------------------===//
 //                            Pass Statistics
 //===----------------------------------------------------------------------===//
-STATISTIC(StaticSrcLinesCount, "Number of static Source lines executed in trace");
-STATISTIC(StaticInstSrcLinesMissing, "#static LLVM insts whose source lines can't be found using debug info");
-STATISTIC(StaticInstWithoutSrcLines, "#static LLVM insts who does not have any corresponding source lines ");
-STATISTIC(StaticLLVMInstCount, "Number of static LLVM instructions executed in trace");
+STATISTIC(NumSrcLines, "Number of static source lines executed in trace");
+STATISTIC(NumSrcLinesMissing, "Number of LLVM insts whose source lines can't be found using debug info");
+STATISTIC(NumWithoutSrcLines, "#static LLVM insts who does not have any corresponding source lines ");
+STATISTIC(NumStaticLLVMInst, "Number of static LLVM instructions executed in trace");
 
 //===----------------------------------------------------------------------===//
 //                        Command Line Arguments.
@@ -65,40 +65,40 @@ void CountSrcLines::countLines(const std::string &bbrecord_file) {
 	std::unordered_set<unsigned>::iterator curr;
 	for (curr = bb_set.begin(); curr != bb_set.end(); ++curr) {
 	   BasicBlock *BB = bbNumPass->getBlock (*curr);
-           StaticLLVMInstCount += BB->size ();
+           NumStaticLLVMInst += BB->size ();
            for(BasicBlock::iterator it = BB->begin(); it != BB->end(); it++) {
 	       srcLineInfo = SourceLineMappingPass::locateSrcInfo (it);
                if (srcLineInfo.compare(0, 23, "SourceLineInfoMissing: ") == 0) {
                  // Separately keep track of LLVM insts whose source line can't be found using debug info
-                 StaticInstSrcLinesMissing++;
+                 NumSrcLinesMissing++;
                  BBsWithInstWithNoSrcLineMapping.insert(srcLineInfo);
                } else if (srcLineInfo.compare(0, 18, "NoSourceLineInfo: ") == 0) {
                  // Count static LLVM insts whose corresponding source lines don't exist
-                 StaticInstWithoutSrcLines++;		
+                 NumWithoutSrcLines++;		
                } else
                  srcLines.insert (srcLineInfo);
 	   }
 	}
 
-    StaticSrcLinesCount = srcLines.size();
+    NumSrcLines = srcLines.size();
 	DEBUG(errs() << "Number of unique LLVM instructions: "
-                 << StaticLLVMInstCount
+                 << NumStaticLLVMInst
                  << "\n");
 	DEBUG(errs() << "Number of unique source lines: "
-                 << StaticSrcLinesCount
+                 << NumSrcLines
                  << "\n");
 	DEBUG(errs() << "#Unique LLVM insts with source line debug info missing: "
-                 << StaticInstSrcLinesMissing
+                 << NumSrcLinesMissing
                  << "\n");
 	DEBUG(errs() << "#Unique BBs whose source line debug info missing: "
                  << BBsWithInstWithNoSrcLineMapping.size()
                  << "\n");
 	DEBUG(errs() << "#Unique LLVM insts whose corr source lines don't exist: "
-                 << StaticInstWithoutSrcLines
+                 << NumWithoutSrcLines
                  << "\n");
 	DEBUG(errs() << "Number of unique source lines including 1 for each insts"\
                  << "for which no source line could be found using debug info: "
-                 << StaticSrcLinesCount + StaticInstSrcLinesMissing
+                 << NumSrcLines + NumSrcLinesMissing
                  << "\n");
 }
 

@@ -65,11 +65,11 @@ TraceCD("trace-cd", cl::desc("Trace control dependence"), cl::init(false));
 //                        Giri Pass Statistics
 //===----------------------------------------------------------------------===//
 
-STATISTIC(DynValueCount, "Number of Dynamic Values in Slice");
-STATISTIC(DynSourcesCount, "Number of Dynamic Sources Queried");
-STATISTIC(DynValsSkipped, "Number of Dynamic Values Skipped");
-STATISTIC(TotalLoadsTraced, "Number of Dynamic Loads Traced");
-STATISTIC(LostLoadsTraced, "Number of Dynamic Loads Lost");
+STATISTIC(NumDynValues, "Number of Dynamic Values in Slice");
+STATISTIC(NumDynSources, "Number of Dynamic Sources Queried");
+STATISTIC(NumDynValsSkipped, "Number of Dynamic Values Skipped");
+STATISTIC(NumLoadsTraced, "Number of Dynamic Loads Traced");
+STATISTIC(NumLoadsLost, "Number of Dynamic Loads Lost");
 
 //===----------------------------------------------------------------------===//
 //                        DynamicGiri Implementations
@@ -188,7 +188,7 @@ void DynamicGiri::findSlice(DynValue &Initial,
   Worklist.push_back (&Initial);
 
   // Update the number of queries made for dynamic slices.
-  ++DynSourcesCount;
+  ++NumDynSources;
 
   // Find the backwards slice.
   while (Worklist.size()) {
@@ -204,7 +204,7 @@ void DynamicGiri::findSlice(DynValue &Initial,
     // If it has been processed, then don't process it again.
     std::unordered_set<DynValue>::iterator dvi = Slice.find (*DV);
     if (dvi != Slice.end()) {
-      ++DynValsSkipped;
+      ++NumDynValsSkipped;
       continue;
     }
 
@@ -295,11 +295,11 @@ void DynamicGiri::findSlice(DynValue &Initial,
 
   // Update the count of dynamic instructions in the backwards slice.
   if (Slice.size())
-    DynValueCount += Slice.size();
+    NumDynValues += Slice.size();
 
   // Update the statistics on lost loads.
-  TotalLoadsTraced = Trace->totalLoadsTraced;
-  LostLoadsTraced = Trace->lostLoadsTraced;
+  NumLoadsTraced = Trace->totalLoadsTraced;
+  NumLoadsLost = Trace->lostLoadsTraced;
 }
 
 void DynamicGiri::printBackwardsSlice(std::set<Value *> &Slice,
