@@ -190,28 +190,23 @@ public:
     AU.setPreservesAll();
   };
 
-  virtual void releaseMemory() {
-    ForceExecCache.clear();
-  }
-
-public:
   /// This method returns all of the values that are in the backwards slice of
   /// the specified instruction.
   void getBackwardsSlice(Instruction *I,
                          std::set<Value *> &Slice,
-                         std::unordered_set<DynValue> &dynamicSlice,
+                         std::unordered_set<DynValue> &DynamicSlice,
                          std::set<DynValue *> &DataFlowGraph);
 
   /// This method prints all of the values that are in the backwards slice of
   /// the specified instruction.
   void printBackwardsSlice(std::set<Value *> &Slice,
-                           std::unordered_set<DynValue> &dynamicSlice,
+                           std::unordered_set<DynValue> &DynamicSlice,
                            std::set<DynValue *> &DataFlowGraph);
 
   /// Start building expression tree from root cause and count the mapped
   /// source lines
   void getExprTree(std::set<Value *> &Slice,
-                   std::unordered_set<DynValue> &dynamicSlice,
+                   std::unordered_set<DynValue> &DynamicSlice,
                    std::set<DynValue *> &DataFlowGraph);
 
 private:
@@ -277,9 +272,8 @@ private:
   const Type *SInt64Ty, *SInt32Ty, *SInt16Ty, *SInt8Ty;
   const Type *UInt64Ty, *UInt32Ty, *UInt16Ty, *UInt8Ty;
   const Type *FloatTy, *DoubleTy, *VoidTy;
-
 };
 
-}
+} // END namespace giri
 
 #endif
