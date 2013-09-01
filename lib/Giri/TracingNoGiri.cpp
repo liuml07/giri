@@ -36,9 +36,8 @@ using namespace llvm;
 //===----------------------------------------------------------------------===//
 //                     Command Line Arguments
 //===----------------------------------------------------------------------===//
-cl::opt<std::string> TraceFilename("trace-file",
-                                   cl::desc("Trace filename"),
-                                   cl::init("bbrecord"));
+// this shared command line option was defined in the Utility so
+extern llvm::cl::opt<std::string> TraceFilename;
 
 //===----------------------------------------------------------------------===//
 //                        Pass Statistics
