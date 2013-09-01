@@ -1,4 +1,4 @@
-//===- Giri.cpp - Find dynamic backwards slice analysis pass -------------- --//
+//===- CountSrcLines.cpp - Find dynamic backwards slice analysis pass --------//
 //
 //                      Giri: Dynamic Slicing in LLVM
 //
@@ -31,112 +31,83 @@
 
 using namespace llvm;
 using namespace dg;
+using namespace std;
 
 //===----------------------------------------------------------------------===//
 //                            Pass Statistics
 //===----------------------------------------------------------------------===//
+STATISTIC(NumOfDynamicBBs, "Number of basic blocks executed in trace");
 STATISTIC(NumSrcLines, "Number of static source lines executed in trace");
-STATISTIC(NumSrcLinesMissing, "Number of LLVM insts whose source lines can't be found using debug info");
-STATISTIC(NumWithoutSrcLines, "#static LLVM insts who does not have any corresponding source lines ");
-STATISTIC(NumStaticLLVMInst, "Number of static LLVM instructions executed in trace");
+STATISTIC(NumSrcLinesMissing, "Number of insts missing debug info");
+STATISTIC(NumWithoutSrcLines, "Number of ignored insts without source lines");
+STATISTIC(NumStaticInst, "Number of static LLVM instructions executed");
+STATISTIC(NumBBsNoSrc, "Number of BBs whose source line debug info is missing");
 
 //===----------------------------------------------------------------------===//
 //                        Command Line Arguments.
 //===----------------------------------------------------------------------===//
-cl::opt<std::string> TraceFilename("trace-file",
-                                   cl::desc("Trace filename"),
-                                   cl::init("bbrecord"));
+cl::opt<string> TraceFilename("trace-file",
+                              cl::desc("Trace filename"),
+                              cl::init("bbrecord"));
 
 //===----------------------------------------------------------------------===//
 //                        CountSrcLines Pass Implementations
 //===----------------------------------------------------------------------===//
-// ID Variable to identify the pass
+
 char CountSrcLines::ID = 0;
 
-// Pass registration
 static RegisterPass<dg::CountSrcLines>
-X("countsrc", "Count Number of LLVM instructions and source lines executed in a trace");
+X("countsrc", "Count number of LLVM instructions and source lines of a trace");
 
-void CountSrcLines::countLines(const std::string &bbrecord_file) {
-	std::unordered_set<unsigned> bb_set = readBB(bbrecord_file);
-    std::string srcLineInfo;
-    std::set<std::string> srcLines;
-    std::set<std::string> BBsWithInstWithNoSrcLineMapping;
-	DEBUG(errs() << "Number of unique Basic Blocks executed: "
-                 << bb_set.size()
-                 << "\n");
+void CountSrcLines::countLines(const string &bbrecord_file) {
+  unordered_set<unsigned> bb_set = readBB(bbrecord_file);
+  set<string> srcLines;
+  set<string> BBsNoSrc;
 
-	std::unordered_set<unsigned>::iterator curr;
-	for (curr = bb_set.begin(); curr != bb_set.end(); ++curr) {
-	   BasicBlock *BB = bbNumPass->getBlock (*curr);
-           NumStaticLLVMInst += BB->size ();
-           for(BasicBlock::iterator it = BB->begin(); it != BB->end(); it++) {
-	       srcLineInfo = SourceLineMappingPass::locateSrcInfo (it);
-               if (srcLineInfo.compare(0, 23, "SourceLineInfoMissing: ") == 0) {
-                 // Separately keep track of LLVM insts whose source line can't be found using debug info
-                 NumSrcLinesMissing++;
-                 BBsWithInstWithNoSrcLineMapping.insert(srcLineInfo);
-               } else if (srcLineInfo.compare(0, 18, "NoSourceLineInfo: ") == 0) {
-                 // Count static LLVM insts whose corresponding source lines don't exist
-                 NumWithoutSrcLines++;		
-               } else
-                 srcLines.insert (srcLineInfo);
-	   }
-	}
+  unordered_set<unsigned>::iterator curr;
+  for (curr = bb_set.begin(); curr != bb_set.end(); ++curr) {
+     BasicBlock *BB = bbNumPass->getBlock(*curr);
+     NumStaticInst += BB->size();
+     for (BasicBlock::iterator it = BB->begin(); it != BB->end(); ++it) {
+       string srcLineInfo = SourceLineMappingPass::locateSrcInfo(it);
+       if (srcLineInfo.empty()) // Ignored instructions without source lines
+         NumWithoutSrcLines++;
+       else if (srcLineInfo == "NIL") { // No source line found using debug info
+         NumSrcLinesMissing++;
+         BBsNoSrc.insert(srcLineInfo);
+       } else
+         srcLines.insert(srcLineInfo);
+     }
+  }
 
-    NumSrcLines = srcLines.size();
-	DEBUG(errs() << "Number of unique LLVM instructions: "
-                 << NumStaticLLVMInst
-                 << "\n");
-	DEBUG(errs() << "Number of unique source lines: "
-                 << NumSrcLines
-                 << "\n");
-	DEBUG(errs() << "#Unique LLVM insts with source line debug info missing: "
-                 << NumSrcLinesMissing
-                 << "\n");
-	DEBUG(errs() << "#Unique BBs whose source line debug info missing: "
-                 << BBsWithInstWithNoSrcLineMapping.size()
-                 << "\n");
-	DEBUG(errs() << "#Unique LLVM insts whose corr source lines don't exist: "
-                 << NumWithoutSrcLines
-                 << "\n");
-	DEBUG(errs() << "Number of unique source lines including 1 for each insts"\
-                 << "for which no source line could be found using debug info: "
-                 << NumSrcLines + NumSrcLinesMissing
-                 << "\n");
+  NumSrcLines = srcLines.size();
+  NumBBsNoSrc = BBsNoSrc.size();
 }
 
-std::unordered_set<unsigned> CountSrcLines::readBB(const std::string &bbrecord_file) {
-    int NumOfDynamicBBs = 0;
+unordered_set<unsigned> CountSrcLines::readBB(const string &bbrecord) {
+  int bb_fd = open(bbrecord.c_str(), O_RDONLY);
+  if (!bb_fd) {
+     errs() << "Error opening trace file: " << bbrecord << "!\n";
+     exit(1);
+  }
 
-	int bb_fd = open(bbrecord_file.c_str(), O_RDONLY);
-    if (!bb_fd) {
-  	   std::cerr << "Error opening trace file!" << bbrecord_file << "\n";
-       exit(1);
+  unordered_set<unsigned> bb_set; // Keep track of basic bock ID
+  Entry entry;
+  while (read(bb_fd, &entry, sizeof(entry)) == sizeof(entry)) {
+    if (entry.type == RecordType::BBType) {
+      bb_set.insert(entry.id);
+      ++NumOfDynamicBBs;
     }
+    if (entry.type == RecordType::ENType)
+      break;
+  }
 
-	// Keep track of basic bock ids we have seen
-	std::unordered_set<unsigned> bb_set;
-	// Read in each entry from the file
-	Entry entry;
-	while (read(bb_fd, &entry, sizeof(entry)) == sizeof(entry)) {
-	  if (entry.type == RecordType::BBType) {
-	    bb_set.insert(entry.id);
-        NumOfDynamicBBs ++;
-	  }
+  close(bb_fd);
 
-	  if (entry.type == RecordType::ENType)
-	    break;
-	}
-
-	close(bb_fd);
-	std::cerr << "Number of dynamic number of BBs: " << NumOfDynamicBBs << "\n";
-
-	return bb_set;
+  return bb_set;
 }
 
 bool CountSrcLines::runOnModule(Module &M) {
-
   // Get references to other passes used by this pass.
   bbNumPass = &getAnalysis<QueryBasicBlockNumbers>();
   lsNumPass = &getAnalysis<QueryLoadStoreNumbers>();
