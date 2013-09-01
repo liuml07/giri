@@ -13,7 +13,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#define DEBUG_TYPE "giri-util"
+#define DEBUG_TYPE "giriutil"
 
 #include "Utility/CountSrcLines.h"
 #include "Utility/SourceLineMapping.h"
@@ -25,8 +25,8 @@
 #include "llvm/Support/raw_ostream.h"
 
 #include <fcntl.h>
-#include <iostream>
 #include <fstream>
+#include <iostream>
 #include <unistd.h>
 
 using namespace llvm;
@@ -43,9 +43,13 @@ STATISTIC(NumStaticLLVMInst, "Number of static LLVM instructions executed in tra
 //===----------------------------------------------------------------------===//
 //                        Command Line Arguments.
 //===----------------------------------------------------------------------===//
-static cl::opt<std::string>
-TraceFilename ("tr", cl::desc("Trace filename"), cl::init("bbrecord"));
+cl::opt<std::string> TraceFilename("trace-file",
+                                   cl::desc("Trace filename"),
+                                   cl::init("bbrecord"));
 
+//===----------------------------------------------------------------------===//
+//                        CountSrcLines Pass Implementations
+//===----------------------------------------------------------------------===//
 // ID Variable to identify the pass
 char CountSrcLines::ID = 0;
 
