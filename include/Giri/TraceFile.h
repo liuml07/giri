@@ -397,10 +397,15 @@ private:
 
   /// This method, given a dynamic value that reads from memory, will find the
   /// dynamic value(s) that stores into the same memory.
+  ///
+  /// \param DV[in] - the dynamic value of the load instruction
+  /// \param Sources[out] - the work list to add the related values
+  /// \param store_index - the index in the trace file to start with
+  /// \param load_entry - the load entry
   void findAllStoresForLoad(DynValue &DV,
                             Worklist_t &Sources,
                             long store_index,
-                            Entry load_entry);
+                            const Entry load_entry);
 
   /// Given a dynamic value representing a phi-node, determine which basic block
   /// was executed before the phi-node's basic block and add the correct dynamic

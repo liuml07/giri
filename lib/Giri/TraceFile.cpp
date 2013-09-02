@@ -907,17 +907,13 @@ static inline bool overlaps(const Entry &first, const Entry &second) {
 void TraceFile::findAllStoresForLoad(DynValue &DV,
                                      Worklist_t &Sources,
                                      long store_index,
-                                     Entry load_entry) {
+                                     const Entry load_entry) {
   while (store_index >= 0) {
     if (trace[store_index].type == RecordType::STType &&
         overlaps(trace[store_index], load_entry)) {
-      //assert(shouldBeLost == false);
-      assert(trace[store_index].type    == RecordType::STType);
-      assert(overlaps(trace[store_index], load_entry));
       // Find the LLVM store instruction(s) that match this dynamic store
       // instruction.
       Value *V = lsNumPass->getInstforID(trace[store_index].id);
-      assert(V);
       Instruction *SI = dyn_cast<Instruction>(V);
       assert(SI);
 
@@ -936,15 +932,16 @@ void TraceFile::findAllStoresForLoad(DynValue &DV,
       DynValue newDynValue = DynValue(V, bbindex);
       addToWorklist(newDynValue, Sources, DV);
 
-      Entry store_entry = trace[store_index];
+      Entry &store_entry = trace[store_index];
       Entry new_entry;
-      unsigned long store_end = store_entry.address + store_entry.length;
-      unsigned long load_end = load_entry.address + load_entry.length;
       if (load_entry.address < store_entry.address) {
         new_entry.address = load_entry.address;
         new_entry.length = store_entry.address - load_entry.address;
         findAllStoresForLoad(DV, Sources, store_index - 1, new_entry);
       }
+
+      unsigned long store_end = store_entry.address + store_entry.length;
+      unsigned long load_end = load_entry.address + load_entry.length;
       if (store_end < load_end) {
         new_entry.address = store_end;
         new_entry.length = load_end - store_end;
@@ -962,9 +959,11 @@ void TraceFile::findAllStoresForLoad(DynValue &DV,
   // If we can't find the source of the load, then just ignore it.  The trail
   // ends here.
   if (store_index == -1) {
-    DEBUG(dbgs() << "We can't find the source of the load. This load may be "
-                    "uninitialized or we don't support a special function "
-                    "which may be storing to this load.\n");
+    // This load may be uninitialized or we don't support a special function
+    // which may be storing to this load
+    DEBUG(dbgs() << "We can't find the source of the load:");
+    DEBUG(DV.getValue()->print(dbgs()));
+    DEBUG(dbgs() << "\n");
     ++lostLoadsTraced;
   }
 }
@@ -1019,16 +1018,15 @@ void TraceFile::getSourcesForLoad(DynValue &DV,
     // stored to these locations.
     ++totalLoadsTraced;
     long block_index = load_indices[index];
-    long store_index = block_index - 1;
 
     // Don't bother performing the scan if the address is zero.  This means
     // that it's a lost load for which no matching store exists.
-    //bool shouldBeLost = false;
-    if (!(trace[block_index].address)) {
+    if (!trace[block_index].address) {
       ++lostLoadsTraced;
       continue;
     }
 
+    long store_index = block_index - 1;
     findAllStoresForLoad(DV, Sources, store_index, trace[block_index]);
 
     /*
