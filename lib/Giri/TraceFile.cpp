@@ -381,12 +381,12 @@ void TraceFile::buildTraceFunAddrMap(void) {
   for (unsigned long index = 0;
        trace[index].type != RecordType::ENType;
        ++index) {
-    // Take action on the Call record types.
+    // Take action on the call record types.
     if (trace[index].type == RecordType::CLType) {
       Value *v = lsNumPass->getInstforID(trace[index].id);
       if (CallInst *CI = dyn_cast<CallInst>(v))
-        // For recursion through indirect function calls, it'll be 0 and it will
-        // not work
+        // For recursion through indirect function calls, it'll be 0 and it
+        // will not work
         if (Function *calledFun = CI->getCalledFunction())
           if (traceFunAddrMap.find(calledFun) == traceFunAddrMap.end())
             traceFunAddrMap[calledFun] = trace[index].address;
@@ -430,7 +430,7 @@ unsigned long TraceFile::findPreviousNestedID(unsigned long start_index,
   // Assert that we're starting our backwards scan on a basic block entry.
   assert(trace[start_index].type == RecordType::BBType);
   // Assert that we're not looking for a basic block index, since we can only
-  // use this function when ebtry belongs to basicblock nestedID.
+  // use this function when entry belongs to basic block nestedID.
   assert(type != RecordType::BBType);
   assert(start_index > 0);
 
@@ -475,20 +475,15 @@ unsigned long TraceFile::findNextID(unsigned long start_index,
   // Start searching from the specified index and continue until we find an
   // entry with the correct ID.
   unsigned long index = start_index;
-  bool found = false;
-  while (!found) {
+  while (true) {
     if (index > maxIndex)
       break;
-    if (trace[index].type == type && trace[index].id == id) {
-      found = true;
-      break;
-    }
+    if (trace[index].type == type && trace[index].id == id)
+      return index;
     ++index;
   }
 
-  // Assert that we've found the entry for which we're looking.
-  assert(found && "Did not find desired subsequent entry in trace!\n");
-  return index;
+  report_fatal_error("Did not find desired subsequent entry in trace!\n");
 }
 
 unsigned long TraceFile::findNextAddress(unsigned long start_index,
@@ -517,19 +512,17 @@ unsigned long TraceFile::findNextAddress(unsigned long start_index,
   return index;
 }
 
+/// Start searching from the specified index and continue until we find an
+/// entry with the correct ID.
 unsigned long TraceFile::findNextNestedID(unsigned long start_index,
                                           RecordType type,
                                           const unsigned id,
                                           const unsigned nestID) {
-  // Start searching from the specified index and continue until we find an
-  // entry with the correct ID.
-  //
-  // This works because entry id belongs to basicblock nestedID. So
-  // any more occurance of nestedID before id means a recursion.
+  // This works because entry id belongs to basicblock nestedID. So any more
+  // occurance of nestedID before id means a recursion.
   unsigned nesting = 0;
   unsigned long index = start_index;
-  bool found = false;
-  while (!found) {
+  while (true) {
     // If we've searched past the end of the trace file, stop searching.
     if (index > maxIndex)
       break;
@@ -538,10 +531,9 @@ unsigned long TraceFile::findNextNestedID(unsigned long start_index,
     // level.  If it's zero, we've found our entry.  If it's non-zero, decrease
     // the nesting level and keep looking.
     if (trace[index].type == type && trace[index].id == id) {
-      if (nesting == 0) {
-        found = true;
-        break;
-      } else
+      if (nesting == 0)
+        return index;
+      else
         ++nesting;
     }
 
@@ -554,15 +546,11 @@ unsigned long TraceFile::findNextNestedID(unsigned long start_index,
     ++index;
   }
 
-  if (!found)
-    DEBUG(dbgs() << "start_index: " << start_index
-                 << " type: " << static_cast<char>(type)
-                 << " id: " << id
-                 << " nestID: " << nestID << "\n");
-  // Assert that we've found the entry for which we're looking.
-  assert(found && "Did not find desired subsequent entry in trace!\n");
-
-  return index;
+  errs() << "start_index: " << start_index
+         << " type: " << static_cast<char>(type)
+         << " id: " << id
+         << " nestID: " << nestID << "\n";
+  report_fatal_error("Did not find desired subsequent entry in trace!\n");
 }
 
 /// Start searching from the specified index and continue until we find an entry
@@ -572,9 +560,9 @@ unsigned long TraceFile::findPreviousIDWithRecursion(Function *fun,
                                                      RecordType type,
                                                      const unsigned id) {
   uintptr_t funAddr;
-  // Get the runtime trace address of this function fun
-  // If this function is not called or called through indirect call we won't
-  // have its runtime trace address. So, we can't track recursion for them.
+  // Get the runtime trace address of this function fun. If this function is
+  // not called or called through indirect call we won't have its runtime
+  // trace address. So, we can't track recursion for them.
   if (traceFunAddrMap.find(fun) != traceFunAddrMap.end())
     funAddr = traceFunAddrMap[fun];
   else
@@ -583,7 +571,6 @@ unsigned long TraceFile::findPreviousIDWithRecursion(Function *fun,
   unsigned long index = start_index;
   signed nesting = 0;
   do {
-    //assert (nesting >= 0);
     if (nesting < 0) {
       errs() << "Call records are not matching.\n";
       return maxIndex;
@@ -717,6 +704,7 @@ unsigned long TraceFile::findPreviousIDWithRecursion(Function *fun,
       ;
     return index;
   }
+
   report_fatal_error("Did not find desired trace of basic block!\n");
 }
 
