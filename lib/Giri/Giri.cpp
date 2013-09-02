@@ -37,7 +37,7 @@ using namespace giri;
 //                        Command Line Arguments
 //===----------------------------------------------------------------------===//
 // The trace filename was specified externally in tracing part
-extern llvm::cl::opt<std::string> TraceFilename;
+extern cl::opt<std::string> TraceFilename;
 
 static cl::opt<std::string>
 SliceFilename("slice-file", cl::desc("Slice output file name"), cl::init("-"));
@@ -154,7 +154,7 @@ bool DynamicGiri::findExecForcers(BasicBlock *BB,
 }
 
 void DynamicGiri::findSlice(DynValue &Initial,
-                            std::unordered_set<DynValue> &Slice,
+                            std::unordered_set<DynValue> &DynSlice,
                             std::set<DynValue *> &DataFlowGraph) {
   // Worklist
   Worklist_t Worklist;
@@ -178,8 +178,8 @@ void DynamicGiri::findSlice(DynValue &Initial,
 
     // Check to see if this dynamic value has already been processed.
     // If it has been processed, then don't process it again.
-    std::unordered_set<DynValue>::iterator dvi = Slice.find(*DV);
-    if (dvi != Slice.end()) {
+    std::unordered_set<DynValue>::iterator dvi = DynSlice.find(*DV);
+    if (dvi != DynSlice.end()) {
       ++NumDynValsSkipped;
       continue;
     }
@@ -191,10 +191,10 @@ void DynamicGiri::findSlice(DynValue &Initial,
 #endif
 
     // Add the worklist item to the dynamic slice.
-    Slice.insert(*DV);
+    DynSlice.insert(*DV);
 
     // Print every 100000th dynamic value to monitor progress
-    if (Slice.size() % 100000 == 0) {
+    if (DynSlice.size() % 100000 == 0) {
        DEBUG(dbgs() << "100000th Dynamic value processed\n");
        DEBUG(DV->print(dbgs(), lsNumPass));
     }
@@ -202,8 +202,8 @@ void DynamicGiri::findSlice(DynValue &Initial,
     // Get the dynamic basic block to which this value belongs.
     DynBasicBlock DBB = DynBasicBlock(*DV);
 
-    // If there is a dynamic basic block associated with this value, then
-    // go find which dynamic basic block forced execution of this basic block.
+    // If there is a dynamic basic block associated with this value, then go
+    // find which dynamic basic block forced execution of this basic block.
     // However, don't do this if control-dependence tracking is disabled or if
     // we've already processed the basic block.
     if (TraceCD && !DBB.isNull()) {
@@ -219,7 +219,7 @@ void DynamicGiri::findSlice(DynValue &Initial,
           // processed before.  Find the set of basic blocks that can force
           // execution of this basic block.
           std::set<unsigned> forcesExecSet;
-          bool atLeastOnce=findExecForcers(DBB.getBasicBlock(), forcesExecSet);
+          bool found = findExecForcers(DBB.getBasicBlock(), forcesExecSet);
 
           // Find the previously executed basic block which caused execution of
           // this basic block.
@@ -230,9 +230,9 @@ void DynamicGiri::findSlice(DynValue &Initial,
           // no control dependence exists and nothing needs to be done.
           // Otherwise, add the condition of the basic block that forced
           // execution to the worklist.
-          if (Forcer.getBasicBlock() == nullptr) { // error, cudn't find CD
-            llvm::errs() << " Could not find Control-dep of this Basic Block \n";
-          } else if (Forcer.getBasicBlock() != &entryBlock || !atLeastOnce) {
+          if (Forcer.getBasicBlock() == nullptr) { // Couldn't find CD
+            errs() << "Could not find Control-dep of this Basic Block \n";
+          } else if (Forcer.getBasicBlock() != &entryBlock || !found) {
             DynValue DTerminator = Forcer.getTerminator();
             Trace->addToWorklist(DTerminator, Worklist, *DV);
           }
@@ -241,8 +241,8 @@ void DynamicGiri::findSlice(DynValue &Initial,
     }
 
 #if 0
-    DEBUG(dbgs() << "DV: " << DV.getIndex() << ": ");
-    DEBUG(DV.getValue()->print(dbgs()));
+    DEBUG(dbgs() << "DV: " << DV->getIndex() << ": ");
+    DEBUG(DV->getValue()->print(dbgs()));
     DEBUG(dbgs() << "\n");
 #endif
 
@@ -251,11 +251,12 @@ void DynamicGiri::findSlice(DynValue &Initial,
     // depth-first order (depending upon whether the new value is inserted at
     // the end or begining); BFS should help optimize access to the trace file
     // by increasing locality.
+    // @TODO support both DFS and BFS traverse
     Trace->getSourcesFor(*DV, Worklist);
   }
 
   // Update the count of dynamic instructions in the backwards slice.
-  NumDynValues += Slice.size();
+  NumDynValues += DynSlice.size();
 
   // Update the statistics on lost loads.
   NumLoadsTraced = Trace->totalLoadsTraced;
@@ -263,7 +264,7 @@ void DynamicGiri::findSlice(DynValue &Initial,
 }
 
 void DynamicGiri::printBackwardsSlice(std::set<Value *> &Slice,
-                                      std::unordered_set<DynValue> &DynamicSlice,
+                                      std::unordered_set<DynValue> &DynSlice,
                                       std::set<DynValue *> &DataFlowGraph) {
   // Print out the dynamic backwards slice.
   std::string errinfo;
@@ -286,8 +287,8 @@ void DynamicGiri::printBackwardsSlice(std::set<Value *> &Slice,
   SliceFile << "==================================================\n";
   SliceFile << " Dynamic Slice \n";
   SliceFile << "==================================================\n";
-  for (std::unordered_set<DynValue>::iterator i = DynamicSlice.begin();
-       i != DynamicSlice.end();
+  for (std::unordered_set<DynValue>::iterator i = DynSlice.begin();
+       i != DynSlice.end();
        ++i) {
     DynValue DV = *i;
     DV.print(SliceFile, lsNumPass);
@@ -301,19 +302,19 @@ void DynamicGiri::printBackwardsSlice(std::set<Value *> &Slice,
 
 void DynamicGiri::getBackwardsSlice(Instruction *I,
                                     std::set<Value *> &Slice,
-                                    std::unordered_set<DynValue > &DynamicSlice,
+                                    std::unordered_set<DynValue > &DynSlice,
                                     std::set<DynValue *> &DataFlowGraph) {
   // Get the last dynamic execution of the specified instruction.
   DynValue *DI = Trace->getLastDynValue(I);
 
   // Find all instructions in the backwards dynamic slice that contribute to
   // the value of this instruction.
-  findSlice(*DI, DynamicSlice, DataFlowGraph);
+  findSlice(*DI, DynSlice, DataFlowGraph);
 
   // Fetch the instructions out of the dynamic slice set.  The caller may be
   // interested in static instructions.
-  std::unordered_set<DynValue>::iterator i = DynamicSlice.begin();
-  while (i != DynamicSlice.end()) {
+  std::unordered_set<DynValue>::iterator i = DynSlice.begin();
+  while (i != DynSlice.end()) {
     Slice.insert(i->getValue());
     ++i;
   }
@@ -344,7 +345,7 @@ bool DynamicGiri::checkType(const Type *T) {
 
 bool DynamicGiri::runOnModule(Module &M) {
   std::set<Value *> Slice;
-  std::unordered_set<DynValue> DynamicSlice;
+  std::unordered_set<DynValue> DynSlice;
   std::set<DynValue *> DataFlowGraph;
 
   // Get references to other passes used by this pass.
@@ -390,14 +391,14 @@ bool DynamicGiri::runOnModule(Module &M) {
               l.getLineNumber() == StartLoc) {
             DEBUG(dbgs() << "Found instruction matching the LoC:\n");
             DEBUG(I->dump());
-            getBackwardsSlice(&*I, Slice, DynamicSlice, DataFlowGraph);
+            getBackwardsSlice(&*I, Slice, DynSlice, DataFlowGraph);
             Found = true;
           }
         }
     if (!Found)
       errs() << "Didin't find the starting instruction to slice " << "\n";
     else
-      printBackwardsSlice(Slice, DynamicSlice, DataFlowGraph);
+      printBackwardsSlice(Slice, DynSlice, DataFlowGraph);
   } else if (!StartOfSliceInst.empty()) {
     // User specified the slicing criterion by the inst command, with the
     // function name and the instruction count. The instruction count can be
@@ -427,14 +428,14 @@ bool DynamicGiri::runOnModule(Module &M) {
         // Scan the function to find the slicing criterion by inst number
         DEBUG(dbgs() << "The start of slice instruction is: ");
         DEBUG(I->dump());
-        getBackwardsSlice(&*I, Slice, DynamicSlice, DataFlowGraph);
+        getBackwardsSlice(&*I, Slice, DynSlice, DataFlowGraph);
         Found = true;
         break;
       }
     if (!Found)
       errs() << "Didin't find the starting instruction to slice " << "\n";
     else
-      printBackwardsSlice(Slice, DynamicSlice, DataFlowGraph);
+      printBackwardsSlice(Slice, DynSlice, DataFlowGraph);
   } else {
     // In this case, the user did not specify the slicing criterion, i.e. the
     // start of the slicing instruction. Thus we simply use the first return
@@ -447,8 +448,8 @@ bool DynamicGiri::runOnModule(Module &M) {
       if (isa<ReturnInst>(*I)) {
         DEBUG(dbgs() << "The start of slice instruction is: " << "\n");
         DEBUG(I->dump());
-        getBackwardsSlice(&*I, Slice, DynamicSlice, DataFlowGraph);
-        printBackwardsSlice(Slice, DynamicSlice, DataFlowGraph);
+        getBackwardsSlice(&*I, Slice, DynSlice, DataFlowGraph);
+        printBackwardsSlice(Slice, DynSlice, DataFlowGraph);
         break;
       }
   }
