@@ -910,6 +910,7 @@ void TraceFile::findAllStoresForLoad(DynValue &DV,
                                      const Entry load_entry) {
   while (store_index >= 0) {
     if (trace[store_index].type == RecordType::STType &&
+        trace[store_index].tid == load_entry.tid &&
         overlaps(trace[store_index], load_entry)) {
       // Find the LLVM store instruction(s) that match this dynamic store
       // instruction.
@@ -928,12 +929,12 @@ void TraceFile::findAllStoresForLoad(DynValue &DV,
       // Record the store instruction as a source.
       // FIXME: This should handle *all* stores with the ID.  It is possible
       // that this occurs through function cloning.
-      // FIXME: Do we need to consider the tid here?
       DynValue newDynValue = DynValue(V, bbindex);
       addToWorklist(newDynValue, Sources, DV);
 
       Entry &store_entry = trace[store_index];
       Entry new_entry;
+      new_entry.tid = load_entry.tid;
       if (load_entry.address < store_entry.address) {
         new_entry.address = load_entry.address;
         new_entry.length = store_entry.address - load_entry.address;
