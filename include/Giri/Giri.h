@@ -150,7 +150,7 @@ private:
 
   /// Create a global constructor (ctor) function that can be called when the
   /// program starts up.
-  Function* createCtor(Module &M);
+  Function *createCtor(Module &M);
 
   /// Insert the specified function into the list of global constructor
   /// functions.
@@ -192,15 +192,20 @@ public:
 
   /// This method returns all of the values that are in the backwards slice of
   /// the specified instruction.
+  ///
+  /// \param I - the slicing criterion
+  /// \param Slice - the static slice container
+  /// \param DynSlice - the dynamic slice container
+  /// \param DataFlowGraph - the data flow graph
   void getBackwardsSlice(Instruction *I,
                          std::set<Value *> &Slice,
-                         std::unordered_set<DynValue> &DynamicSlice,
+                         std::unordered_set<DynValue> &DynSlice,
                          std::set<DynValue *> &DataFlowGraph);
 
   /// This method prints all of the values that are in the backwards slice of
   /// the specified instruction.
   void printBackwardsSlice(std::set<Value *> &Slice,
-                           std::unordered_set<DynValue> &DynamicSlice,
+                           std::unordered_set<DynValue> &DynSlice,
                            std::set<DynValue *> &DataFlowGraph);
 
 private:
@@ -216,10 +221,12 @@ private:
   /// subsequent executions depending on the result of the basic block's
   /// terminating instruction.
   ///
-  /// \param[in] Initial - The initial value for which we want a slice.
-  void findSlice (DynValue & V,
-                  std::unordered_set<DynValue> & Slice,
-                  std::set<DynValue *> & DataFlowGraph);
+  /// \param[in] Initial - the slicing criterion dynamic value
+  /// \param[out] DynSlices - the dynamic slice container
+  /// \param[out] DataFlowGraph - the data flow graph
+  void findSlice(DynValue &Initial,
+                 std::unordered_set<DynValue> &DynSlice,
+                 std::set<DynValue *> &DataFlowGraph);
 
   /// Find the basic blocks that can force execution of the specified basic
   /// block and return the identifiers used to represent those basic blocks
@@ -242,7 +249,7 @@ private:
   ///                 function is called (i.e., the specified basic block is
   ///                 control-dependent on the entry block if the entry block
   ///                 is in bbNums).
-  bool findExecForcers(BasicBlock * BB, std::set<unsigned> &bbNums);
+  bool findExecForcers(BasicBlock *BB, std::set<unsigned> &bbNums);
 
   void initDataFlowFitler(void);
 
