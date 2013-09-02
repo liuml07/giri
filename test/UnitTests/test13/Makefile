@@ -1,4 +1,4 @@
-##===- giri/test/UnitTests/test4/Makefile ------------------*- Makefile -*-===##
+##===- giri/test/UnitTests/test13/Makefile -----------------*- Makefile -*-===##
 
 NAME = struct
 LDFLAGS = -lm

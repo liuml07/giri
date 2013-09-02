@@ -1,4 +1,4 @@
-##===- giri/test/UnitTests/test3/Makefile ------------------*- Makefile -*-===##
+##===- giri/test/UnitTests/test10/Makefile -----------------*- Makefile -*-===##
 
 NAME = str
 INPUT ?= giri
