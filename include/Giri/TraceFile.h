@@ -268,33 +268,6 @@ private:
   //===--------------------------------------------------------------------===//
 
   /// This method searches backwards in the trace file for an entry of the
-  /// specified type.
-  ///
-  /// This method assumes that a previous entry in the trace *will* match the
-  /// type. Asserts in the code will ensure that this is true when this code is
-  /// compiled with assertions enabled.
-  ///
-  /// \param start_index - The index in the trace file which will be examined
-  ///                      first for a match.
-  /// \param type - The type of entry for which the caller searches.
-  /// \return The index in the trace of entry with the specified type and ID
-  /// is returned.
-  unsigned long findPrevious(unsigned long start_index, RecordType type);
-
-  /// This method searches backwards in the trace file for an entry of the
-  /// specified type and ID.
-  ///
-  /// \param start_index - The index in the trace file which will be examined
-  //                       first for a match.
-  /// \param type - The type of entry for which the caller searches.
-  /// \param ids - A set of IDs which the entry in the trace should match.
-  /// \return The index in the trace of entry with the specified type and ID is
-  /// returned; if no such entry is found, then the end entry is returned.
-  unsigned long findPreviousID(unsigned long start_index,
-                               RecordType type,
-                               const std::set<unsigned> &ids);
-
-  /// This method searches backwards in the trace file for an entry of the
   /// specified type and ID.
   ///
   /// \param start_index - The index in the trace file which will be examined
