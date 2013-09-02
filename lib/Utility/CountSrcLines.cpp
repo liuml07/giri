@@ -86,10 +86,8 @@ void CountSrcLines::countLines(const string &bbrecord_file) {
 
 unordered_set<unsigned> CountSrcLines::readBB(const string &bbrecord) {
   int bb_fd = open(bbrecord.c_str(), O_RDONLY);
-  if (!bb_fd) {
-     errs() << "Error opening trace file: " << bbrecord << "!\n";
-     exit(1);
-  }
+  if (!bb_fd)
+     report_fatal_error("Error opening trace file: " + bbrecord + "!\n");
 
   unordered_set<unsigned> bb_set; // Keep track of basic bock ID
   Entry entry;
