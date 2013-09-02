@@ -264,7 +264,7 @@ private:
   void buildTraceFunAddrMap();
 
   //===--------------------------------------------------------------------===//
-  // Utility methods for scanning through the trace file
+  //          Utility methods for scanning through the trace file
   //===--------------------------------------------------------------------===//
 
   /// This method searches backwards in the trace file for an entry of the
