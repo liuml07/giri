@@ -99,7 +99,7 @@ DynValue *TraceFile::getLastDynValue(Value  *V) {
   // If this is the first block, verify that it is the for the value for which
   // we seek.  If it isn't, then flag an error with an assertion.
   assert(trace[0].type == RecordType::BBType && trace[0].id == id &&
-          "Cannot find instruction in trace!\n");
+         "Cannot find instruction in trace!\n");
 
   return new DynValue(I, 0);
 }
@@ -216,12 +216,15 @@ Instruction* TraceFile::getCallInstForFormalArg(DynValue &DV) {
   // we just need to find a matching call entry that calls this instruction.
   assert(DV.index > 0);
   unsigned long callIndex = DV.index - 1;
-  while ((callIndex > 0) &&
-         ((trace[callIndex].type != RecordType::CLType) ||
-          (trace[callIndex].address != trace[DV.index].address))) {
+  while (callIndex > 0) {
+    if (trace[callIndex].type == RecordType::CLType &&
+        trace[callIndex].tid == trace[DV.index].tid &&
+        trace[callIndex].address == trace[DV.index].address)
+      break;
     --callIndex;
   }
   assert(trace[callIndex].type == RecordType::CLType);
+  assert(trace[callIndex].tid == trace[DV.index].tid);
   assert(trace[callIndex].address == trace[DV.index].address);
   assert(callIndex < DV.index);
 
@@ -778,17 +781,18 @@ void TraceFile::getSourcesForArg(DynValue &DV, Worklist_t &Sources) {
   // just need to find a matching call entry that calls this instruction.
   assert(DV.index > 0);
   unsigned long callIndex = DV.index - 1;
-  while (callIndex > 0 &&
-         (trace[callIndex].type != RecordType::CLType ||
-          trace[callIndex].address != trace[DV.index].address)) {
+  while (callIndex > 0) {
+    if (trace[callIndex].type == RecordType::CLType &&
+        trace[callIndex].tid == trace[DV.index].tid &&
+        trace[callIndex].address == trace[DV.index].address)
+      break;
     --callIndex;
   }
   assert(callIndex < DV.index);
-  // assert(trace[callIndex].type == RecordType::CLType);
-  // assert(trace[callIndex].address == trace[DV.index].address);
   // FIXME
-  if (trace[callIndex].address != trace[DV.index].address ||
-      trace[callIndex].type != RecordType::CLType) {
+  if (trace[callIndex].type != RecordType::CLType ||
+      trace[callIndex].tid != trace[DV.index].tid ||
+      trace[callIndex].address != trace[DV.index].address) {
     errs() << "For some variable length functions like ap_rprintf in apache, "
               "call records missing. Stop here for now. Fix it later\n";
     return;

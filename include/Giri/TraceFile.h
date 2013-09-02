@@ -39,16 +39,13 @@ public:
   friend class TraceFile;
   friend class DynBasicBlock;
 
-  DynValue(Value *Val, unsigned long i) : V(Val), parent(nullptr) {
+  DynValue(Value *Val, unsigned long index) :
+    V(Val), index(index), parent(nullptr) {
     // If the value is a constant, set the index to zero.  Constants don't
     // have multiple instances due to dynamic execution, so we want
     // them to appear identical when stored in containers like std::set.
     if (isa<Constant>(Val))
-      index = 0;
-    else
-      index = i;
-
-    return;
+      this->index = 0;
   }
 
   bool operator<(const DynValue &DI) const {
