@@ -396,53 +396,6 @@ void TraceFile::buildTraceFunAddrMap(void) {
   DEBUG(dbgs() << "traceFunAddrMap.size(): " << traceFunAddrMap.size() << "\n");
 }
 
-unsigned long TraceFile::findPrevious(unsigned long start_index,
-                                      RecordType type) {
-  // Start searching from the specified index and continue until we find an
-  // entry with the correct ID.
-  unsigned long index = start_index;
-  bool found = false;
-  while (!found) {
-    if (trace[index].type == type) {
-      found = true;
-      break;
-    }
-    if (index == 0)
-      break;
-    --index;
-  }
-
-  // Assert that we've found the entry for which we're looking.
-  report_fatal_error("Did not find desired trace of basic block!");
-}
-
-unsigned long TraceFile::findPreviousID(unsigned long start_index,
-                                        RecordType type,
-                                        const set<unsigned> &ids) {
-  // Start searching from the specified index and continue until we find an
-  // entry with the correct ID.
-  unsigned long index = start_index;
-  while (true) {
-    if (trace[index].type == type && ids.count(trace[index].id)) {
-      return index;
-    }
-    if (index == 0)
-      break;
-    --index;
-  }
-
-  // We didn't find the record. If this is a basic block record, then grab the
-  // END record.
-  // ******************************** WHY?????? ****************************
-  if (type == RecordType::BBType) {
-    for (index = maxIndex; trace[index].type != RecordType::ENType; --index)
-      ;
-    return index;
-  }
-
-  report_fatal_error("Did not find desired trace entry!");
-}
-
 unsigned long TraceFile::findPreviousID(unsigned long start_index,
                                         RecordType type,
                                         const unsigned id) {
