@@ -455,7 +455,7 @@ private:
   /// \param[in] DV - The dynamic value which reads the memory.
   /// \param[in] count - The number of loads performed by this instruction.
   /// \param[out] Sources - The dynamic value written to the memory location is
-  ///                       added to a container using this insertion iterator.
+  ///                       added to this container.
   void getSourcesForLoad(DynValue &DV, Worklist_t &Sources, unsigned count = 1);
 
   void getSourcesForCall(DynValue &DV, Worklist_t &Sources);
