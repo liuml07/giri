@@ -61,6 +61,8 @@ TraceFile::TraceFile(string Filename,
   // Calculate the index of the last record in the trace.
   maxIndex = finfo.st_size / sizeof(Entry) - 1;
 
+  // Note that we map the whole file in the private memory space. If we don't
+  // have enough VM at this time, this will definitely fail.
   trace = (Entry *)mmap(0,
                         finfo.st_size,
                         PROT_READ | PROT_WRITE,
@@ -110,11 +112,11 @@ void TraceFile::getSourcesFor(DynValue &DInst, Worklist_t &si) {
     // operands (other than Basic Blocks).
     if (BI->isConditional()) {
       DynValue newDynValue = DynValue(BI->getCondition(), DInst.index);
-      addToWorklist( newDynValue, si, DInst );
+      addToWorklist(newDynValue, si, DInst);
     }
   } else if (SwitchInst *SI = dyn_cast<SwitchInst>(DInst.V)) {
     DynValue newDynValue = DynValue(SI->getCondition(), DInst.index);
-    addToWorklist( newDynValue, si, DInst );
+    addToWorklist(newDynValue, si, DInst);
   } else if (isa<PHINode>(DInst.V)) {
     // If DV is an PHI node, we need to determine which predeccessor basic block
     // was executed.
@@ -152,7 +154,7 @@ void TraceFile::getSourcesFor(DynValue &DInst, Worklist_t &si) {
     // operands really contributed to the computation.
     for (unsigned index = 0; index < I->getNumOperands(); ++index) {
       DynValue newDynValue = DynValue(I->getOperand(index), DInst.index);
-      addToWorklist( newDynValue, si, DInst );
+      addToWorklist(newDynValue, si, DInst);
     }
   }
 
@@ -174,7 +176,7 @@ DynBasicBlock TraceFile::getExecForcer(DynBasicBlock DBB,
                                                     RecordType::BBType,
                                                     bbnums);
 
-  if( index == maxIndex ) // We did not find the record due to some reason
+  if (index == maxIndex) // We did not find the record due to some reason
     return DynBasicBlock(nullptr, maxIndex);
 
   // Assert that we have found the entry.
@@ -296,7 +298,7 @@ bool TraceFile::normalize(DynValue &DV) {
                                                         DV.index,
                                                         RecordType::BBType,
                                                         bbID);
-  if( normIndex == maxIndex ) { // Error, could not find required trace entry
+  if (normIndex == maxIndex) { // Error, could not find required trace entry
     DEBUG(errs() << "Buggy values found at normalization. Function name: "
                  << fun->getName().str() << "\n");
     BuggyValues.insert(DV.V);
@@ -421,7 +423,7 @@ unsigned long TraceFile::findPreviousID(unsigned long start_index,
   // entry with the correct ID.
   unsigned long index = start_index;
   while (true) {
-    if ((trace[index].type == type) && (ids.count(trace[index].id))) {
+    if (trace[index].type == type && ids.count(trace[index].id)) {
       return index;
     }
     if (index == 0)
@@ -438,7 +440,7 @@ unsigned long TraceFile::findPreviousID(unsigned long start_index,
     return index;
   }
 
-  report_fatal_error("Did not find desired trace of basic block!");
+  report_fatal_error("Did not find desired trace entry!");
 }
 
 unsigned long TraceFile::findPreviousID(unsigned long start_index,
@@ -465,7 +467,7 @@ unsigned long TraceFile::findPreviousID(unsigned long start_index,
   }
 
   // Report fatal error that we've found the entry for which we're looking.
-  report_fatal_error("Did not find desired trace of basic block!");
+  report_fatal_error("Did not find desired trace entry!");
 }
 
 unsigned long TraceFile::findPreviousNestedID(unsigned long start_index,
@@ -637,7 +639,7 @@ unsigned long TraceFile::findPreviousIDWithRecursion(Function *fun,
     // Determine the address of the called/Return function;
     /* Function *calledFun = nullptr;
     CallInst *CI;
-    if( (CI = dyn_cast<CallInst>(lsNumPass->getInstforID(trace[index].id))) ) {
+    if ((CI = dyn_cast<CallInst>(lsNumPass->getInstforID(trace[index].id)))) {
       // For recursion through indirect function calls it'll be 0 and it will not work
       calledFun = CI->getCalledFunction();
       }*/
@@ -702,7 +704,7 @@ unsigned long TraceFile::findPreviousIDWithRecursion(Function *fun,
   // Get the runtime trace address of this function fun
   // If this function is not called or called through indirect call we won't
   // have its runtime trace address. So, we can't track recursion for them.
-  if (traceFunAddrMap.find(fun) != traceFunAddrMap.end() )
+  if (traceFunAddrMap.find(fun) != traceFunAddrMap.end())
      funAddr = traceFunAddrMap[fun];
   else
      funAddr = ~0; // Make sure nothing matches in this case. @TODO Check again.
@@ -714,7 +716,7 @@ unsigned long TraceFile::findPreviousIDWithRecursion(Function *fun,
     // Determine the address of the called/Return function;
     /* Function *calledFun = nullptr;
     CallInst *CI;
-    if ((CI = dyn_cast<CallInst>(lsNumPass->getInstforID(trace[index].id))) ) {
+    if ((CI = dyn_cast<CallInst>(lsNumPass->getInstforID(trace[index].id)))) {
       // For recursion through indirect function calls it'll be 0 and it will not work
       calledFun = CI->getCalledFunction();
       }*/
@@ -781,7 +783,7 @@ void TraceFile::getSourcesForPHI(DynValue &DV, Worklist_t &Sources) {
                                                           RecordType::BBType,
                                                           phiID);
   if (block_index == maxIndex) { // Could not find required trace entry
-    errs() << "findPreviousIDWithRecursion failed DV.\n";
+    errs() << __func__ << " failed DV.\n";
     return;
   }
   assert(block_index > 0);
@@ -795,8 +797,8 @@ void TraceFile::getSourcesForPHI(DynValue &DV, Worklist_t &Sources) {
                                                          block_index - 1,
                                                          RecordType::BBType,
                                                          predIDs);
-  if( pred_index == maxIndex ) { // Could not find required trace entry
-    errs() << "findPreviousIDWithRecursion failed BLOCK.\n";
+  if (pred_index == maxIndex) { // Could not find required trace entry
+    errs() << __func__ << " failed BLOCK.\n";
     return;
   }
 
@@ -888,7 +890,7 @@ void TraceFile::getSourcesForArg(DynValue &DV, Worklist_t &Sources) {
         // We have found our call instruction.  Add the actual argument in
         // the call instruction to the backwards slice.
         //DynValue newDynValue = DynValue(CI->getOperand(Arg->getArgNo()), index);
-        //addToWorklist( newDynValue, Sources, DV );
+        //addToWorklist(newDynValue, Sources, DV);
         //return;
         break;
       }
@@ -901,7 +903,7 @@ void TraceFile::getSourcesForArg(DynValue &DV, Worklist_t &Sources) {
       // We have found our call instruction.  Add the actual argument in
       // the call instruction to the backwards slice.
       //DynValue newDynValue = DynValue(CI->getOperand(Arg->getArgNo()), index);
-      //addToWorklist( newDynValue, Sources, DV );
+      //addToWorklist(newDynValue, Sources, DV);
       //return;
       break;
     }
@@ -926,7 +928,7 @@ void TraceFile::getSourcesForArg(DynValue &DV, Worklist_t &Sources) {
     if (CalledFunc->getName().str() == "pthread_create") {
       for (uint i=0; i<CI->getNumOperands()-1; i++) {
         DynValue newDynValue = DynValue(CI->getOperand(i), index);
-        addToWorklist( newDynValue, Sources, DV );
+        addToWorklist(newDynValue, Sources, DV);
       }
       return;
     }
@@ -936,7 +938,7 @@ void TraceFile::getSourcesForArg(DynValue &DV, Worklist_t &Sources) {
     // We have found our call instruction.  Add the actual argument in
     // the call instruction to the backwards slice.
     DynValue newDynValue = DynValue(CI->getOperand(Arg->getArgNo()), index);
-    addToWorklist( newDynValue, Sources, DV );
+    addToWorklist(newDynValue, Sources, DV);
     return;
   }
 }
@@ -948,13 +950,13 @@ static inline bool overlaps(const Entry &first, const Entry &second) {
   // Case 1: The objects do not overlap and the first object is located at a
   // lower address in the address space.
   if (first.address < second.address &&
-      (first.address + first.length - 1) < second.address)
+      first.address + first.length - 1 < second.address)
     return false;
 
   // Case 2: The objects do not overlap and the second object is located at a
   // lower address in the address space.
   if (second.address < first.address &&
-      (second.address + second.length - 1) < first.address)
+      second.address + second.length - 1 < first.address)
     return false;
 
   // The objects must overlap in some way.
@@ -965,7 +967,7 @@ void TraceFile::findAllStoresForLoad(DynValue &DV,
                                      Worklist_t &Sources,
                                      long store_index,
                                      Entry load_entry) {
-  while (store_index >= 0 ) {
+  while (store_index >= 0) {
     if (trace[store_index].type == RecordType::STType &&
         overlaps(trace[store_index], load_entry)) {
       //assert(shouldBeLost == false);
@@ -975,7 +977,7 @@ void TraceFile::findAllStoresForLoad(DynValue &DV,
       // instruction.
       Value *V = lsNumPass->getInstforID(trace[store_index].id);
       assert(V);
-      Instruction * SI = dyn_cast<Instruction>(V);
+      Instruction *SI = dyn_cast<Instruction>(V);
       assert(SI);
 
       // Scan forward through the trace to get the basic block in which the
@@ -1087,6 +1089,7 @@ void TraceFile::getSourcesForLoad(DynValue &DV,
     }
 
     findAllStoresForLoad(DV, Sources, store_index, trace[block_index]);
+
     /*
     while ((store_index >= 0) &&
            ((trace[store_index].type != RecordType::STType) ||
@@ -1098,7 +1101,7 @@ void TraceFile::getSourcesForLoad(DynValue &DV,
 #endif
     }
 #if 0
-    DEBUG( printf("exited store_index = %ld\n", store_index) );
+    DEBUG(printf("exited store_index = %ld\n", store_index));
     fflush(stdout);
 #endif
 
@@ -1129,9 +1132,9 @@ void TraceFile::getSourcesForLoad(DynValue &DV,
     // Find the LLVM store instruction(s) that match this dynamic store
     // instruction.
     //
-    Value * V = lsNumPass->getInstforID(trace[store_index].id);
+    Value *V = lsNumPass->getInstforID(trace[store_index].id);
     assert(V);
-    Instruction * SI = dyn_cast<Instruction>(V);
+    Instruction *SI = dyn_cast<Instruction>(V);
     assert(SI);
 
     //
@@ -1158,7 +1161,7 @@ void TraceFile::getSourcesForLoad(DynValue &DV,
     //  occurs through function cloning.
     //
     DynValue newDynValue =  DynValue(V, bbindex);
-    addToWorklist( newDynValue, Sources, DV );
+    addToWorklist(newDynValue, Sources, DV);
     */
   }
 
@@ -1170,7 +1173,7 @@ bool TraceFile::getSourcesForSpecialCall(DynValue &DV,
                                          Worklist_t &Sources) {
   // Get the call instruction of the dynamic value.  If it's not a call
   // instruction, then it obviously isn't a call to a special function.
-  Instruction * I = dyn_cast<Instruction>(DV.V);
+  Instruction *I = dyn_cast<Instruction>(DV.V);
   if (!(isa<CallInst>(I) || isa<InvokeInst>(I)))
     return false;
 
@@ -1195,8 +1198,7 @@ bool TraceFile::getSourcesForSpecialCall(DynValue &DV,
   // Get the current index into the dynamic trace; we'll need that as well.
   unsigned trace_index = DV.index;
 
-  // Determine if this is a call to a special function. If so, handle it
-  // specially!
+  // Handle call instruction to a special function specially
   const StringRef name = CalledFunc->getName();
   if (name.startswith("llvm.memset.") || name == "calloc") {
     // Add all arguments (including pointer values) into the backwards
@@ -1227,7 +1229,7 @@ bool TraceFile::getSourcesForSpecialCall(DynValue &DV,
     // backtrack to find the storing instruction. Not including called function pointer now.
     for (unsigned index = 0; index < CS.arg_size(); ++index) {
       DynValue newDynValue = DynValue(CS.getArgument(index), trace_index);
-      addToWorklist( newDynValue, Sources, DV );
+      addToWorklist(newDynValue, Sources, DV);
     }
     // Find the stores that generate the values that we load twice.
     getSourcesForLoad(DV, Sources, 2);
@@ -1344,7 +1346,7 @@ void TraceFile::getSourcesForCall(DynValue &DV, Worklist_t &Sources) {
                                                           RecordType::CLType,
                                                           callID);
     if (callIndex == maxIndex) { // Could not find required trace entry
-      errs() << "findPreviousIDWithRecursion failed to find\n";
+      errs() << __func__ << " failed to find\n";
       return;
     }
 
@@ -1357,7 +1359,7 @@ void TraceFile::getSourcesForCall(DynValue &DV, Worklist_t &Sources) {
       // conservatively.
       for (unsigned index = 0; index < CI->getNumOperands(); ++index) {
         DynValue newDynValue = DynValue(CI->getOperand(index), DV.index);
-        addToWorklist( newDynValue, Sources, DV );
+        addToWorklist(newDynValue, Sources, DV);
       }
       return;
     }
@@ -1380,7 +1382,7 @@ void TraceFile::getSourcesForCall(DynValue &DV, Worklist_t &Sources) {
   if (CalledFunc->isDeclaration()) {
     for (unsigned index = 0; index < CI->getNumOperands(); ++index) {
       DynValue newDynValue = DynValue(CI->getOperand(index), DV.index);
-      addToWorklist( newDynValue, Sources, DV );
+      addToWorklist(newDynValue, Sources, DV);
     }
     return;
   }
@@ -1398,7 +1400,7 @@ void TraceFile::getSourcesForCall(DynValue &DV, Worklist_t &Sources) {
   // returned function, in that case this assert may fail. May need to search
   // the last such BB entry of the trace of corresponding trace.
   unsigned long tempretindex = retindex - 1;
-  while( trace[tempretindex].type != RecordType::BBType )
+  while (trace[tempretindex].type != RecordType::BBType)
     tempretindex--;
 
   // FIXME: why records are not generated inside some calls as in stat,my_stat
@@ -1411,7 +1413,7 @@ void TraceFile::getSourcesForCall(DynValue &DV, Worklist_t &Sources) {
     // Treat it as external library call in this case and add all operands
     for (unsigned index = 0; index < CI->getNumOperands(); ++index) {
         DynValue newDynValue = DynValue(CI->getOperand(index), DV.index);
-        addToWorklist( newDynValue, Sources, DV );
+        addToWorklist(newDynValue, Sources, DV);
     }
     return;
   }
@@ -1420,18 +1422,18 @@ void TraceFile::getSourcesForCall(DynValue &DV, Worklist_t &Sources) {
   // instruction's return value.
   for (auto BB = CalledFunc->begin(); BB != CalledFunc->end(); ++BB) {
     if (isa<ReturnInst>(BB->getTerminator()))
-      if (bbNumPass->getID(BB) == trace[tempretindex].id ) {
+      if (bbNumPass->getID(BB) == trace[tempretindex].id) {
           DynValue newDynValue = DynValue(BB->getTerminator(), tempretindex);
-          addToWorklist( newDynValue, Sources, DV );
+          addToWorklist(newDynValue, Sources, DV);
       }
   }
 
   /* // For return matching using BB record length
   for (Function::iterator BB = CalledFunc->begin();  BB != CalledFunc->end(); ++BB) {
     if (isa<ReturnInst>(BB->getTerminator())) {
-      if ( bbNumPass->getID(BB) == trace[retindex].id ) {
+      if (bbNumPass->getID(BB) == trace[retindex].id) {
           DynValue newDynValue = DynValue(BB->getTerminator(), retindex);
-          addToWorklist( newDynValue, Sources, DV );
+          addToWorklist(newDynValue, Sources, DV);
       }
     }
   }
@@ -1469,7 +1471,7 @@ void TraceFile::getSourcesForCall(DynValue &DV, Worklist_t &Sources) {
   //
   unsigned retid = trace[retindex].id;
   DynValue newDynValue = DynValue(retMap[retid]->getTerminator(), retindex);
-  addToWorklist( newDynValue, Sources, DV );
+  addToWorklist(newDynValue, Sources, DV);
   */
 }
 
@@ -1491,7 +1493,7 @@ void TraceFile::getSourceForSelect(DynValue &DV, Worklist_t &Sources) {
                                                           RecordType::PDType,
                                                           selectID);
   if (selectIndex == maxIndex) { // Could not find required trace entry
-    errs() << "findPreviousIDWithRecursion failed to find.\n";
+    errs() << __func__ << " failed to find.\n";
     return;
   }
 
