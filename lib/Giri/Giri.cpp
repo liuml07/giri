@@ -34,7 +34,7 @@ using namespace llvm;
 using namespace giri;
 
 //===----------------------------------------------------------------------===//
-//                        Command Line Arguments.
+//                        Command Line Arguments
 //===----------------------------------------------------------------------===//
 // The trace filename was specified externally in tracing part
 extern llvm::cl::opt<std::string> TraceFilename;
@@ -55,12 +55,6 @@ StartOfSliceInst("criterion-inst",
 static cl::opt<bool>
 TraceCD("trace-cd", cl::desc("Trace control dependence"), cl::init(false));
 
-//static cl::opt<bool>
-//DFS("dfs", cl::desc("Do a depth first search"), cl::init(false));
-
-//static cl::opt<bool>
-//ExprTree("expr-tree", cl::desc("Build expression tree from the root causes and map to source lines"), cl::init(false));
-
 //===----------------------------------------------------------------------===//
 //                        Giri Pass Statistics
 //===----------------------------------------------------------------------===//
@@ -72,7 +66,7 @@ STATISTIC(NumLoadsTraced, "Number of Dynamic Loads Traced");
 STATISTIC(NumLoadsLost, "Number of Dynamic Loads Lost");
 
 //===----------------------------------------------------------------------===//
-//                        DynamicGiri Implementations
+//                       DynamicGiri Implementations
 //===----------------------------------------------------------------------===//
 
 // ID Variable to identify the pass
@@ -81,38 +75,22 @@ char DynamicGiri::ID = 0;
 // Pass registration
 static RegisterPass<DynamicGiri> X("dgiri", "Dynamic Backwards Slice Analysis");
 
-/*
-INITIALIZE_PASS_BEGIN(DynamicGiri, "dgiri",
-                "Dynamic Backwards Slice Analysis", false, false)
-INITIALIZE_PASS_DEPENDENCY(PostDominanceFrontier)
-INITIALIZE_PASS_DEPENDENCY(PostDominatorTree)
-INITIALIZE_PASS_END(DynamicGiri, "DynamicGiri",
-                "Dynamic Backwards Slice Analysis", false, false)
-*/
-
 /// This function determines whether the specified value is a source of
 /// information (something that has a label independent of its input SSA values.
+///
 /// \param V - The value to analyze.
 /// \return true if this value is a source; otherwise false, its label is the
 /// join of the labels of its input operands.
 static inline bool isASource(const Value *V) {
   // Call instructions are sources *unless* they are inline assembly.
-  if (const CallInst *CI = dyn_cast<CallInst>(V)) {
-    if (isa<InlineAsm>(CI->getCalledValue()))
-      return false;
-    else
-      return true;
-  }
+  if (const CallInst *CI = dyn_cast<CallInst>(V))
+    return !isa<InlineAsm>(CI->getCalledValue());
 
-  if ((isa<LoadInst>(V)) ||
-      (isa<Argument>(V)) ||
-    //(isa<AllocationInst>(V)) ||
-      (isa<AllocaInst>(V)) ||
-      (isa<Constant>(V)) ||
-      (isa<GlobalValue>(V))) {
-    return true;
-  }
-  return false;
+  return isa<LoadInst>(V) ||
+         isa<Argument>(V) ||
+         isa<AllocaInst>(V) ||
+         isa<Constant>(V) ||
+         isa<GlobalValue>(V);
 }
 
 bool DynamicGiri::findExecForcers(BasicBlock *BB,
@@ -128,7 +106,7 @@ bool DynamicGiri::findExecForcers(BasicBlock *BB,
     // Convert the basic blocks forcing execution into basic block ID numbers.
     for (unsigned index = 0; index < ForceExecCache[BB].size(); ++index) {
       BasicBlock *ForcerBB = ForceExecCache[BB][index];
-      bbNums.insert(bbNumPass->getID (ForcerBB));
+      bbNums.insert(bbNumPass->getID(ForcerBB));
     }
 
     // Determine if the entry basic block forces execution of the specified
@@ -151,11 +129,11 @@ bool DynamicGiri::findExecForcers(BasicBlock *BB,
   for (Function::iterator bb = F->begin(); bb != F->end(); ++bb) {
     // Find all of the basic blocks on which this basic block is
     // control-dependent.  Record these blocks as they can force execution.
-    PostDominanceFrontier::iterator i = PDF.find (bb);
+    PostDominanceFrontier::iterator i = PDF.find(bb);
     if (i != PDF.end()) {
-      PostDominanceFrontier::DomSetType & CDSet = i->second;
-      std::vector<BasicBlock *> & ForceExecSet = ForceExecCache[bb];
-      ForceExecSet.insert (ForceExecSet.end(), CDSet.begin(), CDSet.end());
+      PostDominanceFrontier::DomSetType &CDSet = i->second;
+      std::vector<BasicBlock *> &ForceExecSet = ForceExecCache[bb];
+      ForceExecSet.insert(ForceExecSet.end(), CDSet.begin(), CDSet.end());
     }
 
     // If the specified basic block post-dominates the entry block, then we
@@ -163,8 +141,8 @@ bool DynamicGiri::findExecForcers(BasicBlock *BB,
     // Therefore, execution of the entry block forces execution of the basic
     // block.
     BasicBlock &entryBlock = F->getEntryBlock();
-    if (PDT.properlyDominates (bb, &entryBlock)) {
-      ForceExecCache[bb].push_back (&entryBlock);
+    if (PDT.properlyDominates(bb, &entryBlock)) {
+      ForceExecCache[bb].push_back(&entryBlock);
       ForceAtLeastOnceCache[BB] = true;
     } else {
       ForceAtLeastOnceCache[BB] = false;
@@ -185,7 +163,7 @@ void DynamicGiri::findSlice(DynValue &Initial,
   std::unordered_set<DynBasicBlock> processedBBs;
 
   // Start off by processing the initial value we're given.
-  Worklist.push_back (&Initial);
+  Worklist.push_back(&Initial);
 
   // Update the number of queries made for dynamic slices.
   ++NumDynSources;
@@ -196,22 +174,20 @@ void DynamicGiri::findSlice(DynValue &Initial,
     Worklist.pop_front();
 
     // Normalize the dynamic value.
-    //DV->print();
     Trace->normalize(*DV);
-    //DV->print();
 
     // Check to see if this dynamic value has already been processed.
     // If it has been processed, then don't process it again.
-    std::unordered_set<DynValue>::iterator dvi = Slice.find (*DV);
+    std::unordered_set<DynValue>::iterator dvi = Slice.find(*DV);
     if (dvi != Slice.end()) {
       ++NumDynValsSkipped;
       continue;
     }
 
-    // Print the values in dynamic slice for debugging
 #if 0
-    DEBUG( std::cerr << "DV: " << DV.getIndex() << ": " );
-    DEBUG( DV.getValue()->dump() );
+    // Print the values in dynamic slice for debugging
+    DEBUG( std::cerr << "DV: " << DV.getIndex() << ": ");
+    DEBUG( DV.getValue()->dump());
 #endif
 
     // Add the worklist item to the dynamic slice.
@@ -223,8 +199,6 @@ void DynamicGiri::findSlice(DynValue &Initial,
        DEBUG(DV->print(dbgs(), lsNumPass));
     }
 
-    // *** May need to move this code to TraceFile
-
     // Get the dynamic basic block to which this value belongs.
     DynBasicBlock DBB = DynBasicBlock(*DV);
 
@@ -235,7 +209,7 @@ void DynamicGiri::findSlice(DynValue &Initial,
     if (TraceCD && !DBB.isNull()) {
       // If the basic block is the entry block, then don't do anything.  We
       // already know that it forced its own execution.
-      BasicBlock & entryBlock = DBB.getParent()->getEntryBlock();
+      BasicBlock &entryBlock = DBB.getParent()->getEntryBlock();
       if (DBB.getBasicBlock() != &entryBlock) {
         // This basic block was not an entry basic block.  Insert it into the
         // set of processed elements; if it was not already processed, process
@@ -260,11 +234,6 @@ void DynamicGiri::findSlice(DynValue &Initial,
             llvm::errs() << " Could not find Control-dep of this Basic Block \n";
           } else if (Forcer.getBasicBlock() != &entryBlock || !atLeastOnce) {
             DynValue DTerminator = Forcer.getTerminator();
-
-            /*if ( !DFS )
-	        Trace->addToWorklist(DTerminator, std::inserter(Worklist, Worklist.end()), *DV);
-              else
-	        Trace->addToWorklist(DTerminator, std::inserter(Worklist, Worklist.begin()), *DV);*/
             Trace->addToWorklist(DTerminator, Worklist, *DV);
           }
         }
@@ -272,30 +241,21 @@ void DynamicGiri::findSlice(DynValue &Initial,
     }
 
 #if 0
-    DEBUG( std::cerr << "DV: " << DV.getIndex() << ": " );
-    DEBUG( DV.getValue()->print(std::cerr) );
-    DEBUG( std::cerr << std::endl );
+    DEBUG(dbgs() << "DV: " << DV.getIndex() << ": ");
+    DEBUG(DV.getValue()->print(dbgs()));
+    DEBUG(dbgs() << "\n");
 #endif
 
-    // Find the values contributing to the current value. Add the
-    // source to the worklist. Traverse the backwards slice in
-    // breadth-first order or depth-first order (depending upon
-    // whether the new value is inserted at the end or begining); BFS
-    // should help optimize access to the trace file by increasing
-    // locality.
-    //
-    /*
-    if( !DFS )
-      Trace->getSourcesFor (*DV, std::inserter(Worklist, Worklist.end()));
-    else
-      Trace->getSourcesFor (*DV, std::inserter(Worklist, Worklist.begin()));
-    */
-    Trace->getSourcesFor (*DV, Worklist);
+    // Find the values contributing to the current value. Add the source to
+    // the worklist. Traverse the backwards slice in breadth-first order or
+    // depth-first order (depending upon whether the new value is inserted at
+    // the end or begining); BFS should help optimize access to the trace file
+    // by increasing locality.
+    Trace->getSourcesFor(*DV, Worklist);
   }
 
   // Update the count of dynamic instructions in the backwards slice.
-  if (Slice.size())
-    NumDynValues += Slice.size();
+  NumDynValues += Slice.size();
 
   // Update the statistics on lost loads.
   NumLoadsTraced = Trace->totalLoadsTraced;
@@ -315,7 +275,7 @@ void DynamicGiri::printBackwardsSlice(std::set<Value *> &Slice,
     Value *V = *i;
     V->print(SliceFile);
     SliceFile << "\n";
-    if (Instruction * I = dyn_cast<Instruction>(V))
+    if (Instruction *I = dyn_cast<Instruction>(V))
       SliceFile << "Source Line Info: "
                 << SourceLineMappingPass::locateSrcInfo(I)
                 << "\n";
@@ -339,13 +299,12 @@ void DynamicGiri::printBackwardsSlice(std::set<Value *> &Slice,
   }
 }
 
-void DynamicGiri::getBackwardsSlice (Instruction *I,
-                                     std::set<Value *> &Slice,
-                                     std::unordered_set<DynValue > &DynamicSlice,
-                                     std::set<DynValue *> &DataFlowGraph) {
-
+void DynamicGiri::getBackwardsSlice(Instruction *I,
+                                    std::set<Value *> &Slice,
+                                    std::unordered_set<DynValue > &DynamicSlice,
+                                    std::set<DynValue *> &DataFlowGraph) {
   // Get the last dynamic execution of the specified instruction.
-  DynValue *DI = Trace->getLastDynValue (I);
+  DynValue *DI = Trace->getLastDynValue(I);
 
   // Find all instructions in the backwards dynamic slice that contribute to
   // the value of this instruction.
@@ -355,18 +314,12 @@ void DynamicGiri::getBackwardsSlice (Instruction *I,
   // interested in static instructions.
   std::unordered_set<DynValue>::iterator i = DynamicSlice.begin();
   while (i != DynamicSlice.end()) {
-    Slice.insert (i->getValue());
+    Slice.insert(i->getValue());
     ++i;
   }
 }
 
-void DynamicGiri::getExprTree(std::set<Value *> &Slice,
-                              std::unordered_set<DynValue> &DynamicSlice,
-                              std::set<DynValue *> &DataFlowGraph) {
-}
-
-void DynamicGiri::initialize(Module &M)
-{
+void DynamicGiri::initialize(Module &M) {
   /*** Create the type variables ***/
   ////////////////////  Right now treat all unsigned values as signed
   /*
@@ -384,16 +337,9 @@ void DynamicGiri::initialize(Module &M)
 }
 
 bool DynamicGiri::checkType(const Type *T) {
-  if( T == SInt64Ty || T == SInt32Ty || T == SInt16Ty || T == SInt8Ty )
-    return true;
-  //if( !NO_UNSIGNED_CHECK )
-  if( T == UInt64Ty || T == UInt32Ty || T == SInt16Ty || T == SInt8Ty )
-      return true;
-  //if( !NO_FLOAT_CHECK )
-  if( T == FloatTy || T == DoubleTy )
-      return true;
-
-  return false;
+  return T == SInt64Ty || T == SInt32Ty || T == SInt16Ty || T == SInt8Ty ||
+         T == UInt64Ty || T == UInt32Ty || T == UInt16Ty || T == UInt8Ty ||
+         T == FloatTy || T == DoubleTy;
 }
 
 bool DynamicGiri::runOnModule(Module &M) {
@@ -410,7 +356,6 @@ bool DynamicGiri::runOnModule(Module &M) {
 
   initialize(M); // Initialize type variables for invariants
 
-  //
   // FIXME:
   //  This code should not be here.  It should be in a separate pass that
   //  queries this pass as an analysis pass.
