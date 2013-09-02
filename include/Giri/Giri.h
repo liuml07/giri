@@ -203,12 +203,6 @@ public:
                            std::unordered_set<DynValue> &DynamicSlice,
                            std::set<DynValue *> &DataFlowGraph);
 
-  /// Start building expression tree from root cause and count the mapped
-  /// source lines
-  void getExprTree(std::set<Value *> &Slice,
-                   std::unordered_set<DynValue> &DynamicSlice,
-                   std::set<DynValue *> &DataFlowGraph);
-
 private:
   typedef std::deque<DynValue *> Worklist_t;
   typedef std::set<DynValue *> Processed_t;
