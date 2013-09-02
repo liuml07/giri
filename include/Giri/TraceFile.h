@@ -40,11 +40,9 @@ public:
   friend class DynBasicBlock;
 
   DynValue(Value *Val, unsigned long i) : V(Val), parent(nullptr) {
-    //
     // If the value is a constant, set the index to zero.  Constants don't
     // have multiple instances due to dynamic execution, so we want
     // them to appear identical when stored in containers like std::set.
-    //
     if (isa<Constant>(Val))
       index = 0;
     else
@@ -124,27 +122,19 @@ public:
     return ((index == DBB.index) && (BB == DBB.BB));
   }
 
-  BasicBlock *getBasicBlock(void) const {
-    return BB;
-  }
+  BasicBlock *getBasicBlock(void) const { return BB; }
 
-  unsigned long getIndex(void) const {
-    return index;
-  }
+  unsigned long getIndex(void) const { return index; }
 
-  bool isNull(void) {
-    return (BB == 0 && index == 0);
-  }
+  bool isNull(void) const { return (BB == 0 && index == 0); }
 
   /// Get the dynamic terminator instruction for this dynamic basic block.
-  DynValue getTerminator(void) {
+  DynValue getTerminator(void) const {
     assert(!isNull());
     return DynValue(BB->getTerminator(), index);
   }
 
-  Function *getParent (void) {
-    return (BB) ? BB->getParent() : 0;
-  }
+  Function *getParent (void) const { return (BB) ? BB->getParent() : 0; }
 
 private:
   BasicBlock *BB; ///< LLVM basic block
@@ -211,7 +201,9 @@ public:
 
   /// Normalize a dynamic basic block. This means that we search for its entry
   /// within the dynamic trace and update its index.
-  long normalize(DynBasicBlock & DDB);
+  ///
+  /// \returns true if success else fasle
+  bool normalize(DynBasicBlock & DDB);
 
   /// Normalize a dynamic value.  This means that we update its index value to
   /// be equal to the basic block entry corresponding to the value's dynamic
@@ -223,14 +215,20 @@ public:
   /// We don't need to take into account nesting struction due to recursive
   /// calls as except stores, all values are propagated through SSA values.
   /// For store, we already point to BB end accounting for recursion.
-  long normalize(DynValue &DV);
+  ///
+  /// \returns true if success else fasle
+  bool normalize(DynValue &DV);
 
-  /// @TODO Remove this function later
-  /// Add the control dependence to worklist since we can't directly call the
-  /// private addToWorklist
-  void addCtrDepToWorklist(DynValue &DV, Worklist_t &Sources, DynValue &Parent);
-
-  void mapCallsToReturns(DynValue &DV, Worklist_t &Sources);
+  /// This method add a new DynValue to the worklist and updates its parent
+  /// pointer.
+  /// \param DV - New dynamic value to be inserted.
+  /// \param Sources - The dynamic values that are inputs for this instruction
+  ///                  are added to a container using this insertion iterator.
+  /// \parm Parent - One of the parent node of new node DV in the Data flow
+  ///                graph.
+  /// \return The index in the trace of entry with the specified type and ID
+  /// is returned.
+  void addToWorklist(DynValue &DV, Worklist_t &Sources, DynValue &Parent);
 
   /// Given a dynamic use of a function's formal argument, find the call
   /// Instruction which provides the actual value for this arg.
@@ -248,9 +246,10 @@ private:
   /// Along the way, determine if there are load records for which no previous
   /// store record can match.  Mark these load records so that we don't try to
   /// find their matching stores when peforming the dynamic backwards slice.
+  /// This function will be called in the constructor.
   /// This algorithm should be O(n*logn) where n is the number of elements in the
   /// trace.
-  void fixupLostLoads(void);
+  void fixupLostLoads();
 
   /// Build a map from functions to their runtime trace address
   ///
@@ -262,7 +261,7 @@ private:
   /// in this run to their corresponding trace function addresses which
   /// can possibly be different This algorithm should be n*c where n
   /// is the number of elements in the trace.
-  void buildTraceFunAddrMap(void);
+  void buildTraceFunAddrMap();
 
   //===--------------------------------------------------------------------===//
   // Utility methods for scanning through the trace file
@@ -472,17 +471,6 @@ private:
   /// Examine the trace file to determine which input of a select instruction
   /// was used during dynamic execution.
   void getSourceForSelect(DynValue &DV, Worklist_t &Sources);
-
-  /// This method add a new DynValue to the worklist and updates its parent
-  /// pointer.
-  /// \param DV - New dynamic value to be inserted.
-  /// \param Sources - The dynamic values that are inputs for this instruction
-  ///                  are added to a container using this insertion iterator.
-  /// \parm Parent - One of the parent node of new node DV in the Data flow
-  ///                graph.
-  /// \return The index in the trace of entry with the specified type and ID
-  /// is returned.
-  void addToWorklist(DynValue &DV, Worklist_t &Sources, DynValue &Parent);
 
 private:
   /// The pass that maps basic blocks to identifiers

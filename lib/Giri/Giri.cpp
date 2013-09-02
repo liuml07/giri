@@ -197,7 +197,7 @@ void DynamicGiri::findSlice(DynValue &Initial,
 
     // Normalize the dynamic value.
     //DV->print();
-    Trace->normalize (*DV);
+    Trace->normalize(*DV);
     //DV->print();
 
     // Check to see if this dynamic value has already been processed.
@@ -262,10 +262,10 @@ void DynamicGiri::findSlice(DynValue &Initial,
             DynValue DTerminator = Forcer.getTerminator();
 
             /*if ( !DFS )
-	        Trace->addCtrDepToWorklist(DTerminator, std::inserter(Worklist, Worklist.end()), *DV);
+	        Trace->addToWorklist(DTerminator, std::inserter(Worklist, Worklist.end()), *DV);
               else
-	        Trace->addCtrDepToWorklist(DTerminator, std::inserter(Worklist, Worklist.begin()), *DV);*/
-            Trace->addCtrDepToWorklist(DTerminator, Worklist, *DV);
+	        Trace->addToWorklist(DTerminator, std::inserter(Worklist, Worklist.begin()), *DV);*/
+            Trace->addToWorklist(DTerminator, Worklist, *DV);
           }
         }
       }
