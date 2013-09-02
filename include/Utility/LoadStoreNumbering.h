@@ -38,20 +38,20 @@ class LoadStoreNumberPass : public ModulePass,
 public:
   static char ID;
 
-  LoadStoreNumberPass () : ModulePass (ID) {}
+  LoadStoreNumberPass() : ModulePass(ID) {}
 
   /// It takes a module and assigns a unique identifier for each load and
   /// store instruction.
   /// @return true - The module was modified.
-  virtual bool runOnModule (Module & M);
+  virtual bool runOnModule(Module &M);
 
   virtual void getAnalysisUsage(AnalysisUsage &AU) const {
     AU.setPreservesCFG();
   };
 
   ////////////////////// Instruction visitors //////////////////////
-  void visitLoadInst(LoadInst &I);
-  void visitStoreInst(StoreInst &I);
+  void visitLoadInst(LoadInst &LI);
+  void visitStoreInst(StoreInst &SI);
   void visitSelectInst(SelectInst &SI);
   void visitCallInst(CallInst &CI);
 
@@ -59,12 +59,12 @@ private:
 
   /// This method modifies the IR to assign the specified ID to the specified
   /// instruction.
-  MDNode * assignID (Instruction * I, unsigned id);
+  MDNode *assignID(Instruction *I, unsigned id);
 
 private:
-  unsigned count; //< Counter for assigning unique IDs
+  unsigned count; ///< Counter for assigning unique IDs
 
-  NamedMDNode * MD; //< Store metadata of each load and store
+  NamedMDNode *MD; ///< Store metadata of each load and store
 };
 
 /// \class This pass is an analysis pass that reads the metadata added by the
@@ -74,13 +74,14 @@ class QueryLoadStoreNumbers : public ModulePass {
 public:
   static char ID;
 
-  QueryLoadStoreNumbers () : ModulePass (ID) {}
+  QueryLoadStoreNumbers() : ModulePass(ID) {}
 
   /// It examines the metadata for the module and constructs a mapping from
   /// instructions to identifiers.  It can also tell if an instruction has been
   /// added since the instructions were assigned identifiers.
-  /// @return false - The module is never modified because this is an analysis pass.
-  virtual bool runOnModule (Module & M);
+  ///
+  /// @return always false since this is an analysis pass.
+  virtual bool runOnModule(Module & M);
 
   virtual void getAnalysisUsage(AnalysisUsage &AU) const {
     AU.setPreservesAll();
@@ -89,15 +90,15 @@ public:
   /// Return the ID number for the specified instruction.
   /// \return 0 if this instruction has *no* associated ID. Otherwise, the ID
   /// of the instruction is returned.
-  unsigned getID (Instruction *I) const {
-    std::map<Value*, unsigned>::const_iterator i = IDMap.find(I);
+  unsigned getID(Instruction *I) const {
+    std::map<Value *, unsigned>::const_iterator i = IDMap.find(I);
     if (i == IDMap.end())
       return 0;
     return i->second;
   }
 
-  Value * getInstforID (unsigned id) const {
-    std::unordered_map<unsigned, Value *>::const_iterator i = InstMap.find (id);
+  Value *getInstforID(unsigned id) const {
+    std::unordered_map<unsigned, Value *>::const_iterator i = InstMap.find(id);
     if (i != InstMap.end())
       return i->second;
     return 0;
@@ -107,7 +108,7 @@ protected:
   /// \brief Maps an instruction to the number to which it was assigned. Note
   /// *multiple* instructions can be assigned the same ID (e.g., if a
   /// transform clones a function).
-  std::map<Value*, unsigned> IDMap;
+  std::map<Value *, unsigned> IDMap;
 
   /// \brief Map an ID to the instruction to which it is mapped. Note that we
   /// can have multiple IDs mapped to the same instruction; however, we ignore
@@ -122,11 +123,11 @@ class RemoveLoadStoreNumbers : public ModulePass {
 public:
   static char ID;
 
-  RemoveLoadStoreNumbers () : ModulePass (ID) {}
+  RemoveLoadStoreNumbers() : ModulePass(ID) {}
 
   /// It takes a module and removes the instruction ID metadata.
   /// @return false if the module was not modified, otherwise true.
-  virtual bool runOnModule (Module & M);
+  virtual bool runOnModule(Module &M);
 
   virtual void getAnalysisUsage(AnalysisUsage &AU) const {
     AU.setPreservesCFG();
