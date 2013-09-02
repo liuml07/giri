@@ -1,4 +1,4 @@
-##===- giri/test/UnitTests/test3/Makefile ------------------*- Makefile -*-===##
+##===- giri/test/UnitTests/test12/Makefile -----------------*- Makefile -*-===##
 
 NAME = psum
 LDFLAGS = -pthread

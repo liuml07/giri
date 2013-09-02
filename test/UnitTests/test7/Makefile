@@ -1,4 +1,4 @@
-##===- giri/test/UnitTests/test3/Makefile ------------------*- Makefile -*-===##
+##===- giri/test/UnitTests/test7/Makefile ------------------*- Makefile -*-===##
 
 NAME = sigint
 INPUT ?=

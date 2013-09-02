@@ -1,4 +1,4 @@
-##===- giri/test/UnitTests/test3/Makefile ------------------*- Makefile -*-===##
+##===- giri/test/UnitTests/test8/Makefile ------------------*- Makefile -*-===##
 
 NAME = ptr
 INPUT ?= 40 54

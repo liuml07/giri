@@ -1,4 +1,4 @@
-##===- giri/test/UnitTests/test3/Makefile ------------------*- Makefile -*-===##
+##===- giri/test/UnitTests/test6/Makefile ------------------*- Makefile -*-===##
 
 NAME = sigusr1
 INPUT ?=

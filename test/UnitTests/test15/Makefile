@@ -1,4 +1,4 @@
-##===- giri/test/UnitTests/test1/Makefile ------------------*- Makefile -*-===##
+##===- giri/test/UnitTests/test15/Makefile -----------------*- Makefile -*-===##
 
 NAME = hanoi
 INPUT ?= 7
