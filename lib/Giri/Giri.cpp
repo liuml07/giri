@@ -331,29 +331,6 @@ void DynamicGiri::getBackwardsSlice(Instruction *I,
   }
 }
 
-void DynamicGiri::initialize(Module &M) {
-  /*** Create the type variables ***/
-  ////////////////////  Right now treat all unsigned values as signed
-  /*
-  UInt64Ty = Type::getInt64Ty(M.getContext());
-  UInt32Ty = Type::getInt32Ty(M.getContext());
-  UInt16Ty = Type::getInt16Ty(M.getContext());
-  UInt8Ty  = Type::getInt8Ty(M.getContext());
-  */
-  SInt64Ty = Type::getInt64Ty(M.getContext());
-  SInt32Ty = Type::getInt32Ty(M.getContext());
-  SInt16Ty = Type::getInt16Ty(M.getContext());
-  SInt8Ty  = Type::getInt8Ty(M.getContext());
-  FloatTy  = Type::getFloatTy(M.getContext());
-  DoubleTy = Type::getDoubleTy(M.getContext());
-}
-
-bool DynamicGiri::checkType(const Type *T) {
-  return T == SInt64Ty || T == SInt32Ty || T == SInt16Ty || T == SInt8Ty ||
-         T == UInt64Ty || T == UInt32Ty || T == UInt16Ty || T == UInt8Ty ||
-         T == FloatTy || T == DoubleTy;
-}
-
 bool DynamicGiri::runOnModule(Module &M) {
   // Get references to other passes used by this pass.
   bbNumPass = &getAnalysis<QueryBasicBlockNumbers>();
@@ -361,8 +338,6 @@ bool DynamicGiri::runOnModule(Module &M) {
 
   // Open the trace file and get ready to start using it.
   Trace = new TraceFile(TraceFilename, bbNumPass, lsNumPass);
-
-  initialize(M); // Initialize type variables for invariants
 
   // FIXME:
   //  This code should not be here.  It should be in a separate pass that

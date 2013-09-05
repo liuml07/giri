@@ -156,16 +156,6 @@ private:
   /// functions.
   void insertIntoGlobalCtorList(Function *RuntimeCtor);
 
-  // Type Variables (need to combine giri/nogiri/inv move to utility)
-  const Type *SInt64Ty, *SInt32Ty, *SInt16Ty, *SInt8Ty;
-  const Type *UInt64Ty, *UInt32Ty, *UInt16Ty, *UInt8Ty;
-  const Type *FloatTy, *DoubleTy, *VoidTy;
-
-  bool checkType(const Type *T);
-
-  /// Initialize type objects used for invarint inst checking.
-  void initialize(Module &M);
-
 };
 
 /// This pass finds the backwards dynamic slice of LLVM values.
@@ -261,9 +251,6 @@ private:
 
   bool checkType(const Type *T);
 
-  ///  Initialize type objects used for invarint inst checking.
-  void initialize(Module &M);
-
   /// Trace file object (used for querying the trace)
   TraceFile *Trace;
 
@@ -274,11 +261,6 @@ private:
   /// Passes used by this pass
   const QueryBasicBlockNumbers *bbNumPass;
   const QueryLoadStoreNumbers *lsNumPass;
-
-  /// Type Variables
-  const Type *SInt64Ty, *SInt32Ty, *SInt16Ty, *SInt8Ty;
-  const Type *UInt64Ty, *UInt32Ty, *UInt16Ty, *UInt8Ty;
-  const Type *FloatTy, *DoubleTy, *VoidTy;
 };
 
 } // END namespace giri

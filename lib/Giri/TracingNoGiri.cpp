@@ -83,8 +83,6 @@ bool TracingNoGiri::doInitialization(Module & M) {
   VoidPtrType = PointerType::getUnqual(Int8Type);
   VoidType = Type::getVoidTy(M.getContext());
 
-  initialize(M); // Initialize type variables for invariants
-
   // Add the function for recording the execution of a basic block.
   RecordBB = cast<Function>(M.getOrInsertFunction("recordBB",
                                                   VoidType,
@@ -693,35 +691,4 @@ bool TracingNoGiri::runOnBasicBlock(BasicBlock &BB) {
 
   // Assume that we modified something.
   return true;
-}
-
-void TracingNoGiri::initialize(Module &M)
-{
-  /*** Create the type variables ***/
-  ////////////////////  Right now treat all unsigned values as signed
-  /*
-  UInt64Ty = Type::getInt64Ty(M.getContext());
-  UInt32Ty = Type::getInt32Ty(M.getContext());
-  UInt16Ty = Type::getInt16Ty(M.getContext());
-  UInt8Ty  = Type::getInt8Ty(M.getContext());
-  */
-  SInt64Ty = Type::getInt64Ty(M.getContext());
-  SInt32Ty = Type::getInt32Ty(M.getContext());
-  SInt16Ty = Type::getInt16Ty(M.getContext());
-  SInt8Ty  = Type::getInt8Ty(M.getContext());
-  FloatTy  = Type::getFloatTy(M.getContext());
-  DoubleTy = Type::getDoubleTy(M.getContext());
-}
-
-bool TracingNoGiri::checkType(const Type *T) {
-  if( T == SInt64Ty || T == SInt32Ty || T == SInt16Ty || T == SInt8Ty )
-    return true;
-  //if( !NO_UNSIGNED_CHECK )
-  if( T == UInt64Ty || T == UInt32Ty || T == SInt16Ty || T == SInt8Ty )
-      return true;
-  //if( !NO_FLOAT_CHECK )
-  if( T == FloatTy || T == DoubleTy )
-      return true;
-
-  return false;
 }
