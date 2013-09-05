@@ -218,13 +218,11 @@ Instruction* TraceFile::getCallInstForFormalArg(DynValue &DV) {
   unsigned long callIndex = DV.index - 1;
   while (callIndex > 0) {
     if (trace[callIndex].type == RecordType::CLType &&
-        trace[callIndex].tid == trace[DV.index].tid &&
         trace[callIndex].address == trace[DV.index].address)
       break;
     --callIndex;
   }
   assert(trace[callIndex].type == RecordType::CLType);
-  assert(trace[callIndex].tid == trace[DV.index].tid);
   assert(trace[callIndex].address == trace[DV.index].address);
   assert(callIndex < DV.index);
 
@@ -783,7 +781,6 @@ void TraceFile::getSourcesForArg(DynValue &DV, Worklist_t &Sources) {
   unsigned long callIndex = DV.index - 1;
   while (callIndex > 0) {
     if (trace[callIndex].type == RecordType::CLType &&
-        trace[callIndex].tid == trace[DV.index].tid &&
         trace[callIndex].address == trace[DV.index].address)
       break;
     --callIndex;
@@ -791,7 +788,6 @@ void TraceFile::getSourcesForArg(DynValue &DV, Worklist_t &Sources) {
   assert(callIndex < DV.index);
   // FIXME
   if (trace[callIndex].type != RecordType::CLType ||
-      trace[callIndex].tid != trace[DV.index].tid ||
       trace[callIndex].address != trace[DV.index].address) {
     errs() << "For some variable length functions like ap_rprintf in apache, "
               "call records missing. Stop here for now. Fix it later\n";
@@ -914,7 +910,6 @@ void TraceFile::findAllStoresForLoad(DynValue &DV,
                                      const Entry load_entry) {
   while (store_index >= 0) {
     if (trace[store_index].type == RecordType::STType &&
-        trace[store_index].tid == load_entry.tid &&
         overlaps(trace[store_index], load_entry)) {
       // Find the LLVM store instruction(s) that match this dynamic store
       // instruction.
@@ -937,9 +932,8 @@ void TraceFile::findAllStoresForLoad(DynValue &DV,
       addToWorklist(newDynValue, Sources, DV);
 
       Entry &store_entry = trace[store_index];
-      Entry new_entry;
-      new_entry.tid = load_entry.tid;
       if (load_entry.address < store_entry.address) {
+        Entry new_entry;
         new_entry.address = load_entry.address;
         new_entry.length = store_entry.address - load_entry.address;
         findAllStoresForLoad(DV, Sources, store_index - 1, new_entry);
@@ -948,7 +942,8 @@ void TraceFile::findAllStoresForLoad(DynValue &DV,
       unsigned long store_end = store_entry.address + store_entry.length;
       unsigned long load_end = load_entry.address + load_entry.length;
       if (store_end < load_end) {
-        new_entry.address = store_end;
+        Entry new_entry;
+        new_entry.address = load_entry.address;
         new_entry.length = load_end - store_end;
         findAllStoresForLoad(DV, Sources, store_index - 1, new_entry);
       }
