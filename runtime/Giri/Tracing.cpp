@@ -47,14 +47,13 @@ extern "C" void recordInit(const char *name);
 extern "C" void recordStartBB(unsigned id, unsigned char *fp);
 extern "C" void recordBB(unsigned id, unsigned char *fp, unsigned lastBB);
 extern "C" void recordLoad(unsigned id, unsigned char *p, uintptr_t);
-extern "C" void recordStore(unsigned id, unsigned char *p, uintptr_t);
 extern "C" void recordStrLoad(unsigned id, char *p);
+extern "C" void recordStore(unsigned id, unsigned char *p, uintptr_t);
 extern "C" void recordStrStore(unsigned id, char *p);
 extern "C" void recordStrcatStore(unsigned id, char *p, char *s);
 extern "C" void recordCall(unsigned id, unsigned char *p);
-extern "C" void recordReturn(unsigned id, unsigned char *p);
 extern "C" void recordExtCall(unsigned id, unsigned char *p);
-extern "C" void recordExtFun(unsigned id);
+extern "C" void recordReturn(unsigned id, unsigned char *p);
 extern "C" void recordExtCallRet(unsigned callID, unsigned char *fp);
 extern "C" void recordSelect(unsigned id, unsigned char flag);
 
@@ -237,6 +236,8 @@ void EntryCache::closeCacheFile() {
 
   // Truncate the file to be the actual size for small traces
   ftruncate(fd, len + fileOffset);
+
+  // destroy the mutex
   pthread_mutex_destroy(&EntryCacheMutex);
 }
 
@@ -259,18 +260,17 @@ static void finish() {
 }
 
 /// Signal handler to write only tracing data to file
-static void cleanup_only_tracing(int signum)
-{
+static void cleanup_only_tracing(int signum) {
   ERROR("[GIRI] Abnormal termination, signal number %d\n", signum);
   exit(signum);
 }
 
 void recordInit(const char *name) {
   // Open the file for recording the trace if it hasn't been opened already.
-  // Truncate it in case this dynamic trace is shorter than the last one stored
-  // in the file.
+  // Truncate it in case this dynamic trace is shorter than the last one
+  // stored in the file.
   record = open(name, O_RDWR | O_CREAT | O_TRUNC, 0640u);
-  assert((record != -1) && "Failed to open tracing file!\n");
+  assert(record != -1 && "Failed to open tracing file!\n");
   DEBUG("[GIRI] Opened trace file: %s\n", name);
 
   // Initialize the entry cache by giving it a memory buffer to use.
@@ -327,44 +327,20 @@ void recordBB(unsigned id, unsigned char *fp, unsigned lastBB) {
         FNStack[tid].pop();
       }
     } else {
-      // If nothing in stack, it is main function return which doesn't have a matching call.
-      // Hence just store a large number as call id
+      // If nothing in stack, it is main function return which doesn't have a
+      // matching call.  Hence just store a large number as call id
       callID = ~0;
     }
-  } else {
-    callID = 0;
   }
 
-  entryCache.addToEntryCache(Entry(RecordType::BBType,
-                                   id,
-                                   tid,
-                                   fp,
-                                   callID));
+  entryCache.addToEntryCache(Entry(RecordType::BBType, id, tid, fp, callID));
 
   // Take the basic block off the basic block stack.  We have recorded that it
   // has finished execution.
   BBStack[tid].pop();
 
+  pthread_mutex_unlock(&fnstack_mutex);
   pthread_mutex_unlock(&bbstack_mutex);
-  pthread_mutex_unlock(&fnstack_mutex);
-}
-
-/// Record that an external function has finished execution by updating function
-/// call stack.
-/// TODO: delete this
-///       Not needed anymore as we don't add external function call records
-void recordExtCallRet(unsigned callID, unsigned char *fp) {
-  pthread_mutex_lock(&fnstack_mutex);
-
-  pthread_t tid = pthread_self();
-  assert(!FNStack[tid].empty());
-  DEBUG("[GIRI] Inside %s: callID = %u\n", __func__, callID); 
-  if (FNStack[tid].top().fnAddress != fp)
-	ERROR("[GIRI] Function id on stack doesn't match for id %u. \
-           MAY be due to function call from external code\n", callID);
-  else
-     FNStack[tid].pop();
-  pthread_mutex_unlock(&fnstack_mutex);
 }
 
 /// Record that a load has been executed.
@@ -372,6 +348,20 @@ void recordLoad(unsigned id, unsigned char *p, uintptr_t length) {
   pthread_t tid = pthread_self();
   DEBUG("[GIRI] Inside %s: id = %u, len = %lx\n", __func__, id, length);
   entryCache.addToEntryCache(Entry(RecordType::LDType, id, tid, p, length));
+}
+
+/// Record that a string has been read.
+void recordStrLoad(unsigned id, char *p) {
+  // First determine the length of the string.  Add one byte to include the
+  // string terminator character.
+  uintptr_t length = strlen(p) + 1;
+  DEBUG("[GIRI] Inside %s: id = %u, leng = %lx\n", __func__, id, length);
+  // Record that a load has been executed.
+  entryCache.addToEntryCache(Entry(RecordType::LDType,
+                                   id,
+                                   pthread_self(),
+                                   (unsigned char *)p,
+                                   length));
 }
 
 /// Record that a store has occurred.
@@ -388,22 +378,6 @@ void recordStore(unsigned id, unsigned char *p, uintptr_t length) {
                                    length));
 }
 
-///  Record that a string has been read.
-void recordStrLoad(unsigned id, char *p) {
-  // First determine the length of the string.  Add one byte to include the
-  // string terminator character.
-  uintptr_t length = strlen(p) + 1;
-
-  DEBUG("[GIRI] Inside %s: id = %u, leng = %lx\n", __func__, id, length);
-
-  // Record that a load has been executed.
-  entryCache.addToEntryCache(Entry(RecordType::LDType,
-                                   id,
-                                   pthread_self(),
-                                   (unsigned char *)p,
-                                   length));
-}
-
 /// Record that a string has been written.
 /// \param id - The ID of the instruction that wrote to the string.
 /// \param p  - A pointer to the string.
@@ -411,9 +385,7 @@ void recordStrStore(unsigned id, char *p) {
   // First determine the length of the string.  Add one byte to include the
   // string terminator character.
   uintptr_t length = strlen(p) + 1;
-
   DEBUG("[GIRI] Inside %s: id = %u, length = %lx\n", __func__, id, length);
-
   // Record that there has been a store starting at the first address of the
   // string and continuing for the length of the string.
   entryCache.addToEntryCache(Entry(RecordType::STType,
@@ -432,7 +404,6 @@ void recordStrcatStore(unsigned id, char *p, char *s) {
   // from there. Then determine the length of the written string.
   char *start = p + strlen(p);
   uintptr_t length = strlen(s) + 1;
-
   DEBUG("[GIRI] Inside %s: id = %u, length = %lx\n", __func__, id, length);
   // Record that there has been a store starting at the firstlast
   // address (the position of null termination char) of the string and
@@ -454,7 +425,6 @@ void recordCall(unsigned id, unsigned char *fp) {
   pthread_mutex_lock(&fnstack_mutex);
   // Record that a call has been executed.
   entryCache.addToEntryCache(Entry(RecordType::CLType, id, tid, fp));
-
   // Push the Function call identifier on to the back of the stack.
   FNStack[tid].push(FunRecord(id, fp));
   pthread_mutex_unlock(&fnstack_mutex);
@@ -466,7 +436,6 @@ void recordCall(unsigned id, unsigned char *fp) {
 /// \param fp - The address of the function that was called.
 void recordExtCall(unsigned id, unsigned char *fp) {
   DEBUG("[GIRI] Inside %s: id = %u\n", __func__, id);
-
   // Record that a call has been executed.
   entryCache.addToEntryCache(Entry(RecordType::CLType,
                                    id,
@@ -477,12 +446,28 @@ void recordExtCall(unsigned id, unsigned char *fp) {
 /// Record that a function has finished execution by adding a return trace entry
 void recordReturn(unsigned id, unsigned char *fp) {
   DEBUG("[GIRI] Inside %s: id = %u\n", __func__, id);
-
   // Record that a call has returned.
   entryCache.addToEntryCache(Entry(RecordType::RTType,
                                    id,
                                    pthread_self(),
                                    fp));
+}
+
+/// Record that an external function has finished execution by updating function
+/// call stack.
+/// TODO: delete this
+///       Not needed anymore as we don't add external function call records
+void recordExtCallRet(unsigned callID, unsigned char *fp) {
+  pthread_t tid = pthread_self();
+  pthread_mutex_lock(&fnstack_mutex);
+  assert(!FNStack[tid].empty());
+  DEBUG("[GIRI] Inside %s: callID = %u\n", __func__, callID); 
+  if (FNStack[tid].top().fnAddress != fp)
+	ERROR("[GIRI] Function id on stack doesn't match for id %u. \
+           MAY be due to function call from external code\n", callID);
+  else
+     FNStack[tid].pop();
+  pthread_mutex_unlock(&fnstack_mutex);
 }
 
 /// This function records which input of a select instruction was selected.

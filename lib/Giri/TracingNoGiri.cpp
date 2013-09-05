@@ -83,6 +83,12 @@ bool TracingNoGiri::doInitialization(Module & M) {
   VoidPtrType = PointerType::getUnqual(Int8Type);
   VoidType = Type::getVoidTy(M.getContext());
 
+  // Get a reference to the run-time's initialization function
+  Init = cast<Function>(M.getOrInsertFunction("recordInit",
+                                              VoidType,
+                                              VoidPtrType,
+                                              nullptr));
+
   // Add the function for recording the execution of a basic block.
   RecordBB = cast<Function>(M.getOrInsertFunction("recordBB",
                                                   VoidType,
@@ -106,24 +112,18 @@ bool TracingNoGiri::doInitialization(Module & M) {
                                                     Int64Type,
                                                     nullptr));
 
+  RecordStrLoad = cast<Function>(M.getOrInsertFunction("recordStrLoad",
+                                                       VoidType,
+                                                       Int32Type,
+                                                       VoidPtrType,
+                                                       nullptr));
+
   RecordStore = cast<Function>(M.getOrInsertFunction("recordStore",
                                                      VoidType,
                                                      Int32Type,
                                                      VoidPtrType,
                                                      Int64Type,
                                                      nullptr));
-
-  RecordSelect = cast<Function>(M.getOrInsertFunction("recordSelect",
-                                                      VoidType,
-                                                      Int32Type,
-                                                      Int8Type,
-                                                      nullptr));
-
-  RecordStrLoad = cast<Function>(M.getOrInsertFunction("recordStrLoad",
-                                                       VoidType,
-                                                       Int32Type,
-                                                       VoidPtrType,
-                                                       nullptr));
 
   RecordStrStore = cast<Function>(M.getOrInsertFunction("recordStrStore",
                                                         VoidType,
@@ -144,17 +144,17 @@ bool TracingNoGiri::doInitialization(Module & M) {
                                                     VoidPtrType,
                                                     nullptr));
 
-  RecordReturn = cast<Function>(M.getOrInsertFunction("recordReturn",
-                                                      VoidType,
-                                                      Int32Type,
-                                                      VoidPtrType,
-                                                      nullptr));
-
   RecordExtCall = cast<Function>(M.getOrInsertFunction("recordExtCall",
                                                        VoidType,
                                                        Int32Type,
                                                        VoidPtrType,
                                                        nullptr));
+
+  RecordReturn = cast<Function>(M.getOrInsertFunction("recordReturn",
+                                                      VoidType,
+                                                      Int32Type,
+                                                      VoidPtrType,
+                                                      nullptr));
 
   RecordExtCallRet = cast<Function>(M.getOrInsertFunction("recordExtCallRet",
                                                           VoidType,
@@ -162,20 +162,11 @@ bool TracingNoGiri::doInitialization(Module & M) {
                                                           VoidPtrType,
                                                           nullptr));
 
-  RecordExtFun = cast<Function>(M.getOrInsertFunction("recordExtFun",
+  RecordSelect = cast<Function>(M.getOrInsertFunction("recordSelect",
                                                       VoidType,
                                                       Int32Type,
-                                                      Int32Type,
-                                                      VoidPtrType,
-                                                      VoidPtrType,
+                                                      Int8Type,
                                                       nullptr));
-
-  // Get a reference to the run-time's initialization function
-  Init = cast<Function>(M.getOrInsertFunction("recordInit",
-                                              VoidType,
-                                              VoidPtrType,
-                                              nullptr));
-
   return true;
 }
 

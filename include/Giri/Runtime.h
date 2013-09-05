@@ -46,7 +46,7 @@ struct Entry {
   /// type + #elements to transfer
   RecordType type;
 
-  /// The ID number of the basic block to which this entry belongs
+  /// The ID of the basic block, or the load/store instruction
   unsigned id;
 
   pthread_t tid; ///< The thread ID
