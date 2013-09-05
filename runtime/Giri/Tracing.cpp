@@ -110,7 +110,7 @@ private:
   /// The current index into the entry cache. This points to the next element
   /// in which to write the next entry (cache holds a part of the trace file).
   unsigned index;
-  Entry *cache; /// A cache of entries that need to be written to disk
+  Entry *cache; ///< A cache of entries that need to be written to disk
   off_t fileOffset; ///< The offset of the file which is cached into memory.
   int fd; ///< File which is being cached in memory.
 
@@ -293,11 +293,11 @@ void recordInit(const char *name) {
 /// block termination if the program terminates before the basic blocks
 /// complete execution.
 void recordStartBB(unsigned id, unsigned char *fp) {
-  pthread_t pid = pthread_self();
+  pthread_t tid = pthread_self();
 
   pthread_mutex_lock(&bbstack_mutex);
   // Push the basic block identifier on to the back of the stack.
-  BBStack[pid].push(BBRecord(id, fp));
+  BBStack[tid].push(BBRecord(id, fp));
   pthread_mutex_unlock(&bbstack_mutex);
 }
 
@@ -309,7 +309,7 @@ void recordBB(unsigned id, unsigned char *fp, unsigned lastBB) {
 
   // Record that this basic block has been executed.
   unsigned callID = 0;
-  pthread_t pid = pthread_self();
+  pthread_t tid = pthread_self();
 
   pthread_mutex_lock(&bbstack_mutex);
   pthread_mutex_lock(&fnstack_mutex);
@@ -317,13 +317,13 @@ void recordBB(unsigned id, unsigned char *fp, unsigned lastBB) {
   // off the FFStack. We have recorded that it has finished execution. Store
   // the call id to record the end of function call at the end of the last BB.
   if (lastBB) {
-    if (!FNStack[pid].empty()) {
-      if (FNStack[pid].top().fnAddress != fp ) {
+    if (!FNStack[tid].empty()) {
+      if (FNStack[tid].top().fnAddress != fp ) {
         ERROR("[GIRI] Function id on stack doesn't match for id %u.\
                MAY be due to function call from external code\n", id);
       } else {
-        callID = FNStack[pid].top().id;
-        FNStack[pid].pop();
+        callID = FNStack[tid].top().id;
+        FNStack[tid].pop();
       }
     } else {
       // If nothing in stack, it is main function return which doesn't have a matching call.
@@ -336,13 +336,13 @@ void recordBB(unsigned id, unsigned char *fp, unsigned lastBB) {
 
   entryCache.addToEntryCache(Entry(RecordType::BBType,
                                    id,
-                                   pid,
+                                   tid,
                                    fp,
                                    callID));
 
   // Take the basic block off the basic block stack.  We have recorded that it
   // has finished execution.
-  BBStack[pid].pop();
+  BBStack[tid].pop();
 
   pthread_mutex_unlock(&bbstack_mutex);
   pthread_mutex_unlock(&fnstack_mutex);
@@ -355,22 +355,22 @@ void recordBB(unsigned id, unsigned char *fp, unsigned lastBB) {
 void recordExtCallRet(unsigned callID, unsigned char *fp) {
   pthread_mutex_lock(&fnstack_mutex);
 
-  pthread_t pid = pthread_self();
-  assert(!FNStack[pid].empty());
+  pthread_t tid = pthread_self();
+  assert(!FNStack[tid].empty());
   DEBUG("[GIRI] Inside %s: callID = %u\n", __func__, callID); 
-  if (FNStack[pid].top().fnAddress != fp)
+  if (FNStack[tid].top().fnAddress != fp)
 	ERROR("[GIRI] Function id on stack doesn't match for id %u. \
            MAY be due to function call from external code\n", callID);
   else
-     FNStack[pid].pop();
+     FNStack[tid].pop();
   pthread_mutex_unlock(&fnstack_mutex);
 }
 
 /// Record that a load has been executed.
 void recordLoad(unsigned id, unsigned char *p, uintptr_t length) {
-  pthread_t pid = pthread_self();
+  pthread_t tid = pthread_self();
   DEBUG("[GIRI] Inside %s: id = %u, len = %lx\n", __func__, id, length);
-  entryCache.addToEntryCache(Entry(RecordType::LDType, id, pid, p, length));
+  entryCache.addToEntryCache(Entry(RecordType::LDType, id, tid, p, length));
 }
 
 /// Record that a store has occurred.
@@ -448,14 +448,14 @@ void recordStrcatStore(unsigned id, char *p, char *s) {
 /// \param fp - The address of the function that was called.
 void recordCall(unsigned id, unsigned char *fp) {
   DEBUG("[GIRI] Inside %s: id = %u\n", __func__, id);
-  pthread_t pid = pthread_self();
+  pthread_t tid = pthread_self();
 
   pthread_mutex_lock(&fnstack_mutex);
   // Record that a call has been executed.
-  entryCache.addToEntryCache(Entry(RecordType::CLType, id, pid, fp));
+  entryCache.addToEntryCache(Entry(RecordType::CLType, id, tid, fp));
 
   // Push the Function call identifier on to the back of the stack.
-  FNStack[pid].push(FunRecord(id, fp));
+  FNStack[tid].push(FunRecord(id, fp));
   pthread_mutex_unlock(&fnstack_mutex);
 }
 

@@ -654,14 +654,7 @@ unsigned long TraceFile::findPreviousIDWithRecursion(Function *fun,
   signed nesting = 0;
   do {
     assert(nesting >= 0);
-    // Determine the address of the called/Return function;
-    /* Function *calledFun = nullptr;
-    CallInst *CI;
-    if ((CI = dyn_cast<CallInst>(lsNumPass->getInstforID(trace[index].id)))) {
-      // For recursion through indirect function calls it'll be 0 and it will not work
-      calledFun = CI->getCalledFunction();
-      }*/
-
+    
     // We have found an entry matching our criteria.  If the nesting level is
     // zero, then this is our entry.  Otherwise, we know that we've found a
     // matching entry within a nested basic block entry.
