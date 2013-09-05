@@ -23,6 +23,7 @@
 #include <fcntl.h>
 #include <pthread.h>
 #include <signal.h>
+#include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/mman.h>
@@ -34,7 +35,7 @@
 #ifdef DEBUG_GIRI_RUNTIME
 #define DEBUG(...) fprintf(stderr, __VA_ARGS__)
 #else
-#define DEBUG(...) do {} while(false)
+#define DEBUG(...) do {} while (false)
 #endif
 
 #define ERROR(...) fprintf(stderr, __VA_ARGS__)
@@ -131,7 +132,7 @@ void EntryCache::init(int FD) {
     abort();
   }
 
-  entryCacheBytes = pages * page_size * LOAD_FACTOR;
+  entryCacheBytes = static_cast<long>(pages * LOAD_FACTOR ) * page_size;
   entryCacheSize = entryCacheBytes / sizeof(Entry);
 
   // Save the file descriptor of the file that we'll use.
@@ -146,10 +147,9 @@ void EntryCache::init(int FD) {
 }
 
 void EntryCache::mapCache() {
-  
 #ifndef __CYGWIN__
   char buf[1] = {0};
-  off_t currentPosition = lseek(fd, entryCacheBytes+1, SEEK_CUR);
+  off_t currentPosition = lseek(fd, entryCacheBytes + 1, SEEK_CUR);
   write(fd, buf, 1);
   lseek(fd, currentPosition, SEEK_SET);
 #endif
@@ -170,7 +170,10 @@ void EntryCache::mapCache() {
                         fd,
                         fileOffset);
 #endif
-  assert(cache != MAP_FAILED);
+  if (cache == MAP_FAILED) {
+    ERROR("[GIRI] Error mapping entry cache: %s\n", strerror(errno));
+    abort();
+  }
 
   // Reset the entry cache.
   index = 0;
