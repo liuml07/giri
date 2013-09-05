@@ -93,7 +93,7 @@ static pthread_mutex_t fnstack_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 class EntryCache {
 public:
-  /// Open the file descriptor and mmap the entryCacheBytes bytes to the cache
+  /// Open the file descriptor and mmap the EntryCacheBytes bytes to the cache
   void init(int FD);
 
   /// Add one entry to the cache
@@ -114,9 +114,10 @@ private:
   off_t fileOffset; ///< The offset of the file which is cached into memory.
   int fd; ///< File which is being cached in memory.
 
-  unsigned long entryCacheBytes; ///< Size of the entry cache in bytes
-  unsigned long entryCacheSize; ///< Size of the entry cache
+  unsigned long EntryCacheBytes; ///< Size of the entry cache in bytes
+  unsigned long EntryCacheSize; ///< Size of the entry cache
   static const float LOAD_FACTOR; ///< load factor of the system memory
+  pthread_mutex_t EntryCacheMutex; ///< the mutex of modifying the EntryCache
 };
 
 const float EntryCache::LOAD_FACTOR = 0.1;
@@ -132,8 +133,8 @@ void EntryCache::init(int FD) {
     abort();
   }
 
-  entryCacheBytes = static_cast<long>(pages * LOAD_FACTOR ) * page_size;
-  entryCacheSize = entryCacheBytes / sizeof(Entry);
+  EntryCacheBytes = static_cast<long>(pages * LOAD_FACTOR ) * page_size;
+  EntryCacheSize = EntryCacheBytes / sizeof(Entry);
 
   // Save the file descriptor of the file that we'll use.
   fd = FD;
@@ -144,12 +145,14 @@ void EntryCache::init(int FD) {
   cache = 0;
 
   mapCache();
+
+  pthread_mutex_init(&EntryCacheMutex, NULL);
 }
 
 void EntryCache::mapCache() {
 #ifndef __CYGWIN__
   char buf[1] = {0};
-  off_t currentPosition = lseek(fd, entryCacheBytes + 1, SEEK_CUR);
+  off_t currentPosition = lseek(fd, EntryCacheBytes + 1, SEEK_CUR);
   write(fd, buf, 1);
   lseek(fd, currentPosition, SEEK_SET);
 #endif
@@ -157,14 +160,14 @@ void EntryCache::mapCache() {
   // Map in the next section of the file.
 #ifdef __CYGWIN__
   cache = (Entry *)mmap(0,
-                        entryCacheBytes,
+                        EntryCacheBytes,
                         PROT_READ | PROT_WRITE,
                         MAP_SHARED | MAP_AUTOGROW,
                         fd,
                         fileOffset);
 #else
   cache = (Entry *)mmap(0,
-                        entryCacheBytes,
+                        EntryCacheBytes,
                         PROT_READ | PROT_WRITE,
                         MAP_SHARED,
                         fd,
@@ -180,26 +183,22 @@ void EntryCache::mapCache() {
 }
 
 void EntryCache::addToEntryCache(const Entry &entry) {
-  static pthread_mutex_t entrycache_mutex = PTHREAD_MUTEX_INITIALIZER;
-  pthread_mutex_lock(&entrycache_mutex);
+  pthread_mutex_lock(&EntryCacheMutex);
 
   // Flush the cache if necessary.
-  if (index == entryCacheSize) {
+  if (index == EntryCacheSize) {
     DEBUG("[GIRI] Writing the cache to file and remapping...\n");
     // Unmap the data. This should force it to be written to disk.
-    msync(cache, entryCacheBytes, MS_SYNC);
-    munmap(cache, entryCacheBytes);
+    msync(cache, EntryCacheBytes, MS_SYNC);
+    munmap(cache, EntryCacheBytes);
     // Advance the file offset to the next portion of the file.
-    fileOffset += entryCacheBytes;
+    fileOffset += EntryCacheBytes;
     // Remap the cache
     mapCache();
   }
 
-  // Add the entry to the entry cache.
-  cache[index] = entry;
-
-  // Increment the index for the next entry.
-  ++index;
+  // Add the entry to the entry cache and increment the index
+  cache[index++] = entry;
 
 #if 0
   // Initial experiments show that this increases overhead (user + system time).
@@ -209,14 +208,14 @@ void EntryCache::addToEntryCache(const Entry &entry) {
   }
 #endif
 
-  pthread_mutex_unlock(&entrycache_mutex);
+  pthread_mutex_unlock(&EntryCacheMutex);
 }
 
 void EntryCache::closeCacheFile() {
+  pthread_mutex_lock(&bbstack_mutex);
   // Create basic block termination entries for each basic block on the stack.
   // These were the basic blocks that were active when the program terminated.
   // **** Should we print the return records for active functions as well?????????
-  // FIXME: do we need the lock here? This function is registered by the atexit()
   for (auto I = BBStack.begin(); I != BBStack.end(); ++I) {
     while (!I->second.empty()) {
       // Create a basic block entry for it.
@@ -226,6 +225,7 @@ void EntryCache::closeCacheFile() {
       I->second.pop();
     }
   }
+  pthread_mutex_unlock(&bbstack_mutex);
 
   // Create an end entry to terminate the log.
   addToEntryCache(Entry(RecordType::ENType, 0));
@@ -237,6 +237,7 @@ void EntryCache::closeCacheFile() {
 
   // Truncate the file to be the actual size for small traces
   ftruncate(fd, len + fileOffset);
+  pthread_mutex_destroy(&EntryCacheMutex);
 }
 
 //===----------------------------------------------------------------------===//
