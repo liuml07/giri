@@ -204,7 +204,13 @@ public:
 
   /// This method prints all of the values that are in the backwards slice of
   /// the specified instruction.
-  void printBackwardsSlice(std::set<Value *> &Slice,
+  ///
+  /// \param Criterion - the start point of the slicing
+  /// \param Slice - the static slice value set
+  /// \param DynSlice - the very dynamic slice
+  /// \param DataFlowGraph - the data flow graph
+  void printBackwardsSlice(const Instruction *Criterion,
+                           std::set<Value *> &Slice,
                            std::unordered_set<DynValue> &DynSlice,
                            std::set<DynValue *> &DataFlowGraph);
 

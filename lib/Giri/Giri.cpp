@@ -263,15 +263,24 @@ void DynamicGiri::findSlice(DynValue &Initial,
   NumLoadsLost = Trace->lostLoadsTraced;
 }
 
-void DynamicGiri::printBackwardsSlice(std::set<Value *> &Slice,
+void DynamicGiri::printBackwardsSlice(const Instruction *Criterion,
+                                      std::set<Value *> &Slice,
                                       std::unordered_set<DynValue> &DynSlice,
                                       std::set<DynValue *> &DataFlowGraph) {
   // Print out the dynamic backwards slice.
   std::string errinfo;
-  raw_fd_ostream SliceFile(SliceFilename.c_str(), errinfo);
-  SliceFile << "==================================================\n";
-  SliceFile << " Static Slice \n";
-  SliceFile << "==================================================\n";
+  raw_fd_ostream SliceFile(SliceFilename.c_str(),
+                           errinfo,
+                           llvm::raw_fd_ostream::F_Append);
+  if (!errinfo.empty()) {
+    errs() << "Error opening the slice output file: " << SliceFilename
+           << " : " << errinfo << "\n";
+    return;
+  }
+  SliceFile << "----------------------------------------------------------\n";
+  SliceFile << "Static Slice from instruction: \n";
+  Criterion->print(SliceFile);
+  SliceFile << "\n----------------------------------------------------------\n";
   for (std::set<Value *>::iterator i = Slice.begin(); i != Slice.end(); ++i) {
     Value *V = *i;
     V->print(SliceFile);
@@ -284,20 +293,22 @@ void DynamicGiri::printBackwardsSlice(std::set<Value *> &Slice,
 
   // Print out the instructions in the dynamic backwards slice that
   // failed their invariants.
-  SliceFile << "==================================================\n";
-  SliceFile << " Dynamic Slice \n";
-  SliceFile << "==================================================\n";
+  SliceFile << "----------------------------------------------------------\n";
+  SliceFile << "Dynamic Slice from instruction: \n";
+  Criterion->print(SliceFile);
+  SliceFile << "\n----------------------------------------------------------\n";
   for (std::unordered_set<DynValue>::iterator i = DynSlice.begin();
        i != DynSlice.end();
        ++i) {
     DynValue DV = *i;
     DV.print(SliceFile, lsNumPass);
-    if (Instruction *I = dyn_cast<Instruction>(i->getValue())) {
+    if (Instruction *I = dyn_cast<Instruction>(i->getValue()))
       SliceFile << "Source Line Info: "
                 << SourceLineMappingPass::locateSrcInfo(I)
                 << "\n";
-    }
   }
+  SliceFile << "\n";
+  SliceFile.close();
 }
 
 void DynamicGiri::getBackwardsSlice(Instruction *I,
@@ -344,10 +355,6 @@ bool DynamicGiri::checkType(const Type *T) {
 }
 
 bool DynamicGiri::runOnModule(Module &M) {
-  std::set<Value *> Slice;
-  std::unordered_set<DynValue> DynSlice;
-  std::set<DynValue *> DataFlowGraph;
-
   // Get references to other passes used by this pass.
   bbNumPass = &getAnalysis<QueryBasicBlockNumbers>();
   lsNumPass = &getAnalysis<QueryLoadStoreNumbers>();
@@ -366,7 +373,7 @@ bool DynamicGiri::runOnModule(Module &M) {
     // if the user won't bother to dive into the IR of the program. We compare
     // the file name and the loc with all the instructions of the module. Note
     // that there will be more than one instruction in this case, and we'll
-    // treat all of them as the criteria.
+    // treat the *last* one of them as the criterion.
     std::ifstream StartOfSlice(StartOfSliceLoc);
     if (!StartOfSlice.is_open()) {
       errs() << "Error opening criterion file: " << StartOfSliceLoc << "\n";
@@ -374,31 +381,38 @@ bool DynamicGiri::runOnModule(Module &M) {
     }
     std::string StartFilename;
     unsigned StartLoc = 0;
-    StartOfSlice >> StartFilename >> StartLoc;
-    StartOfSlice.close();
-    if (StartLoc == 0) {
-      errs() << "Error reading criterion file: " << StartOfSliceLoc << "\n";
-      return false;
-    }
-    DEBUG(dbgs() << "Start slicing Filename:Loc is defined as "
-                 << StartFilename << ":" << StartLoc << "\n");
-    bool Found = false;
-    for (Module::iterator F = M.begin(); F != M.end(); ++F)
-      for (inst_iterator I = inst_begin(F); I != inst_end(F); ++I)
-        if (MDNode *N = I->getMetadata("dbg")) { 
-          DILocation l(N);
-          if (l.getFilename().str() == StartFilename &&
-              l.getLineNumber() == StartLoc) {
-            DEBUG(dbgs() << "Found instruction matching the LoC:\n");
-            DEBUG(I->dump());
-            getBackwardsSlice(&*I, Slice, DynSlice, DataFlowGraph);
-            Found = true;
+    while (StartOfSlice >> StartFilename >> StartLoc) {
+      if (StartLoc == 0) {
+        errs() << "Error reading criterion file: " << StartOfSliceLoc << "\n";
+        break;
+      }
+      dbgs() << "Start slicing Filename:Loc is defined as "
+             << StartFilename << ":" << StartLoc << "\n";
+
+      Instruction *Criterion = nullptr;
+      for (Module::iterator F = M.begin(); F != M.end(); ++F)
+        for (inst_iterator I = inst_begin(F); I != inst_end(F); ++I)
+          if (MDNode *N = I->getMetadata("dbg")) { 
+            DILocation l(N);
+            if (l.getFilename().str() == StartFilename &&
+                l.getLineNumber() == StartLoc) {
+              Criterion = &*I;
+              DEBUG(dbgs() << "Found instruction matching the LoC: ");
+              DEBUG(Criterion->dump());
+            }
           }
-        }
-    if (!Found)
-      errs() << "Didin't find the starting instruction to slice " << "\n";
-    else
-      printBackwardsSlice(Slice, DynSlice, DataFlowGraph);
+
+      if (Criterion != nullptr) {
+        std::set<Value *> Slice;
+        std::unordered_set<DynValue> DynSlice;
+        std::set<DynValue *> DataFlowGraph;
+        getBackwardsSlice(Criterion, Slice, DynSlice, DataFlowGraph);
+        printBackwardsSlice(Criterion, Slice, DynSlice, DataFlowGraph);
+      } else
+        errs() << "Didin't find the starting instruction to slice.\n";
+      StartLoc = 0; // reset the LoC for error checking of while
+    }
+    StartOfSlice.close();
   } else if (!StartOfSliceInst.empty()) {
     // User specified the slicing criterion by the inst command, with the
     // function name and the instruction count. The instruction count can be
@@ -411,31 +425,37 @@ bool DynamicGiri::runOnModule(Module &M) {
     }
     std::string StartFunction;
     unsigned StartInst = 0;
-    StartOfSlice >> StartFunction >> StartInst;
-    StartOfSlice.close();
-    if (StartInst == 0) {
-      errs() << "Error reading criterion file: " << StartOfSliceInst << "\n";
-      return false;
-    }
-    DEBUG(dbgs() << "Start slicing Function:Instruction is defined as "
-                 << StartFunction << ":" << StartInst << "\n");
-    // Get a reference to the function specified by the user.
-    Function *Func = M.getFunction(StartFunction);
-    assert(Func);
-    bool Found = false;
-    for (inst_iterator I = inst_begin(Func), E = inst_end(Func); I != E; ++I)
-      if (--StartInst == 0) {
-        // Scan the function to find the slicing criterion by inst number
-        DEBUG(dbgs() << "The start of slice instruction is: ");
-        DEBUG(I->dump());
-        getBackwardsSlice(&*I, Slice, DynSlice, DataFlowGraph);
-        Found = true;
+    while (StartOfSlice >> StartFunction >> StartInst) {
+      if (StartInst == 0) {
+        errs() << "Error reading criterion file: " << StartOfSliceInst << "\n";
         break;
       }
-    if (!Found)
-      errs() << "Didin't find the starting instruction to slice " << "\n";
-    else
-      printBackwardsSlice(Slice, DynSlice, DataFlowGraph);
+      dbgs() << "Start slicing Function:Instruction is defined as "
+             << StartFunction << ":" << StartInst << "\n";
+
+      Function *Func = M.getFunction(StartFunction);
+      assert(Func);
+      Instruction *Criterion = nullptr;
+      // Scan the function to find the slicing criterion by inst number
+      for (inst_iterator I = inst_begin(Func), E = inst_end(Func); I != E; ++I)
+        if (--StartInst == 0) {
+          Criterion = &*I;
+          DEBUG(dbgs() << "The start of slice instruction is: ");
+          DEBUG(Criterion->dump());
+          break;
+        }
+
+      if (Criterion != nullptr) {
+        std::set<Value *> Slice;
+        std::unordered_set<DynValue> DynSlice;
+        std::set<DynValue *> DataFlowGraph;
+        getBackwardsSlice(Criterion, Slice, DynSlice, DataFlowGraph);
+        printBackwardsSlice(Criterion, Slice, DynSlice, DataFlowGraph);
+      } else
+        errs() << "Didin't find the starting instruction to slice.\n";
+      StartInst = 0; // reset the inst number for error checking of while
+    }
+    StartOfSlice.close();
   } else {
     // In this case, the user did not specify the slicing criterion, i.e. the
     // start of the slicing instruction. Thus we simply use the first return
@@ -448,8 +468,11 @@ bool DynamicGiri::runOnModule(Module &M) {
       if (isa<ReturnInst>(*I)) {
         DEBUG(dbgs() << "The start of slice instruction is: " << "\n");
         DEBUG(I->dump());
+        std::set<Value *> Slice;
+        std::unordered_set<DynValue> DynSlice;
+        std::set<DynValue *> DataFlowGraph;
         getBackwardsSlice(&*I, Slice, DynSlice, DataFlowGraph);
-        printBackwardsSlice(Slice, DynSlice, DataFlowGraph);
+        printBackwardsSlice(&*I, Slice, DynSlice, DataFlowGraph);
         break;
       }
   }
