@@ -42,6 +42,10 @@ static RegisterPass<QueryLoadStoreNumbers>
 Y ("query-lsnum", "Query Unique Identifiers of Loads and Stores");
 
 MDNode *LoadStoreNumberPass::assignID(Instruction *I, unsigned id) {
+  DEBUG(dbgs() << id << " : ");
+  DEBUG(I->print(dbgs()));
+  DEBUG(dbgs() << "\n");
+
   // Fetch the context in which the enclosing module was defined.  We'll need
   // it for creating practically everything.
   Module *M = I->getParent()->getParent()->getParent();
