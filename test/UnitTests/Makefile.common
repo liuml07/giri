@@ -75,7 +75,7 @@ mapping: $(NAME).all.bc
 .PHONY: ptrace rebuild clean clean-all
 
 prtrace: $(NAME).trace
-	$(GIRI_BIN_DIR)/prtrace $<
+	$(GIRI_BIN_DIR)/prtrace $< | view -
 
 rebuild: clean all
 
