@@ -409,9 +409,7 @@ private:
   /// input to the phi-node to the backwards slice.
   ///
   /// \param[in] DV - The dynamic phi-node value.
-  /// \param[out] Sources - An insertion iterator; The dynamic value that
-  ///                       becomes the result of the phi-node will be inserted
-  ///                       into a container using this iterator.
+  /// \param[out] Sources - The argument is added to this container
   void getSourcesForPHI(DynValue &DV, Worklist_t &Sources);
 
   /// Given a dynamic use of a function's formal argument, find the dynamic
@@ -419,9 +417,7 @@ private:
   ///
   /// \param[in] DV - The dynamic argument value. The LLVM value must be an
   ///             Argument. DV is not required to be normalized.
-  /// \param[out] Sources - The dynamic value representing the actual
-  ///                       argument is added to a container using this
-  ///                       insertion iterator.
+  /// \param[out] Sources - The argument is added to this container
   void getSourcesForArg(DynValue &DV, Worklist_t &Sources);
 
   /// This method, given a dynamic value that reads from memory, will find the
@@ -429,8 +425,7 @@ private:
   ///
   /// \param[in] DV - The dynamic value which reads the memory.
   /// \param[in] count - The number of loads performed by this instruction.
-  /// \param[out] Sources - The dynamic value written to the memory location is
-  ///                       added to this container.
+  /// \param[out] Sources - The argument is added to this container
   void getSourcesForLoad(DynValue &DV, Worklist_t &Sources, unsigned count = 1);
 
   void getSourcesForCall(DynValue &DV, Worklist_t &Sources);
