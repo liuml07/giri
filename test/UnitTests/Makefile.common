@@ -69,6 +69,14 @@ mapping: $(NAME).all.bc
 		-srcline-mapping $(MAPPING) \
 		-stats $(DEBUGFLAGS) $< -o /dev/null
 
+lsid: $(NAME).all.bc
+	opt -load $(GIRI_LIB_DIR)/libdgutility.so \
+		-mergereturn \
+		-lsnum -dump-lsid=true \
+		-remove-lsnum \
+		-stats $(DEBUGFLAGS) $< -o /dev/null 2>&1 |\
+		view -
+
 %.ll : %.bc
 	llvm-dis $< -o $@
 
