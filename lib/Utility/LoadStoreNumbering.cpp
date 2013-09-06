@@ -32,7 +32,7 @@ using namespace llvm;
 //                        Command Line Arguments
 //===----------------------------------------------------------------------===//
 // The trace filename was specified externally in tracing part
-cl::opt<bool>
+static cl::opt<bool>
 DumpID("dump-lsid", cl::desc("Dump assigned Load/Store ID"), cl::init(false));
 
 //===----------------------------------------------------------------------===//
