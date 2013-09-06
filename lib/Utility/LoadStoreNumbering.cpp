@@ -19,13 +19,25 @@
 
 #include "llvm/Constants.h"
 #include "llvm/Instructions.h"
+#include "llvm/Support/CommandLine.h"
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/raw_ostream.h"
 
 #include <vector>
 
 using namespace dg;
+using namespace llvm;
 
+//===----------------------------------------------------------------------===//
+//                        Command Line Arguments
+//===----------------------------------------------------------------------===//
+// The trace filename was specified externally in tracing part
+cl::opt<bool>
+DumpID("dump-lsid", cl::desc("Dump assigned Load/Store ID"), cl::init(false));
+
+//===----------------------------------------------------------------------===//
+//                        Load Store Number Passes
+//===----------------------------------------------------------------------===//
 char LoadStoreNumberPass::ID    = 0;
 char QueryLoadStoreNumbers::ID  = 0;
 char RemoveLoadStoreNumbers::ID = 0;
@@ -42,9 +54,11 @@ static RegisterPass<QueryLoadStoreNumbers>
 Y ("query-lsnum", "Query Unique Identifiers of Loads and Stores");
 
 MDNode *LoadStoreNumberPass::assignID(Instruction *I, unsigned id) {
-  DEBUG(dbgs() << id << " : ");
-  DEBUG(I->print(dbgs()));
-  DEBUG(dbgs() << "\n");
+  if (DumpID) {
+    dbgs() << id << " : ";
+    I->print(dbgs());
+    dbgs() << "\n";
+  }
 
   // Fetch the context in which the enclosing module was defined.  We'll need
   // it for creating practically everything.

@@ -3,9 +3,8 @@
 VERSION ?= pthread
 #CRITERION ?= "-criterion-loc=loc-$(VERSION).txt"
 CRITERION ?= "-criterion-inst=inst-$(VERSION).txt"
-INPUT ?= 4
-#DEBUGFLAGS ?= -debug-only=giri
 DEBUGFLAGS ?= -debug
+INPUT ?= 4
 
 ###### Don't modify the following unless you know exactly what you'r doing #####
 ifeq (pthread,$(VERSION))
