@@ -16,7 +16,6 @@
 #define MAX_PROGRAM_POINTS 2000000
 
 #include "Utility/LoadStoreNumbering.h"
-#include "Utility/Utils.h"
 
 #include "llvm/Constants.h"
 #include "llvm/Instructions.h"
@@ -53,29 +52,6 @@ MDNode *LoadStoreNumberPass::assignID(Instruction *I, unsigned id) {
   ID[0] = I;
   ID[1] = ConstantInt::get(Type::getInt32Ty(Context), id);
   return MDNode::getWhenValsUnresolved(Context, ArrayRef<Value*>(ID, 2), false);
-}
-
-void LoadStoreNumberPass::visitLoadInst(LoadInst &LI) {
-  MD->addOperand(assignID(&LI, ++count));
-}
-
-void LoadStoreNumberPass::visitStoreInst(StoreInst &SI) {
-  MD->addOperand(assignID(&SI, ++count));
-}
-
-void LoadStoreNumberPass::visitSelectInst(SelectInst &SI) {
-  MD->addOperand(assignID(&SI, ++count));
-}
-
-void LoadStoreNumberPass::visitCallInst(CallInst &CI) {
-  // Do not add an identifier for this call instruction if it is a run-time
-  // function.
-  Function *CalledFunc = CI.getCalledFunction();
-
-  // Don't instrument functions that are part of the dynamic tracing
-  // run-time libraries.
-  if (!isTracerFunction(CalledFunc))
-    MD->addOperand(assignID(&CI, ++count));
 }
 
 bool LoadStoreNumberPass::runOnModule(Module &M) {

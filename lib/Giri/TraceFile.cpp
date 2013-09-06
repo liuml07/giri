@@ -228,8 +228,8 @@ Instruction* TraceFile::getCallInstForFormalArg(DynValue &DV) {
 
   // Now that we have found the call instruction within the trace, find the
   // static LLVM call instruction that goes with it.
-  Value *V = lsNumPass->getInstforID(trace[callIndex].id);
-  CallInst *CI = dyn_cast<CallInst>(V);
+  unsigned callid = trace[callIndex].id;
+  CallInst *CI = dyn_cast<CallInst>(lsNumPass->getInstByID(callid));
   assert(CI);
 
   return CI;
@@ -384,8 +384,8 @@ void TraceFile::buildTraceFunAddrMap(void) {
        ++index) {
     // Take action on the call record types.
     if (trace[index].type == RecordType::CLType) {
-      Value *v = lsNumPass->getInstforID(trace[index].id);
-      if (CallInst *CI = dyn_cast<CallInst>(v))
+      Instruction *V = lsNumPass->getInstByID(trace[index].id);
+      if (CallInst *CI = dyn_cast<CallInst>(V))
         // For recursion through indirect function calls, it'll be 0 and it
         // will not work
         if (Function *calledFun = CI->getCalledFunction())
@@ -580,8 +580,9 @@ unsigned long TraceFile::findPreviousIDWithRecursion(Function *fun,
     // Determine the address of the called/Return function;
     /* Function *calledFun = nullptr;
     CallInst *CI;
-    if ((CI = dyn_cast<CallInst>(lsNumPass->getInstforID(trace[index].id)))) {
-      // For recursion through indirect function calls it'll be 0 and it will not work
+    if ((CI = dyn_cast<CallInst>(lsNumPass->getInstByID(trace[index].id)))) {
+      // For recursion through indirect function calls it'll be 0 and it will
+      // not work
       calledFun = CI->getCalledFunction();
       }*/
 
@@ -789,10 +790,9 @@ void TraceFile::getSourcesForArg(DynValue &DV, Worklist_t &Sources) {
 
   // Now that we have found the call instruction within the trace, find the
   // static, LLVM call instruction that goes with it.
-  Value *V = lsNumPass->getInstforID(trace[callIndex].id);
-  CallInst *CI = dyn_cast<CallInst>(V);
+  unsigned callid = trace[callIndex].id;
+  CallInst *CI = dyn_cast<CallInst>(lsNumPass->getInstByID(callid));
   assert(CI);
-  unsigned callID = bbNumPass->getID(CI->getParent());
 
   // Scan forward through the trace to find the execution of the basic block
   // that contains the call.  If we encounter call records with the same ID,
@@ -802,6 +802,7 @@ void TraceFile::getSourcesForArg(DynValue &DV, Worklist_t &Sources) {
   bool found = false;
   unsigned nesting = 0;
   unsigned long index = callIndex;
+  unsigned bbid = bbNumPass->getID(CI->getParent());
   while (!found) {
     // Assert that we actually find the basic block record eventually.
     assert(index <= maxIndex);
@@ -819,7 +820,7 @@ void TraceFile::getSourcesForArg(DynValue &DV, Worklist_t &Sources) {
     // instruction is contained, decrease the nesting indexing.  If the
     // nesting is zero, then we've found our basic block entry.
     if (trace[index].type == RecordType::BBType &&
-        trace[index].id == callID) {
+        trace[index].id == bbid) {
       if (--nesting == 0) {
         // We have found our call instruction.  Add the actual argument in
         // the call instruction to the backwards slice.
@@ -906,22 +907,20 @@ void TraceFile::findAllStoresForLoad(DynValue &DV,
         overlaps(trace[store_index], load_entry)) {
       // Find the LLVM store instruction(s) that match this dynamic store
       // instruction.
-      Value *V = lsNumPass->getInstforID(trace[store_index].id);
-      Instruction *SI = dyn_cast<Instruction>(V);
+      Instruction *SI = lsNumPass->getInstByID(trace[store_index].id);
       assert(SI);
 
       // Scan forward through the trace to get the basic block in which the
       // store was executed.
-      unsigned storeID = lsNumPass->getID(SI);
       unsigned storeBBID = bbNumPass->getID(SI->getParent());
       unsigned long bbindex = findNextNestedID(store_index,
                                                RecordType::BBType,
                                                storeBBID,
-                                               storeID);
+                                               trace[store_index].id);
       // Record the store instruction as a source.
       // FIXME: This should handle *all* stores with the ID.  It is possible
       // that this occurs through function cloning.
-      DynValue newDynValue = DynValue(V, bbindex);
+      DynValue newDynValue = DynValue(SI, bbindex);
       addToWorklist(newDynValue, Sources, DV);
 
       Entry &store_entry = trace[store_index];
@@ -1064,7 +1063,7 @@ void TraceFile::getSourcesForLoad(DynValue &DV,
     // Find the LLVM store instruction(s) that match this dynamic store
     // instruction.
     //
-    Value *V = lsNumPass->getInstforID(trace[store_index].id);
+    Value *V = lsNumPass->getInstByID(trace[store_index].id);
     assert(V);
     Instruction *SI = dyn_cast<Instruction>(V);
     assert(SI);

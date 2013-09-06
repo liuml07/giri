@@ -16,12 +16,13 @@
 #ifndef DG_LOADSTORENUMBERING_H
 #define DG_LOADSTORENUMBERING_H
 
+#include "Utility/Utils.h"
+
 #include "llvm/Function.h"
 #include "llvm/Module.h"
 #include "llvm/Pass.h"
 #include "llvm/Support/InstVisitor.h"
 
-#include <map>
 #include <unordered_map>
 
 using namespace llvm;
@@ -37,7 +38,6 @@ class LoadStoreNumberPass : public ModulePass,
                             public InstVisitor<LoadStoreNumberPass> {
 public:
   static char ID;
-
   LoadStoreNumberPass() : ModulePass(ID) {}
 
   /// It takes a module and assigns a unique identifier for each load and
@@ -50,20 +50,28 @@ public:
   };
 
   ////////////////////// Instruction visitors //////////////////////
-  void visitLoadInst(LoadInst &LI);
-  void visitStoreInst(StoreInst &SI);
-  void visitSelectInst(SelectInst &SI);
-  void visitCallInst(CallInst &CI);
+  void visitLoadInst(LoadInst &LI) {
+    MD->addOperand(assignID(&LI, ++count));
+  }
+  void visitStoreInst(StoreInst &SI) {
+    MD->addOperand(assignID(&SI, ++count));
+  }
+  void visitSelectInst(SelectInst &SI) {
+    MD->addOperand(assignID(&SI, ++count));
+  }
+  void visitCallInst(CallInst &CI) {
+    // Don't instrument functions that are part of the dynamic tracing
+    // run-time libraries.
+    if (!isTracerFunction(CI.getCalledFunction()))
+      MD->addOperand(assignID(&CI, ++count));
+  }
 
 private:
-
-  /// This method modifies the IR to assign the specified ID to the specified
-  /// instruction.
+  /// Modifies the IR to assign the specified ID to the instruction
   MDNode *assignID(Instruction *I, unsigned id);
 
 private:
   unsigned count; ///< Counter for assigning unique IDs
-
   NamedMDNode *MD; ///< Store metadata of each load and store
 };
 
@@ -73,7 +81,6 @@ private:
 class QueryLoadStoreNumbers : public ModulePass {
 public:
   static char ID;
-
   QueryLoadStoreNumbers() : ModulePass(ID) {}
 
   /// It examines the metadata for the module and constructs a mapping from
@@ -90,17 +97,17 @@ public:
   /// Return the ID number for the specified instruction.
   /// \return 0 if this instruction has *no* associated ID. Otherwise, the ID
   /// of the instruction is returned.
-  unsigned getID(Instruction *I) const {
-    std::map<Value *, unsigned>::const_iterator i = IDMap.find(I);
-    if (i == IDMap.end())
-      return 0;
-    return i->second;
+  unsigned getID(const Instruction *I) const {
+    auto im = IDMap.find(I);
+    if (im != IDMap.end())
+      return im->second;
+    return 0;
   }
 
-  Value *getInstforID(unsigned id) const {
-    std::unordered_map<unsigned, Value *>::const_iterator i = InstMap.find(id);
-    if (i != InstMap.end())
-      return i->second;
+  Instruction *getInstByID(unsigned id) const {
+    auto im= InstMap.find(id);
+    if (im != InstMap.end())
+      return im->second;
     return 0;
   }
 
@@ -108,12 +115,12 @@ protected:
   /// \brief Maps an instruction to the number to which it was assigned. Note
   /// *multiple* instructions can be assigned the same ID (e.g., if a
   /// transform clones a function).
-  std::map<Value *, unsigned> IDMap;
+  std::unordered_map<const Instruction *, unsigned> IDMap;
 
   /// \brief Map an ID to the instruction to which it is mapped. Note that we
   /// can have multiple IDs mapped to the same instruction; however, we ignore
   /// that possibility for now.
-  std::unordered_map<unsigned, Value *> InstMap;
+  std::unordered_map<unsigned, Instruction *> InstMap;
 };
 
 /// \class This pass removes the metadata that numbers basic blocks.
@@ -122,7 +129,6 @@ protected:
 class RemoveLoadStoreNumbers : public ModulePass {
 public:
   static char ID;
-
   RemoveLoadStoreNumbers() : ModulePass(ID) {}
 
   /// It takes a module and removes the instruction ID metadata.
