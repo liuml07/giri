@@ -41,7 +41,7 @@ int main(int argc, char ** argv) {
 
   // Print a header that reminds the user of what the fields mean.
   printf("-----------------------------------------------------------------------------\n");
-  printf("Record Type : %10s: %6s: %15s: %16s: %8s\n",
+  printf("%10s:  Record Type: %6s: %15s: %16s: %8s\n",
          "Index", "ID", "TID", "Address", "Length");
   printf("-----------------------------------------------------------------------------\n");
 
@@ -50,6 +50,8 @@ int main(int argc, char ** argv) {
   ssize_t readsize;
   unsigned index = 0;
   while ((readsize = read(fd, &entry, sizeof(entry))) == sizeof(entry)) {
+    printf("%10u: ", index++);
+
     // Print the entry's type
     switch (entry.type) {
       case RecordType::BBType:
@@ -77,15 +79,13 @@ int main(int argc, char ** argv) {
 
     // Print the value associated with the entry.
     if (entry.type == RecordType::BBType)
-      printf("%10u: %6u: %8lu: %16lx: %8lu\n",
-             index++,
+      printf("%6u: %8lu: %16lx: %8lu\n",
              entry.id,
              entry.tid,
              entry.address,
              entry.length);
     else
-      printf("%10u: %6u: %8lu: %16lx: %8lx\n",
-             index++,
+      printf("%6u: %8lu: %16lx: %8lx\n",
              entry.id,
              entry.tid,
              entry.address,
