@@ -66,7 +66,7 @@ void matrixmult_splitter(void *data_in)
 {
     pthread_attr_t attr;
     pthread_t * tid;
-    int i, num_procs;
+    int i, num_procs = 4;
 
 	/* Make a copy of the mm_data structure */
     mm_data_t * data = (mm_data_t *)data_in; 
@@ -78,8 +78,8 @@ void matrixmult_splitter(void *data_in)
     assert(data->matrix_B);
     assert(data->output);
 
-    CHECK_ERROR((num_procs = sysconf(_SC_NPROCESSORS_ONLN)) <= 0);
-    dprintf("THe number of processors is %d\n", num_procs);
+    /*CHECK_ERROR((num_procs = sysconf(_SC_NPROCESSORS_ONLN)) <= 0);*/
+    /*dprintf("THe number of processors is %d\n", num_procs);*/
 
     tid = (pthread_t *)MALLOC(num_procs * sizeof(pthread_t));
     /* Thread must be scheduled systemwide */

@@ -14,7 +14,7 @@ GIRI_DIR = ../../build/
 SRC_FILES = $(NAME).c
 #CRITERION ?= "-criterion-loc=loc-$(VERSION).txt"
 CRITERION ?= "-criterion-inst=inst-$(VERSION).txt"
-INPUT ?= 16
+INPUT ?= 4
 DEBUGFLAGS ?= -debug-only=giri
 
 include ../UnitTests/Makefile.common
