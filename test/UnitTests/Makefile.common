@@ -3,7 +3,7 @@
 
 ########################### User defined variables ###########################
 NAME ?= main
-DEBUGFLAGS ?= -debug
+DEBUGFLAGS ?= -debug-only=giri
 GIRI_DIR ?= ../../../build/
 GIRI_VERSION ?= Release+Debug+Asserts
 SRC_FILES ?= $(wildcard *.c)
