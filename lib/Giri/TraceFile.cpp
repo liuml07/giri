@@ -83,7 +83,7 @@ DynValue *TraceFile::getLastDynValue(Value  *V) {
   // that doesn't belong to a specific basic block within the trace.
   Instruction *I = dyn_cast<Instruction>(V);
   if (I == nullptr)
-    return new DynValue(V, 0, 0);
+    return new DynValue(V, 0);
 
   // First, get the ID of the basic block containing this instruction.
   unsigned id = bbNumPass->getID(I->getParent());
@@ -93,7 +93,7 @@ DynValue *TraceFile::getLastDynValue(Value  *V) {
   // find a matching basic block ID.
   for (unsigned long index = maxIndex; index > 0; --index) {
     if (trace[index].type == RecordType::BBType && trace[index].id == id)
-      return new DynValue(I, index, trace[index].tid);
+      return new DynValue(I, index);
   }
 
   // If this is the first block, verify that it is the for the value for which
@@ -101,7 +101,7 @@ DynValue *TraceFile::getLastDynValue(Value  *V) {
   assert(trace[0].type == RecordType::BBType && trace[0].id == id &&
          "Cannot find instruction in trace!\n");
 
-  return new DynValue(I, 0, 0);
+  return new DynValue(I, 0);
 }
 
 void TraceFile::getSourcesFor(DynValue &DInst, Worklist_t &Worklist) {
@@ -111,11 +111,11 @@ void TraceFile::getSourcesFor(DynValue &DInst, Worklist_t &Worklist) {
     // branch, do not add it to the slice at all as it will have no incoming
     // operands (other than Basic Blocks).
     if (BI->isConditional()) {
-      DynValue NDV = DynValue(BI->getCondition(), DInst.index, DInst.tid);
+      DynValue NDV = DynValue(BI->getCondition(), DInst.index);
       addToWorklist(NDV, Worklist, DInst);
     }
   } else if (SwitchInst *SI = dyn_cast<SwitchInst>(DInst.V)) {
-    DynValue NDV = DynValue(SI->getCondition(), DInst.index, DInst.tid);
+    DynValue NDV = DynValue(SI->getCondition(), DInst.index);
     addToWorklist(NDV, Worklist, DInst);
   } else if (isa<PHINode>(DInst.V)) {
     // If DV is an PHI node, we need to determine which predeccessor basic block
@@ -134,7 +134,7 @@ void TraceFile::getSourcesFor(DynValue &DInst, Worklist_t &Worklist) {
     // and find the corresponding store instruction.
 
     // The dereferenced pointer should be part of the dynamic backwards slice.
-    DynValue NDV = DynValue(LI->getOperand(0), DInst.index, DInst.tid);
+    DynValue NDV = DynValue(LI->getOperand(0), DInst.index);
     addToWorklist(NDV, Worklist, DInst);
 
     // Find the store instruction that generates that value that this load
@@ -154,7 +154,7 @@ void TraceFile::getSourcesFor(DynValue &DInst, Worklist_t &Worklist) {
     // operands really contributed to the computation.
     for (unsigned index = 0; index < I->getNumOperands(); ++index)
       if (!isa<Constant>(I->getOperand(index))) {
-        DynValue NDV = DynValue(I->getOperand(index), DInst.index, DInst.tid);
+        DynValue NDV = DynValue(I->getOperand(index), DInst.index);
         addToWorklist(NDV, Worklist, DInst);
       }
   }
@@ -168,7 +168,7 @@ DynBasicBlock TraceFile::getExecForcer(DynBasicBlock DBB,
                                        const set<unsigned> &bbnums) {
   // Normalize the dynamic basic block.
   if (!normalize(DBB))
-    return DynBasicBlock(nullptr, maxIndex, 0);
+    return DynBasicBlock(nullptr, maxIndex);
 
   // Find the execution of the basic block that forced execution of the
   // specified basic block.
@@ -178,13 +178,11 @@ DynBasicBlock TraceFile::getExecForcer(DynBasicBlock DBB,
                                                     bbnums);
 
   if (index == maxIndex) // We did not find the record due to some reason
-    return DynBasicBlock(nullptr, maxIndex, 0);
+    return DynBasicBlock(nullptr, maxIndex);
 
   // Assert that we have found the entry.
   assert(trace[index].type == RecordType::BBType);
-  return DynBasicBlock(bbNumPass->getBlock(trace[index].id),
-                       index,
-                       trace[index].tid);
+  return DynBasicBlock(bbNumPass->getBlock(trace[index].id), index);
 }
 
 void TraceFile::addToWorklist(DynValue &DV,
@@ -521,7 +519,8 @@ unsigned long TraceFile::findNextAddress(unsigned long start_index,
 unsigned long TraceFile::findNextNestedID(unsigned long start_index,
                                           RecordType type,
                                           const unsigned id,
-                                          const unsigned nestID) {
+                                          const unsigned nestID,
+                                          pthread_t tid) {
   // This works because entry id belongs to basicblock nestedID. So any more
   // occurance of nestedID before id means a recursion.
   unsigned nesting = 0;
@@ -746,7 +745,7 @@ void TraceFile::getSourcesForPHI(DynValue &DV, Worklist_t &Sources) {
   for (unsigned index = 0; index < PHI->getNumIncomingValues(); ++index)
     if (predBBID == bbNumPass->getID(PHI->getIncomingBlock(index))) {
       Value *V = PHI->getIncomingValue(index);
-      DynValue NDV = DynValue(V, pred_index, DV.tid);
+      DynValue NDV = DynValue(V, pred_index);
       addToWorklist(NDV, Sources, DV);
       return;
     }
@@ -867,7 +866,7 @@ void TraceFile::getSourcesForArg(DynValue &DV, Worklist_t &Sources) {
     if (CalledFunc->getName().str() == "pthread_create") {
       for (uint i=0; i<CI->getNumOperands()-1; i++)
         if (!isa<Constant>(CI->getOperand(index))) {
-          DynValue NDV = DynValue(CI->getOperand(i), index, DV.tid);
+          DynValue NDV = DynValue(CI->getOperand(i), index);
           addToWorklist(NDV, Sources, DV);
         }
       return;
@@ -877,7 +876,7 @@ void TraceFile::getSourcesForArg(DynValue &DV, Worklist_t &Sources) {
   } else {
     // We have found our call instruction.  Add the actual argument in
     // the call instruction to the backwards slice.
-    DynValue NDV = DynValue(CI->getOperand(Arg->getArgNo()), index, DV.tid);
+    DynValue NDV = DynValue(CI->getOperand(Arg->getArgNo()), index);
     addToWorklist(NDV, Sources, DV);
     return;
   }
@@ -921,11 +920,12 @@ void TraceFile::findAllStoresForLoad(DynValue &DV,
       unsigned long bbindex = findNextNestedID(store_index,
                                                RecordType::BBType,
                                                storeBBID,
-                                               trace[store_index].id);
+                                               trace[store_index].id,
+                                               trace[store_index].tid);
       // Record the store instruction as a source.
       // FIXME: This should handle *all* stores with the ID.  It is possible
       // that this occurs through function cloning.
-      DynValue NDV = DynValue(SI, bbindex, DV.tid);
+      DynValue NDV = DynValue(SI, bbindex);
       addToWorklist(NDV, Sources, DV);
 
       Entry &store_entry = trace[store_index];
@@ -1143,7 +1143,7 @@ bool TraceFile::getSourcesForSpecialCall(DynValue &DV,
     // dynamic slice. Not including called function pointer now.
     for (unsigned index = 0; index < CS.arg_size(); ++index)
       if (!isa<Constant>(CS.getArgument(index))) {
-        DynValue NDV = DynValue(CS.getArgument(index), trace_index, DV.tid);
+        DynValue NDV = DynValue(CS.getArgument(index), trace_index);
         addToWorklist(NDV, Sources, DV);
       }
     // We don't read from any memory buffer, so return true and be done.
@@ -1157,7 +1157,7 @@ bool TraceFile::getSourcesForSpecialCall(DynValue &DV,
     // instruction. Not including called function pointer now.
     for (unsigned index = 0; index < CS.arg_size(); ++index)
       if (!isa<Constant>(CS.getArgument(index))) {
-        DynValue NDV = DynValue(CS.getArgument(index), trace_index, DV.tid);
+        DynValue NDV = DynValue(CS.getArgument(index), trace_index);
         addToWorklist(NDV, Sources, DV);
       }
     // Find the stores that generate the values that we load.
@@ -1169,7 +1169,7 @@ bool TraceFile::getSourcesForSpecialCall(DynValue &DV,
     // instruction. Not including called function pointer now.
     for (unsigned index = 0; index < CS.arg_size(); ++index)
       if (!isa<Constant>(CS.getArgument(index))) {
-        DynValue NDV = DynValue(CS.getArgument(index), trace_index, DV.tid);
+        DynValue NDV = DynValue(CS.getArgument(index), trace_index);
         addToWorklist(NDV, Sources, DV);
       }
     // Find the stores that generate the values that we load twice.
@@ -1191,7 +1191,7 @@ bool TraceFile::getSourcesForSpecialCall(DynValue &DV,
     for (unsigned index = 0; index < CS.arg_size(); ++index)
       if (!isa<Constant>(CS.getArgument(index))) {
         // All scalars(including the pointers) into the dynamic backwards slice.
-        DynValue NDV = DynValue(CS.getArgument(index), trace_index, DV.tid);
+        DynValue NDV = DynValue(CS.getArgument(index), trace_index);
         addToWorklist(NDV, Sources, DV);
         // If it's a character ptr but not the destination ptr or format string
         if (CS.getArgument(index)->getType() == VoidPtrType && index >= 2)
@@ -1205,7 +1205,7 @@ bool TraceFile::getSourcesForSpecialCall(DynValue &DV,
     // dynamic slice. Not including called function pointer now.
     for (unsigned index = 0; index < CS.arg_size(); ++index)
       if (!isa<Constant>(CS.getArgument(index))) {
-        DynValue NDV = DynValue(CS.getArgument(index), trace_index, DV.tid);
+        DynValue NDV = DynValue(CS.getArgument(index), trace_index);
         addToWorklist(NDV, Sources, DV);
       }
     // We don't read from any memory buffer, so return true and be done.
@@ -1304,7 +1304,7 @@ void TraceFile::getSourcesForCall(DynValue &DV, Worklist_t &Sources) {
       // conservatively.
       for (unsigned index = 0; index < CI->getNumOperands(); ++index)
         if (!isa<Constant>(CI->getOperand(index))) {
-          DynValue NDV = DynValue(CI->getOperand(index), DV.index, DV.tid);
+          DynValue NDV = DynValue(CI->getOperand(index), DV.index);
           addToWorklist(NDV, Sources, DV);
         }
       return;
@@ -1328,7 +1328,7 @@ void TraceFile::getSourcesForCall(DynValue &DV, Worklist_t &Sources) {
   if (CalledFunc->isDeclaration()) {
     for (unsigned index = 0; index < CI->getNumOperands(); ++index)
       if (!isa<Constant>(CI->getOperand(index))) {
-        DynValue NDV = DynValue(CI->getOperand(index), DV.index, DV.tid);
+        DynValue NDV = DynValue(CI->getOperand(index), DV.index);
         addToWorklist(NDV, Sources, DV);
       }
     return;
@@ -1340,7 +1340,10 @@ void TraceFile::getSourcesForCall(DynValue &DV, Worklist_t &Sources) {
   // return ids of function calls in the last basic block.
   unsigned bbID = bbNumPass->getID(CI->getParent());
   unsigned callID = lsNumPass->getID(CI);
-  unsigned long retindex = matchReturnWithCall(DV.index, bbID, callID, DV.tid);
+  unsigned long retindex = matchReturnWithCall(DV.index,
+                                               bbID,
+                                               callID, 
+                                               trace[DV.index].tid);
 
   // FIXME FOR MUTIPLE THREADS.
   // If there are multiple threads, previous entry may not be the BB of the
@@ -1360,7 +1363,7 @@ void TraceFile::getSourcesForCall(DynValue &DV, Worklist_t &Sources) {
     // Treat it as external library call in this case and add all operands
     for (unsigned index = 0; index < CI->getNumOperands(); ++index)
       if (!isa<Constant>(CI->getOperand(index))) {
-        DynValue NDV = DynValue(CI->getOperand(index), DV.index, DV.tid);
+        DynValue NDV = DynValue(CI->getOperand(index), DV.index);
         addToWorklist(NDV, Sources, DV);
       }
     return;
@@ -1371,7 +1374,7 @@ void TraceFile::getSourcesForCall(DynValue &DV, Worklist_t &Sources) {
   for (auto BB = CalledFunc->begin(); BB != CalledFunc->end(); ++BB) {
     if (isa<ReturnInst>(BB->getTerminator()))
       if (bbNumPass->getID(BB) == trace[tempretindex].id) {
-        DynValue NDV = DynValue(BB->getTerminator(), tempretindex, DV.tid);
+        DynValue NDV = DynValue(BB->getTerminator(), tempretindex);
         addToWorklist(NDV, Sources, DV);
       }
   }
@@ -1452,7 +1455,7 @@ void TraceFile::getSourceForSelect(DynValue &DV, Worklist_t &Sources) {
   // Determine which argument was used at run-time based on the trace.
   unsigned predicate = trace[selectIndex].address;
   Value *Operand = predicate ? SI->getTrueValue() : SI->getFalseValue();
-  DynValue NDV = DynValue(Operand, DV.index, DV.tid);
+  DynValue NDV = DynValue(Operand, DV.index);
   addToWorklist(NDV, Sources, DV);
 
   return;

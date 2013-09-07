@@ -40,8 +40,8 @@ public:
   friend class TraceFile;
   friend class DynBasicBlock;
 
-  DynValue(Value *Val, unsigned long index, pthread_t tid) :
-    V(Val), index(index), tid(tid), parent(nullptr) {
+  DynValue(Value *Val, unsigned long index) :
+    V(Val), index(index), parent(nullptr) {
     // If the value is a constant, set the index to zero.  Constants don't
     // have multiple instances due to dynamic execution, so we want
     // them to appear identical when stored in containers like std::set.
@@ -60,8 +60,6 @@ public:
   Value *getValue(void) const { return V; }
 
   unsigned long getIndex(void) const { return index; }
-
-  pthread_t getTid() const { return tid; }
 
   DynValue *getParent(void) const { return parent; }
   void setParent(DynValue *p) { parent = p; }
@@ -83,8 +81,6 @@ private:
   /// the instruction this dynamic instruction refers
   unsigned long index;
 
-  pthread_t tid; ///< the thread id of this dynvalue
-
   /// Record its parent in the current depth first search path during DFS search
   /// of the data flow graph to filter invariants.
   DynValue *parent;
@@ -103,7 +99,6 @@ public:
     if (Instruction *I = dyn_cast<Instruction>(DV.getValue())) {
       BB = I->getParent();
       index = DV.index;
-      tid = DV.tid;
     }
   }
 
@@ -111,8 +106,7 @@ private:
   /// Create and initialize a dynamic basic block.  Note that the
   /// constructor is private; only dynamic tracing code should be creating
   /// these values explicitly.
-  DynBasicBlock(BasicBlock *bb, unsigned long index, pthread_t tid) :
-    BB(bb), index(index), tid(tid) { }
+  DynBasicBlock(BasicBlock *bb, unsigned long index) : BB(bb), index(index) { }
 
   bool operator<(const DynBasicBlock & DBB) const {
     return (index < DBB.index) ||
@@ -128,14 +122,12 @@ public:
 
   unsigned long getIndex(void) const { return index; }
 
-  pthread_t getTid() const { return tid; }
-
   bool isNull(void) const { return (BB == 0 && index == 0); }
 
   /// Get the dynamic terminator instruction for this dynamic basic block.
   DynValue getTerminator(void) const {
     assert(!isNull());
-    return DynValue(BB->getTerminator(), index, tid);
+    return DynValue(BB->getTerminator(), index);
   }
 
   Function *getParent (void) const { return (BB) ? BB->getParent() : 0; }
@@ -146,8 +138,6 @@ private:
   /// Record index within the trace indicating to which dynamic execution of
   /// the basic block this dynamic basic block refers.
   unsigned long index;
-
-  pthread_t tid; ///< the thread id of this dynvalue
 };
 
 /// This class abstracts away searches through the trace file.
@@ -327,7 +317,8 @@ private:
   unsigned long findNextNestedID(unsigned long start_index,
                                  RecordType type,
                                  const unsigned id,
-                                 const unsigned nestID);
+                                 const unsigned nestID,
+                                 pthread_t tid);
 
   /// This method searches forwards in the trace file for an entry of the
   /// specified type and ID.
