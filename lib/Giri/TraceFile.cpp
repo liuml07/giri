@@ -533,7 +533,9 @@ unsigned long TraceFile::findNextNestedID(unsigned long start_index,
     // If we've found the entry for which we're searching, check the nesting
     // level.  If it's zero, we've found our entry.  If it's non-zero, decrease
     // the nesting level and keep looking.
-    if (trace[index].type == type && trace[index].id == id) {
+    if (trace[index].type == type &&
+        trace[index].id == id &&
+        trace[index].tid == tid) {
       if (nesting == 0)
         return index;
       else
@@ -542,7 +544,9 @@ unsigned long TraceFile::findNextNestedID(unsigned long start_index,
 
     // If we find a store/any instruction matching the nesting ID, then we've
     // left one level of recursion.
-    if (trace[index].type == RecordType::BBType && trace[index].id == nestID)
+    if (trace[index].type == RecordType::BBType &&
+        trace[index].id == nestID &&
+        trace[index].tid == tid)
       ++nesting;
 
     ++index;
