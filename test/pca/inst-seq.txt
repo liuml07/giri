@@ -1,1 +1,1 @@
-main 90
+calc_mean 51
