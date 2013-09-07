@@ -219,6 +219,7 @@ Instruction* TraceFile::getCallInstForFormalArg(DynValue &DV) {
   unsigned long callIndex = DV.index - 1;
   while (callIndex > 0) {
     if (trace[callIndex].type == RecordType::CLType &&
+        trace[callIndex].tid == trace[DV.index].tid &&
         trace[callIndex].address == trace[DV.index].address)
       break;
     --callIndex;
