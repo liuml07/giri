@@ -461,8 +461,7 @@ unsigned long TraceFile::findPreviousNestedID(unsigned long start_index,
 
     // If this is a basic block entry with an idential ID to the first basic
     // block on which we started, we know that we've hit a recursive
-    // (i.e., nested) execution of the basic block.  Increase the nesting
-    // level.
+    // (i.e., nested) execution of the basic block.
     if (trace[index].type == RecordType::BBType &&
         trace[index].id == nestedID)
       ++nesting;
@@ -538,13 +537,13 @@ unsigned long TraceFile::findNextNestedID(unsigned long start_index,
       if (nesting == 0)
         return index;
       else
-        ++nesting;
+        --nesting;
     }
 
     // If we find a store/any instruction matching the nesting ID, then we've
-    // left one level of recursion.  Reduce the nesting level.
+    // left one level of recursion.
     if (trace[index].type == RecordType::BBType && trace[index].id == nestID)
-      --nesting;
+      ++nesting;
 
     ++index;
   }
