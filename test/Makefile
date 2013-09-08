@@ -12,6 +12,6 @@ clean:
 	@for u in $(shell ls UnitTests); do \
 		[[ -d UnitTests/$$u ]] && make clean -C UnitTests/$$u;\
 		done
-	@ $(MAKE) clean -C kmeanst 
+	@ $(MAKE) clean -C kmeans
 	@ $(MAKE) clean -C matrix_multiply
 	@ $(MAKE) clean -C pca
