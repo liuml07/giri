@@ -644,20 +644,6 @@ void TracingNoGiri::visitCallInst(CallInst &CI) {
   visitSpecialCall(CI);
 }
 
-void TracingNoGiri::instrumentLoadsAndStores(BasicBlock &BB) {
-  //
-  // Scan through all instructions in the basic block and instrument them as
-  // necessary.  Use a worklist to contain the instructions to avoid any
-  // iterator invalidation issues when adding instructions to the basic block.
-  //
-  std::vector<Instruction *> Worklist;
-  for (BasicBlock::iterator I = BB.begin(); I != BB.end(); ++I) {
-    Worklist.push_back(I);
-  }
-  visit(Worklist.begin(), Worklist.end());
-  return;
-}
-
 bool TracingNoGiri::runOnBasicBlock(BasicBlock &BB) {
   // Fetch the analysis results for numbering basic blocks.
   // Will be run once per module
@@ -668,10 +654,13 @@ bool TracingNoGiri::runOnBasicBlock(BasicBlock &BB) {
   // Instrument the basic block so that it records its execution.
   instrumentBasicBlock(BB);
 
-  // Instrument all load and store instructions so that they record their
-  // execution and the address that they access. Record Calls and addresses of
-  // special external functions as well.
-  instrumentLoadsAndStores(BB);
+  // Scan through all instructions in the basic block and instrument them as
+  // necessary.  Use a worklist to contain the instructions to avoid any
+  // iterator invalidation issues when adding instructions to the basic block.
+  std::vector<Instruction *> Worklist;
+  for (BasicBlock::iterator I = BB.begin(); I != BB.end(); ++I)
+    Worklist.push_back(I);
+  visit(Worklist.begin(), Worklist.end());
 
   // Update the number of basic blocks with phis.
   if (hasPHI(BB))

@@ -143,11 +143,6 @@ private:
   /// run-time.
   void instrumentBasicBlock(BasicBlock &BB);
 
-  /// This method instruments loads and stores so that they record the memory
-  /// addresses that they are accessing.  Record Calls and addresses of special
-  /// external functions as well.
-  void instrumentLoadsAndStores(BasicBlock &BB);
-
   /// Create a global constructor (ctor) function that can be called when the
   /// program starts up.
   Function *createCtor(Module &M);
@@ -155,7 +150,6 @@ private:
   /// Insert the specified function into the list of global constructor
   /// functions.
   void insertIntoGlobalCtorList(Function *RuntimeCtor);
-
 };
 
 /// This pass finds the backwards dynamic slice of LLVM values.
