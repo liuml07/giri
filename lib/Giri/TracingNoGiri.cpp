@@ -29,6 +29,7 @@
 #include "llvm/Support/Debug.h"
 
 #include <vector>
+#include <string>
 
 using namespace giri;
 using namespace llvm;
@@ -88,6 +89,18 @@ bool TracingNoGiri::doInitialization(Module & M) {
                                               VoidType,
                                               VoidPtrType,
                                               nullptr));
+
+  // Load/Store unlock mechnism
+  RecordLock = cast<Function>(M.getOrInsertFunction("recordLock",
+                                                    VoidType,
+                                                    VoidPtrType,
+                                                    nullptr));
+
+  // Load/Store lock mechnism
+  RecordUnlock = cast<Function>(M.getOrInsertFunction("recordUnlock",
+                                                      VoidType,
+                                                      VoidPtrType,
+                                                      nullptr));
 
   // Add the function for recording the execution of a basic block.
   RecordBB = cast<Function>(M.getOrInsertFunction("recordBB",
@@ -195,6 +208,26 @@ Function *TracingNoGiri::createCtor(Module &M) {
   return RuntimeCtor;
 }
 
+void TracingNoGiri::instrumentLock(Instruction *I) {
+  std::string s;
+  raw_string_ostream rso(s);
+  I->print(rso);
+  Constant *Name = stringToGV(rso.str(),
+                              I->getParent()->getParent()->getParent());
+  Name = ConstantExpr::getZExtOrBitCast(Name, VoidPtrType);
+  CallInst::Create(RecordLock, Name)->insertBefore(I);
+}
+
+void TracingNoGiri::instrumentUnlock(Instruction *I) {
+  std::string s;
+  raw_string_ostream rso(s);
+  I->print(rso);
+  Constant *Name = stringToGV(rso.str(),
+                              I->getParent()->getParent()->getParent());
+  Name = ConstantExpr::getZExtOrBitCast(Name, VoidPtrType);
+  CallInst::Create(RecordUnlock, Name)->insertAfter(I);
+}
+
 void TracingNoGiri::insertIntoGlobalCtorList(Function *RuntimeCtor) {
   // Insert the run-time ctor into the ctor list.
   LLVMContext & Context = RuntimeCtor->getParent()->getContext();
@@ -256,8 +289,6 @@ bool TracingNoGiri::doFinalization(Module &M) {
 }
 
 void TracingNoGiri::instrumentBasicBlock(BasicBlock &BB) {
-  Value *LastBB;
-
   // Lookup the ID of this basic block and create an LLVM value for it.
   unsigned id = bbNumPass->getID(&BB);
   assert(id && "Basic block does not have an ID!\n");
@@ -266,6 +297,7 @@ void TracingNoGiri::instrumentBasicBlock(BasicBlock &BB) {
   // Get a pointer to the function in which the basic block belongs.
   Value *FP = castTo(BB.getParent(), VoidPtrType, "", BB.getTerminator());
 
+  Value *LastBB;
   if (isa<ReturnInst>(BB.getTerminator()))
      LastBB = ConstantInt::get(Int32Type, 1);
   else
@@ -273,128 +305,123 @@ void TracingNoGiri::instrumentBasicBlock(BasicBlock &BB) {
 
   // Insert code at the end of the basic block to record that it was executed.
   std::vector<Value *> args = make_vector<Value *>(BBID, FP, LastBB, 0);
-  CallInst::Create(RecordBB, args, "", BB.getTerminator());
-
-  // For debugging
-#if 0
-  if( BB.getParent()->getNameStr().compare("ap_rprintf") == 0 ) {
-    printf("Debugging call record: %lu %lx\n", (ulong)BB.getParent(), (ulong)BB.getParent());
-  }
-#endif
+  instrumentLock(BB.getTerminator());
+  Instruction *RBB = CallInst::Create(RecordBB, args, "", BB.getTerminator());
+  instrumentUnlock(RBB);
 
   // Insert code at the beginning of the basic block to record that it started
   // execution.
   args = make_vector<Value *>(BBID, FP, 0);
-  CallInst::Create(RecordStartBB, args, "", BB.getFirstInsertionPt());
+  Instruction *F = BB.getFirstInsertionPt();
+  Instruction *S = CallInst::Create(RecordStartBB, args, "", F);
+  instrumentLock(S);
+  instrumentUnlock(S);
 }
 
 void TracingNoGiri::visitLoadInst(LoadInst &LI) {
+  instrumentLock(&LI);
+
+  // Get the ID of the load instruction.
+  Value *LoadID = ConstantInt::get(Int32Type, lsNumPass->getID(&LI));
   // Cast the pointer into a void pointer type.
   Value *Pointer = LI.getPointerOperand();
   Pointer = castTo(Pointer, VoidPtrType, Pointer->getName(), &LI);
-
   // Get the size of the loaded data.
   uint64_t size = TD->getTypeStoreSize(LI.getType());
-  Value * LoadSize = ConstantInt::get(Int64Type, size);
-
-  // Get the ID of the load instruction.
-  Value * LoadID = ConstantInt::get(Int32Type, lsNumPass->getID(&LI));
-
+  Value *LoadSize = ConstantInt::get(Int64Type, size);
   // Create the call to the run-time to record the load instruction.
   std::vector<Value *> args=make_vector<Value *>(LoadID, Pointer, LoadSize, 0);
   CallInst::Create(RecordLoad, args, "", &LI);
 
-  // Update statistics
-  ++NumLoads;
+  instrumentUnlock(&LI);
+  ++NumLoads; // Update statistics
 }
 
 void TracingNoGiri::visitSelectInst(SelectInst &SI) {
+  instrumentLock(&SI);
+
   // Cast the predicate (boolean) value into an 8-bit value.
-  Value * Predicate = SI.getCondition();
+  Value *Predicate = SI.getCondition();
   Predicate = castTo(Predicate, Int8Type, Predicate->getName(), &SI);
-
   // Get the ID of the load instruction.
-  Value * SelectID = ConstantInt::get(Int32Type, lsNumPass->getID(&SI));
-
+  Value *SelectID = ConstantInt::get(Int32Type, lsNumPass->getID(&SI));
   // Create the call to the run-time to record the load instruction.
   std::vector<Value *> args=make_vector<Value *>(SelectID, Predicate, 0);
   CallInst::Create(RecordSelect, args, "", &SI);
 
-  // Update statistics
-  ++NumSelects;
+  instrumentUnlock(&SI);
+  ++NumSelects; // Update statistics
 }
 
 void TracingNoGiri::visitStoreInst(StoreInst &SI) {
+  instrumentLock(&SI);
+
   // Cast the pointer into a void pointer type.
   Value * Pointer = SI.getPointerOperand();
   Pointer = castTo(Pointer, VoidPtrType, Pointer->getName(), &SI);
-
   // Get the size of the stored data.
   uint64_t size = TD->getTypeStoreSize(SI.getOperand(0)->getType());
   Value *StoreSize = ConstantInt::get(Int64Type, size);
-
   // Get the ID of the store instruction.
   Value *StoreID = ConstantInt::get(Int32Type, lsNumPass->getID(&SI));
-
   // Create the call to the run-time to record the store instruction.
   std::vector<Value *> args=make_vector<Value *>(StoreID, Pointer, StoreSize, 0);
   CallInst::Create(RecordStore, args, "", &SI);
 
-  // Update statistics
-  ++NumStores;
+  instrumentUnlock(&SI);
+  ++NumStores; // Update statistics
 }
 
 bool TracingNoGiri::visitSpecialCall(CallInst &CI) {
-  // We do not support indirect calls to special functions.
-  Value *NumElts;
   Function *CalledFunc = CI.getCalledFunction();
+
+  // We do not support indirect calls to special functions.
   if (CalledFunc == nullptr)
     return false;
 
   // Do not consider a function special if it has a function body; in this
   // case, the programmer has supplied his or her version of the function, and
   // we will instrument it.
-  if (!(CalledFunc->isDeclaration()))
+  if (!CalledFunc->isDeclaration())
     return false;
 
   // Check the name of the function against a list of known special functions.
   std::string name = CalledFunc->getName().str();
-
   if (name.substr(0,12) == "llvm.memset.") {
+    instrumentLock(&CI);
+
     // Get the destination pointer and cast it to a void pointer.
     Value *dstPointer = CI.getOperand(0);
     dstPointer = castTo(dstPointer, VoidPtrType, dstPointer->getName(), &CI);
-
     // Get the number of bytes that will be written into the buffer.
-    NumElts = CI.getOperand(2);
-
+    Value *NumElts = CI.getOperand(2);
     // Get the ID of the external funtion call instruction.
     Value *CallID = ConstantInt::get(Int32Type, lsNumPass->getID(&CI));
-
     // Create the call to the run-time to record the external call instruction.
     std::vector<Value *> args = make_vector(CallID, dstPointer, NumElts, 0);
     CallInst::Create(RecordStore, args, "", &CI);
 
-    // Update statistics
-    ++NumExtFuns;
+    instrumentUnlock(&CI);
+    ++NumExtFuns; // Update statistics
     return true;
   } else if (name.substr(0,12) == "llvm.memcpy." ||
              name.substr(0,13) == "llvm.memmove." ||
              name == "strcpy") {
+    instrumentLock(&CI);
+
     /* Record Load src, [CI] Load dst [CI] */
     // Get the destination and source pointers and cast them to void pointers.
     Value *dstPointer = CI.getOperand(0);
     Value *srcPointer  = CI.getOperand(1);
     dstPointer = castTo(dstPointer, VoidPtrType, dstPointer->getName(), &CI);
     srcPointer  = castTo(srcPointer,  VoidPtrType, srcPointer->getName(), &CI);
-
     // Get the ID of the ext fun call instruction.
     Value *CallID = ConstantInt::get(Int32Type, lsNumPass->getID(&CI));
 
     // Create the call to the run-time to record the loads and stores of
     // external call instruction.
     if(name == "strcpy") {
-      // CHECK: If the tracer function should be inserted before or after????
+      // FIXME: If the tracer function should be inserted before or after????
       std::vector<Value *> args = make_vector(CallID, srcPointer, 0);
       CallInst::Create(RecordStrLoad, args, "", &CI);
 
@@ -403,8 +430,7 @@ bool TracingNoGiri::visitSpecialCall(CallInst &CI) {
       CI.moveBefore(recStore);
     } else {
       // get the num elements to be transfered
-      NumElts = CI.getOperand(2);
-
+      Value *NumElts = CI.getOperand(2);
       std::vector<Value *> args = make_vector(CallID, srcPointer, NumElts, 0);
       CallInst::Create(RecordLoad, args, "", &CI);
 
@@ -412,11 +438,12 @@ bool TracingNoGiri::visitSpecialCall(CallInst &CI) {
       CallInst::Create(RecordStore, args, "", &CI);
     }
 
-    // Update statistics
-    ++NumExtFuns;
+    instrumentUnlock(&CI);
+    ++NumExtFuns; // Update statistics
     return true;
-
   } else if (name == "strcat") { /* Record Load dst, Load Src, Store dst-end before call inst  */
+    instrumentLock(&CI);
+
     // Get the destination and source pointers and cast them to void pointers.
     Value *dstPointer = CI.getOperand(0);
     Value *srcPointer = CI.getOperand(1);
@@ -439,30 +466,32 @@ bool TracingNoGiri::visitSpecialCall(CallInst &CI) {
     args = make_vector(CallID, dstPointer, srcPointer, 0);
     CallInst::Create(RecordStrcatStore, args, "", &CI);
 
-    // Update statistics
-    ++NumExtFuns;
+    instrumentUnlock(&CI);
+    ++NumExtFuns; // Update statistics
     return true;
   } else if (name == "strlen") { /* Record Load */
+    instrumentLock(&CI);
+
     // Get the destination and source pointers and cast them to void pointers.
     Value *srcPointer  = CI.getOperand(0);
     srcPointer  = castTo(srcPointer,  VoidPtrType, srcPointer->getName(), &CI);
-
     // Get the ID of the ext fun call instruction.
     Value *CallID = ConstantInt::get(Int32Type, lsNumPass->getID(&CI));
-
     std::vector<Value *> args = make_vector(CallID, srcPointer, 0);
     CallInst::Create(RecordStrLoad, args, "", &CI);
 
-    // Update statistics
-    ++NumExtFuns;
+    instrumentUnlock(&CI);
+    ++NumExtFuns; // Update statistics
     return true;
   } else if (name == "calloc") {
+    instrumentLock(&CI);
+
     // Get the number of bytes that will be written into the buffer.
-    NumElts = BinaryOperator::Create(BinaryOperator::Mul,
-                                     CI.getOperand(0),
-                                     CI.getOperand(1), 
-                                     "calloc par1 * par2",
-                                     &CI);
+    Value *NumElts = BinaryOperator::Create(BinaryOperator::Mul,
+                                            CI.getOperand(0),
+                                            CI.getOperand(1),
+                                            "calloc par1 * par2",
+                                            &CI);
     // Get the destination pointer and cast it to a void pointer.
     // Instruction * dstPointerInst;
     Value *dstPointer = castTo(&CI, VoidPtrType, CI.getName(), &CI);
@@ -489,10 +518,10 @@ bool TracingNoGiri::visitSpecialCall(CallInst &CI) {
     CI.moveBefore(recStore); //recStore->insertAfter((Instruction *)NumElts);
 
     // Moove cast, #byte computation and store to after call inst
-    CI.moveBefore((Instruction *)NumElts);
+    CI.moveBefore(cast<Instruction>(NumElts));
 
-    // Update statistics
-    ++NumExtFuns;
+    instrumentUnlock(&CI);
+    ++NumExtFuns; // Update statistics
     return true;
   } else if (name == "tolower" || name == "toupper") {
     // Not needed as there are no loads and stores
@@ -503,6 +532,7 @@ bool TracingNoGiri::visitSpecialCall(CallInst &CI) {
   } else if (name == "sscanf") {
     // TODO
   } else if (name == "sprintf") {
+    instrumentLock(&CI);
     // Get the pointer to the destination buffer.
     Value *dstPointer = CI.getOperand(0);
     dstPointer = castTo(dstPointer, VoidPtrType, dstPointer->getName(), &CI);
@@ -520,8 +550,7 @@ bool TracingNoGiri::visitSpecialCall(CallInst &CI) {
         std::vector<Value *> args = make_vector(CallID, Ptr, 0);
         CallInst::Create(RecordStrLoad, args, "", &CI);
 
-        // Update statistics
-        ++NumLoadStrings;
+        ++NumLoadStrings; // Update statistics
       }
     }
 
@@ -530,10 +559,12 @@ bool TracingNoGiri::visitSpecialCall(CallInst &CI) {
     CallInst *recStore = CallInst::Create(RecordStrStore, args, "", &CI);
     CI.moveBefore(recStore);
 
-    // Update statistics
-    ++NumStoreStrings;
+    instrumentUnlock(&CI);
+    ++NumStoreStrings; // Update statistics
     return true;
   } else if (name == "fgets") {
+    instrumentLock(&CI);
+
     // Get the pointer to the destination buffer.
     Value * dstPointer = CI.getOperand(0);
     dstPointer = castTo(dstPointer, VoidPtrType, dstPointer->getName(), &CI);
@@ -546,6 +577,7 @@ bool TracingNoGiri::visitSpecialCall(CallInst &CI) {
     CallInst *recStore = CallInst::Create(RecordStrStore, args, "", &CI);
     CI.moveBefore(recStore);
 
+    instrumentUnlock(&CI);
     // Update statistics
     ++NumStoreStrings;
     return true;
@@ -555,7 +587,6 @@ bool TracingNoGiri::visitSpecialCall(CallInst &CI) {
 }
 
 void TracingNoGiri::visitCallInst(CallInst &CI) {
-
   // Attempt to get the called function.
   Function *CalledFunc = CI.getCalledFunction();
   if (!CalledFunc)
@@ -580,34 +611,35 @@ void TracingNoGiri::visitCallInst(CallInst &CI) {
   if (isa<InlineAsm>(CI.getCalledValue()->stripPointerCasts()))
     return;
 
+  instrumentLock(&CI);
   // Get the ID of the store instruction.
   Value *CallID = ConstantInt::get(Int32Type, lsNumPass->getID(&CI));
   // Get the called function value and cast it to a void pointer.
   Value *FP = castTo(CI.getCalledValue(), VoidPtrType, "", &CI);
-
   // Create the call to the run-time to record the call instruction.
   std::vector<Value *> args = make_vector<Value *>(CallID, FP, 0);
-
   // Do not add calls to function call stack for external functions
   // as return records won't be used/needed for them, so call a special record function
   // FIXME!!!! Do we still need it after adding separate return records????
+  Instruction *RC;
   if (CalledFunc->isDeclaration())
-    CallInst::Create(RecordExtCall, args, "", &CI);
+    RC = CallInst::Create(RecordExtCall, args, "", &CI);
   else
-    CallInst::Create(RecordCall, args, "", &CI);
-
-  // Update statistics
-  ++NumCalls;
+    RC = CallInst::Create(RecordCall, args, "", &CI);
+  instrumentUnlock(RC);
 
   // Create the call to the run-time to record the return of call instruction.
   CallInst *CallInst = CallInst::Create(RecordReturn, args, "", &CI);
   CI.moveBefore(CallInst);
+  instrumentLock(CallInst);
+  instrumentUnlock(CallInst);
+
+  ++NumCalls; // Update statistics
 
   // The best way to handle external call is to set a flag before calling ext fn and
   // use that to determine if an internal function is called from ext fn. It flag can be
   // reset afterwards and restored to its original value before returning to ext code.
   // FIXME!!!! LATER
-
 
 #if 0
   if (CalledFunc->isDeclaration() &&

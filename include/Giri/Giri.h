@@ -124,6 +124,8 @@ private:
   Function *RecordExtCallRet;
   Function *RecordHandlerThreadID;
   Function *Init;
+  Function *RecordLock;
+  Function *RecordUnlock;
 
   // Integer types
   // Removed const modifier since method signatures have changed
@@ -134,6 +136,13 @@ private:
   Type *VoidPtrType;
 
 private:
+  /// Instrument the unlock function for load/store instructions
+  /// This should insert a function call after the I;
+  void instrumentLock(Instruction *I);
+
+  /// Instrument the unlock function for load/store instructions
+  /// This should insert a function call after the I;
+  void instrumentUnlock(Instruction *I);
 
   /// Instrument the function to record it's thread id, if it is a function
   /// started from pthread_create

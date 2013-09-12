@@ -19,13 +19,12 @@
 #include "llvm/Function.h"
 #include "llvm/Instructions.h"
 #include "llvm/Module.h"
-#include "llvm/Type.h"
-#include "llvm/DerivedTypes.h"
 #include "llvm/Transforms/Utils/BasicBlockUtils.h"
-#include <ext/hash_set>
+#include "llvm/Type.h"
+
+#include <string>
 #include <sstream>
 #include <iostream>
-#include <string>
 
 using namespace llvm;
 
@@ -258,33 +257,32 @@ static inline bool isTracerFunction(Function *fun) {
     return false;
 
   std::string name = fun->stripPointerCasts()->getName().str();
-  if ((name == "recordBB") ||
-      (name == "recordStartBB") ||
-      (name == "recordLoad") ||
-      (name == "recordStore") ||
-      (name == "recordSelect") ||
-      (name == "recordStrLoad") ||
-      (name == "recordStrStore") ||
-      (name == "recordStrcatStore") ||
-      (name == "recordCall") ||
-      (name == "recordInit") ||
-      (name == "trace_fn_start") ||
-      (name == "trace_fn_end") ||
-      (name == "ddgtrace_init") ||
-      (name == "trace_long_value") ||
-      (name == "trace_int_value") ||
-      (name == "trace_short_value") ||
-      (name == "trace_char_value") ||
-      (name == "trace_ulong_value") ||
-      (name == "trace_uint_value") ||
-      (name == "trace_ushort_value") ||
-      (name == "trace_uchar_value") ||
-      (name == "trace_float_value") ||
-      (name == "trace_double_value") ) {
-    return true;
-  }
+  return (name == "recordBB" ||
+          name == "recordStartBB" ||
+          name == "recordLoad" ||
+          name == "recordStore" ||
+          name == "recordSelect" ||
+          name == "recordStrLoad" ||
+          name == "recordStrStore" ||
+          name == "recordStrcatStore" ||
+          name == "recordLock" ||
+          name == "recordUnlock" ||
+          name == "recordCall" ||
+          name == "recordInit" ||
+          name == "trace_fn_start" ||
+          name == "trace_fn_end" ||
+          name == "ddgtrace_init" ||
+          name == "trace_long_value" ||
+          name == "trace_int_value" ||
+          name == "trace_short_value" ||
+          name == "trace_char_value" ||
+          name == "trace_ulong_value" ||
+          name == "trace_uint_value" ||
+          name == "trace_ushort_value" ||
+          name == "trace_uchar_value" ||
+          name == "trace_float_value" ||
+          name == "trace_double_value");
 
-  return false;
 }
 
 #endif

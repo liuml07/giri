@@ -44,6 +44,8 @@
 //                           Forward declearation
 //===----------------------------------------------------------------------===//
 extern "C" void recordInit(const char *name);
+extern "C" void recordLock(const char *inst_name);
+extern "C" void recordUnlock(const char *inst_name);
 extern "C" void recordStartBB(unsigned id, unsigned char *fp);
 extern "C" void recordBB(unsigned id, unsigned char *fp, unsigned lastBB);
 extern "C" void recordLoad(unsigned id, unsigned char *p, uintptr_t);
@@ -73,7 +75,6 @@ struct BBRecord {
     id(id), address(address) {}
 };
 static std::unordered_map<pthread_t, std::stack<BBRecord>> BBStack;
-static pthread_mutex_t bbstack_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 // A stack containing basic blocks currently being executed
 struct FunRecord {
@@ -84,7 +85,6 @@ struct FunRecord {
     id(id), fnAddress(fnAddress) {}
 };
 static std::unordered_map<pthread_t, std::stack<FunRecord>> FNStack;
-static pthread_mutex_t fnstack_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 //===----------------------------------------------------------------------===//
 //                        Trace Entry Cache
@@ -116,7 +116,6 @@ private:
   unsigned long EntryCacheBytes; ///< Size of the entry cache in bytes
   unsigned long EntryCacheSize; ///< Size of the entry cache
   static const float LOAD_FACTOR; ///< load factor of the system memory
-  pthread_mutex_t EntryCacheMutex; ///< the mutex of modifying the EntryCache
 };
 
 const float EntryCache::LOAD_FACTOR = 0.1;
@@ -144,8 +143,6 @@ void EntryCache::init(int FD) {
   cache = 0;
 
   mapCache();
-
-  pthread_mutex_init(&EntryCacheMutex, NULL);
 }
 
 void EntryCache::mapCache() {
@@ -182,8 +179,6 @@ void EntryCache::mapCache() {
 }
 
 void EntryCache::addToEntryCache(const Entry &entry) {
-  pthread_mutex_lock(&EntryCacheMutex);
-
   // Flush the cache if necessary.
   if (index == EntryCacheSize) {
     DEBUG("[GIRI] Writing the cache to file and remapping...\n");
@@ -206,12 +201,9 @@ void EntryCache::addToEntryCache(const Entry &entry) {
     msync(&entryCache.cache[entryCache.index - 1], 1, MS_ASYNC);
   }
 #endif
-
-  pthread_mutex_unlock(&EntryCacheMutex);
 }
 
 void EntryCache::closeCacheFile() {
-  pthread_mutex_lock(&bbstack_mutex);
   // Create basic block termination entries for each basic block on the stack.
   // These were the basic blocks that were active when the program terminated.
   // **** Should we print the return records for active functions as well?????????
@@ -224,7 +216,6 @@ void EntryCache::closeCacheFile() {
       I->second.pop();
     }
   }
-  pthread_mutex_unlock(&bbstack_mutex);
 
   // Create an end entry to terminate the log.
   addToEntryCache(Entry(RecordType::ENType, 0));
@@ -236,9 +227,6 @@ void EntryCache::closeCacheFile() {
 
   // Truncate the file to be the actual size for small traces
   ftruncate(fd, len + fileOffset);
-
-  // destroy the mutex
-  pthread_mutex_destroy(&EntryCacheMutex);
 }
 
 //===----------------------------------------------------------------------===//
@@ -248,15 +236,17 @@ void EntryCache::closeCacheFile() {
 /// This is the very entry cache used by all record functions
 /// Call entryCache.init(fd) before usage
 static EntryCache entryCache;
+/// the mutex of modifying the EntryCache
+static pthread_mutex_t EntryCacheMutex;
 
-// Make sure that we flush the entry cache on exit.
+/// helper function which is registered at atexit()
 static void finish() {
   DEBUG("[GIRI] Writing cache data to trace file and closing.\n");
+  // Make sure that we flush the entry cache on exit.
   entryCache.closeCacheFile();
 
   // destroy the mutexes
-  pthread_mutex_destroy(&bbstack_mutex);
-  pthread_mutex_destroy(&fnstack_mutex);
+  pthread_mutex_destroy(&EntryCacheMutex);
 }
 
 /// Signal handler to write only tracing data to file
@@ -275,6 +265,7 @@ void recordInit(const char *name) {
 
   // Initialize the entry cache by giving it a memory buffer to use.
   entryCache.init(record);
+  pthread_mutex_init(&EntryCacheMutex, NULL);
 
   atexit(finish);
 
@@ -289,6 +280,20 @@ void recordInit(const char *name) {
   signal(SIGFPE, cleanup_only_tracing);
 }
 
+/// \brief Lock the entry cache mutex. This function is instrumented before
+/// one Load/Store was executed. The load / and store sequence should be
+/// guaranteed in the way they happen. 
+void recordLock(const char *inst_name) {
+  pthread_mutex_lock(&EntryCacheMutex);
+  DEBUG("[GIRI] Lock for instruction: %s\n", inst_name);
+}
+
+/// \brief Unlock the entry cache mutex.
+void recordUnlock(const char *inst_name) {
+  DEBUG("[GIRI] Release the lock for instruction: %s\n", inst_name);
+  pthread_mutex_unlock(&EntryCacheMutex);
+}
+
 /// Record that a basic block has started execution. This doesn't generate a
 /// record in the log itself; rather, it is used to create records for basic
 /// block termination if the program terminates before the basic blocks
@@ -296,10 +301,8 @@ void recordInit(const char *name) {
 void recordStartBB(unsigned id, unsigned char *fp) {
   pthread_t tid = pthread_self();
 
-  pthread_mutex_lock(&bbstack_mutex);
   // Push the basic block identifier on to the back of the stack.
   BBStack[tid].push(BBRecord(id, fp));
-  pthread_mutex_unlock(&bbstack_mutex);
 }
 
 /// Record that a basic block has finished execution.
@@ -312,8 +315,6 @@ void recordBB(unsigned id, unsigned char *fp, unsigned lastBB) {
   unsigned callID = 0;
   pthread_t tid = pthread_self();
 
-  pthread_mutex_lock(&bbstack_mutex);
-  pthread_mutex_lock(&fnstack_mutex);
   // If this is the last BB of this function invocation, take the function id
   // off the FFStack. We have recorded that it has finished execution. Store
   // the call id to record the end of function call at the end of the last BB.
@@ -338,9 +339,6 @@ void recordBB(unsigned id, unsigned char *fp, unsigned lastBB) {
   // Take the basic block off the basic block stack.  We have recorded that it
   // has finished execution.
   BBStack[tid].pop();
-
-  pthread_mutex_unlock(&fnstack_mutex);
-  pthread_mutex_unlock(&bbstack_mutex);
 }
 
 /// Record that a load has been executed.
@@ -422,12 +420,10 @@ void recordCall(unsigned id, unsigned char *fp) {
   DEBUG("[GIRI] Inside %s: id = %u\n", __func__, id);
   pthread_t tid = pthread_self();
 
-  pthread_mutex_lock(&fnstack_mutex);
   // Record that a call has been executed.
   entryCache.addToEntryCache(Entry(RecordType::CLType, id, tid, fp));
   // Push the Function call identifier on to the back of the stack.
   FNStack[tid].push(FunRecord(id, fp));
-  pthread_mutex_unlock(&fnstack_mutex);
 }
 
 // FIXME: Do we still need it after adding separate return records????
@@ -458,16 +454,14 @@ void recordReturn(unsigned id, unsigned char *fp) {
 /// TODO: delete this
 ///       Not needed anymore as we don't add external function call records
 void recordExtCallRet(unsigned callID, unsigned char *fp) {
-  pthread_t tid = pthread_self();
-  pthread_mutex_lock(&fnstack_mutex);
-  assert(!FNStack[tid].empty());
   DEBUG("[GIRI] Inside %s: callID = %u\n", __func__, callID); 
+  pthread_t tid = pthread_self();
+  assert(!FNStack[tid].empty());
   if (FNStack[tid].top().fnAddress != fp)
 	ERROR("[GIRI] Function id on stack doesn't match for id %u. \
            MAY be due to function call from external code\n", callID);
   else
      FNStack[tid].pop();
-  pthread_mutex_unlock(&fnstack_mutex);
 }
 
 /// This function records which input of a select instruction was selected.
