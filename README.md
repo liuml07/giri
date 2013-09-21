@@ -16,4 +16,5 @@ Please see our [wiki page](https://github.com/liuml07/giri/wiki/) for more infor
 
 It's an ongoing project and pull requests are heavily appreciated.
 
+* [TODO List](https://github.com/liuml07/giri/wiki/TODO)
 * [Structure of the Code](https://github.com/liuml07/giri/wiki/Structure-of-the-Code)
