@@ -357,6 +357,7 @@ private:
   /// \param start_index - The index in the trace file which will be examined
   ///                      first for a match.
   /// \param type - The type of entry for which the caller searches.
+  /// \param tid - The thread ID
   /// \param id - The ID field of the entry for which the caller searches.
   /// \return The index in the trace of entry with the specified type and ID is
   /// returned; If it can't find a matching entry it'll return maxIndex as
@@ -364,6 +365,7 @@ private:
   unsigned long findPreviousIDWithRecursion(Function *fun,
                                             unsigned long start_index,
                                             RecordType type,
+                                            pthread_t tid,
                                             const unsigned id);
 
   /// This method searches backwards in the trace file for an entry of the
@@ -375,6 +377,7 @@ private:
   /// \param start_index - The index in the trace file which will be examined
   ///                      first for a match.
   /// \param type - The type of entry for which the caller searches.
+  /// \param tid - The thread ID
   /// \param ids - A set of ids of the entry for which the caller searches.
   /// \return The index in the trace of entry with the specified type and ID is
   /// returned; If it can't find a matching entry it'll return maxIndex as error
@@ -382,6 +385,7 @@ private:
   unsigned long findPreviousIDWithRecursion(Function *fun,
                                             unsigned long start_index,
                                             RecordType type,
+                                            pthread_t tid,
                                             const std::set<unsigned> &ids);
 
   /// This method, given a dynamic value that reads from memory, will find the
