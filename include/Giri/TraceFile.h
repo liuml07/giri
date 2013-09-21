@@ -321,12 +321,13 @@ private:
   /// \param start_index - The index in the trace file which will be examined first
   ///                      for a match.
   /// \param type      - The type of entry for which the caller searches.
+  /// \param tid - The thread id
   /// \param address   - The address of the entry for which the caller searches.
-  ///
   /// \return The index in the trace of entry with the specified type and
   /// address is returned.
   unsigned long findNextAddress(unsigned long start_index,
                                 RecordType type,
+                                pthread_t tid,
                                 const uintptr_t address);
 
   /// Given a call instruction, this method searches backwards in the trace file

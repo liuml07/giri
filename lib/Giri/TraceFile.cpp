@@ -451,6 +451,7 @@ unsigned long TraceFile::findNextID(unsigned long start_index,
 
 unsigned long TraceFile::findNextAddress(unsigned long start_index,
                                          RecordType type,
+                                         pthread_t tid,
                                          const uintptr_t address) {
   // Start searching from the specified index and continue until we find an
   // entry with the correct type.
@@ -459,7 +460,9 @@ unsigned long TraceFile::findNextAddress(unsigned long start_index,
   while (!found) {
     if (index > maxIndex)
       break;
-    if (trace[index].type == type && trace[index].address == address) {
+    if (trace[index].type == type &&
+        trace[index].tid == tid &&
+        trace[index].address == address) {
       found = true;
       break;
     }
@@ -1295,7 +1298,10 @@ void TraceFile::getSourcesForCall(DynValue &DV, Worklist_t &Sources) {
 
     // Look for the exectuion of the basic block for the target function.
     // FIXME!!!! Do we need to take into account recursion here?? Probably NO
-    unsigned long targetEntryBB = findNextAddress(callIndex+1, RecordType::BBType, fp);
+    unsigned long targetEntryBB = findNextAddress(callIndex+1,
+                                                  RecordType::BBType,
+                                                  trace[callIndex].tid,
+                                                  fp);
     if (targetEntryBB == maxIndex)
       return;
 
@@ -1339,6 +1345,7 @@ void TraceFile::getSourcesForCall(DynValue &DV, Worklist_t &Sources) {
   // FIXME: why records are not generated inside some calls as in stat,my_stat
   // of mysql????
   if (!(trace[tempretindex].type == RecordType::BBType &&
+        trace[tempretindex].tid == trace[retindex].tid &&
         trace[tempretindex].address == trace[retindex].address)) {
     errs() << "Return and BB record doesn't match! May be due to some reason "
               "the records of a called function are not recorded as in stat "
