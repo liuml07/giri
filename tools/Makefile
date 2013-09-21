@@ -8,6 +8,6 @@ LEVEL = ..
 #
 # List all of the subdirectories that we will compile.
 #
-DIRS = PrintTrace Tracer
+DIRS = PrintTrace
 
 include $(LEVEL)/Makefile.common

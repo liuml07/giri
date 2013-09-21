@@ -20,7 +20,7 @@
 
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/raw_ostream.h"
-#include "llvm/Value.h"
+#include "llvm/IR/Value.h"
 
 #include <deque>
 #include <iterator>

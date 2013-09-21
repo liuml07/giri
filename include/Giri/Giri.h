@@ -22,8 +22,8 @@
 #include "llvm/Analysis/Dominators.h"
 #include "llvm/Analysis/PostDominators.h"
 #include "llvm/Pass.h"
-#include "llvm/Support/InstVisitor.h"
-#include "llvm/Target/TargetData.h"
+#include "llvm/InstVisitor.h"
+#include "llvm/IR/DataLayout.h"
 
 #include <deque>
 #include <set>
@@ -50,9 +50,9 @@ public:
   /// This method is called after all the basic blocks have been transformed.
   /// It inserts code to initialize the run-time of the tracing library.
   virtual bool doFinalization(Module &M);
-  virtual bool doFinalization(Function &F) { return false; }
 
   virtual bool doInitialization(Function &F) { return false; }
+  virtual bool doFinalization(Function &F) { return false; }
 
   /// This method starts execution of the dynamic slice tracing instrumentation
   /// pass. It will add code to a function that records the execution of basic
@@ -60,7 +60,7 @@ public:
   virtual bool runOnBasicBlock(BasicBlock &BB);
 
   virtual void getAnalysisUsage(AnalysisUsage &AU) const {
-    AU.addRequired<TargetData>();
+    AU.addRequired<DataLayout>();
     AU.addRequired<QueryBasicBlockNumbers>();
     AU.addPreserved<QueryBasicBlockNumbers>();
 
@@ -104,7 +104,7 @@ public:
 
 private:
   // Pointers to other passes
-  const TargetData *TD;
+  const DataLayout *TD;
   const QueryBasicBlockNumbers *bbNumPass;
   const QueryLoadStoreNumbers  *lsNumPass;
 

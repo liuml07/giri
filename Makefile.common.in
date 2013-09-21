@@ -26,3 +26,4 @@ include $(PROJ_SRC_ROOT)/Makefile.llvm.rules
 
 CFLAGS += -Wno-deprecated
 CXXFLAGS += -Wno-deprecated
+LDFLAGS += -ltinfo

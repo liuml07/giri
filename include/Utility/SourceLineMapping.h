@@ -15,12 +15,10 @@
 #ifndef DG_SOURCELINEMAPPING_H
 #define DG_SOURCELINEMAPPING_H
 
-#include "llvm/Instruction.h"
+#include "llvm/IR/Instruction.h"
 #include "llvm/Pass.h"
 
 using namespace llvm;
-
-class llvm::raw_ostream;
 
 namespace dg {
 

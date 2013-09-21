@@ -14,13 +14,13 @@
 #ifndef UTILS_H
 #define UTILS_H
 
-#include "llvm/Constants.h"
-#include "llvm/DerivedTypes.h"
-#include "llvm/Function.h"
-#include "llvm/Instructions.h"
-#include "llvm/Module.h"
+#include "llvm/IR/Constants.h"
+#include "llvm/IR/DerivedTypes.h"
+#include "llvm/IR/Function.h"
+#include "llvm/IR/Instructions.h"
+#include "llvm/IR/Module.h"
 #include "llvm/Transforms/Utils/BasicBlockUtils.h"
-#include "llvm/Type.h"
+#include "llvm/IR/Type.h"
 
 #include <string>
 #include <sstream>

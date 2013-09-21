@@ -22,9 +22,9 @@
 #include "Utility/VectorExtras.h"
 
 #include "llvm/ADT/Statistic.h"
-#include "llvm/Constants.h"
-#include "llvm/DerivedTypes.h"
-#include "llvm/Instructions.h"
+#include "llvm/IR/Constants.h"
+#include "llvm/IR/DerivedTypes.h"
+#include "llvm/IR/Instructions.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/Debug.h"
 
@@ -230,7 +230,7 @@ void TracingNoGiri::instrumentUnlock(Instruction *I) {
 
 void TracingNoGiri::insertIntoGlobalCtorList(Function *RuntimeCtor) {
   // Insert the run-time ctor into the ctor list.
-  LLVMContext & Context = RuntimeCtor->getParent()->getContext();
+  LLVMContext &Context = RuntimeCtor->getParent()->getContext();
   Type *Int32Type = IntegerType::getInt32Ty(Context);
   std::vector<Constant *> CtorInits;
   CtorInits.push_back(ConstantInt::get(Int32Type, 65535));
@@ -240,7 +240,7 @@ void TracingNoGiri::insertIntoGlobalCtorList(Function *RuntimeCtor) {
   // Get the current set of static global constructors and add the new ctor
   // to the list.
   std::vector<Constant *> CurrentCtors;
-  Module & M = *(RuntimeCtor->getParent());
+  Module &M = *(RuntimeCtor->getParent());
   GlobalVariable *GVCtor = M.getNamedGlobal("llvm.global_ctors");
   if (GVCtor) {
     if (Constant *C = GVCtor->getInitializer()) {
@@ -265,15 +265,13 @@ void TracingNoGiri::insertIntoGlobalCtorList(Function *RuntimeCtor) {
   // Create a new initializer.
   ArrayType *AT = ArrayType::get(RuntimeCtorInit->getType(),
                                  CurrentCtors.size());
-  Constant *NewInit = ConstantArray::get(AT, CurrentCtors);
-
   // Create the new llvm.global_ctors global variable and replace all uses of
   // the old global variable with the new one.
   new GlobalVariable(M,
-                     NewInit->getType(),
+                     AT,
                      false,
                      GlobalValue::AppendingLinkage,
-                     NewInit,
+                     ConstantArray::get(AT, CurrentCtors),
                      "llvm.global_ctors");
 }
 
@@ -679,7 +677,7 @@ void TracingNoGiri::visitCallInst(CallInst &CI) {
 bool TracingNoGiri::runOnBasicBlock(BasicBlock &BB) {
   // Fetch the analysis results for numbering basic blocks.
   // Will be run once per module
-  TD        = &getAnalysis<TargetData>();
+  TD        = &getAnalysis<DataLayout>();
   bbNumPass = &getAnalysis<QueryBasicBlockNumbers>();
   lsNumPass = &getAnalysis<QueryLoadStoreNumbers>();
 

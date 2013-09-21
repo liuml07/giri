@@ -16,8 +16,8 @@
 #ifndef DG_BASICBLOCKNUMBERING_H
 #define DG_BASICBLOCKNUMBERING_H
 
-#include "llvm/Function.h"
-#include "llvm/Module.h"
+#include "llvm/IR/Function.h"
+#include "llvm/IR/Module.h"
 #include "llvm/Pass.h"
 
 #include <map>
