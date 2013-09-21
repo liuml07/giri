@@ -195,48 +195,6 @@ void TraceFile::addToWorklist(DynValue &DV,
   Sources.push_front(temp);
 }
 
-Instruction* TraceFile::getCallInstForFormalArg(DynValue &DV) {
-  // Get the argument from the dynamic instruction instance.
-  Argument *Arg = dyn_cast<Argument>(DV.V);
-  assert(Arg && "Caller passed a non-argument dynamic instance!\n");
-
-  // If this is an argument to main(), then we've traced back as far as
-  // possible.  Don't trace any further.
-  if (Arg->getParent()->getName().str() == "main")
-    return nullptr;
-
-  // Lazily update our location within the trace file to the last execution
-  // of the function's entry basic block.  We must find the proper location in
-  // the trace before looking for the call instruction within the trace, and
-  // we don't require that the caller normalized the dynamic value.
-  if (!normalize(DV))
-     return nullptr;
-
-  // Now look for the call entry that calls this function.  The basic block
-  // contains the address of the function to which the argument belongs, so
-  // we just need to find a matching call entry that calls this instruction.
-  assert(DV.index > 0);
-  unsigned long callIndex = DV.index - 1;
-  while (callIndex > 0) {
-    if (trace[callIndex].type == RecordType::CLType &&
-        trace[callIndex].tid == trace[DV.index].tid &&
-        trace[callIndex].address == trace[DV.index].address)
-      break;
-    --callIndex;
-  }
-  assert(trace[callIndex].type == RecordType::CLType);
-  assert(trace[callIndex].address == trace[DV.index].address);
-  assert(callIndex < DV.index);
-
-  // Now that we have found the call instruction within the trace, find the
-  // static LLVM call instruction that goes with it.
-  unsigned callid = trace[callIndex].id;
-  CallInst *CI = dyn_cast<CallInst>(lsNumPass->getInstByID(callid));
-  assert(CI);
-
-  return CI;
-}
-
 bool TraceFile::normalize(DynBasicBlock &DBB) {
   if (BuggyValues.find(DBB.BB) != BuggyValues.end()) {
     NumDynBuggyVal++;

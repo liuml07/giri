@@ -226,15 +226,6 @@ public:
   /// is returned.
   void addToWorklist(DynValue &DV, Worklist_t &Sources, DynValue &Parent);
 
-  /// Given a dynamic use of a function's formal argument, find the call
-  /// Instruction which provides the actual value for this arg.
-  /// Only used for building expression tree
-  ///
-  /// \param DV - The dynamic argument value; The LLVM value must be an
-  ///             Argument.  DV is not required to be normalized.
-  /// \return Corresponding call instruction.
-  Instruction *getCallInstForFormalArg(DynValue &DV);
-
 private:
   /// \brief Scan forward through the entire trace and record store instructions,
   /// creating a set of memory intervals that have been written.
