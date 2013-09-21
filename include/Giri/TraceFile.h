@@ -280,6 +280,7 @@ private:
   /// \param nestedID - The ID of the basic block to use to find nesting levels.
   unsigned long findPreviousNestedID(unsigned long start_index,
                                      RecordType type,
+                                     pthread_t tid,
                                      const unsigned id,
                                      const unsigned nestedID);
 

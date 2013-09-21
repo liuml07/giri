@@ -389,6 +389,7 @@ unsigned long TraceFile::findPreviousID(unsigned long start_index,
 
 unsigned long TraceFile::findPreviousNestedID(unsigned long start_index,
                                               RecordType type,
+                                              pthread_t tid,
                                               const unsigned id,
                                               const unsigned nestedID) {
   // Assert that we're starting our backwards scan on a basic block entry.
@@ -411,7 +412,9 @@ unsigned long TraceFile::findPreviousNestedID(unsigned long start_index,
     // zero, then this is our entry.  Otherwise, we know that we've found a
     // matching entry within a nested basic block entry and should therefore
     // decrease the nesting level.
-    if (trace[index].type == type && trace[index].id == id) {
+    if (trace[index].type == type &&
+        trace[index].tid == tid &&
+        trace[index].id == id) {
       if (nesting == 0) {
         return index;
       } else {
@@ -424,6 +427,7 @@ unsigned long TraceFile::findPreviousNestedID(unsigned long start_index,
     // block on which we started, we know that we've hit a recursive
     // (i.e., nested) execution of the basic block.
     if (trace[index].type == RecordType::BBType &&
+        trace[index].tid == tid &&
         trace[index].id == nestedID)
       ++nesting;
   } while (index != 0);
@@ -975,13 +979,10 @@ void TraceFile::getSourcesForLoad(DynValue &DV,
   // Search back in the log to find the first load entry that both belongs to
   // the basic block of the load.  Remember that we must handle nested basic
   // block execution when doing this.
-  //
-  // @TODO This can be optimized to point to load entry when adding to work
-  // list, which will avoid duplicate traversal during invariant violation
-  // finding pass
   unsigned long *load_indices = new unsigned long[count];
   unsigned long start_index = findPreviousNestedID(DV.index,
                                                    RecordType::LDType,
+                                                   trace[DV.index].tid,
                                                    loadID,
                                                    bbID);
   load_indices[0]= start_index;
@@ -990,7 +991,9 @@ void TraceFile::getSourcesForLoad(DynValue &DV,
   // that these should be immediently before the load record; therefore, we
   // should not need to worry about nesting.
   for (unsigned index = 1; index < count; ++index) {
-    start_index = findPreviousID(start_index - 1, RecordType::LDType, loadID);
+    start_index = findPreviousID(start_index - 1,
+                                 RecordType::LDType,
+                                 loadID);
     load_indices[index]= start_index;
   }
 
