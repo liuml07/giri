@@ -27,6 +27,7 @@
 #include "llvm/IR/Instructions.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/Debug.h"
+#include "llvm/Transforms/Utils/ModuleUtils.h"
 
 #include <vector>
 #include <string>
@@ -180,10 +181,11 @@ bool TracingNoGiri::doInitialization(Module & M) {
                                                       Int32Type,
                                                       Int8Type,
                                                       nullptr));
+  createCtor(M);
   return true;
 }
 
-Function *TracingNoGiri::createCtor(Module &M) {
+void TracingNoGiri::createCtor(Module &M) {
   // Create the ctor function.
   Type *VoidTy = Type::getVoidTy(M.getContext());
   Function *RuntimeCtor = cast<Function>(M.getOrInsertFunction("giriCtor",
@@ -205,7 +207,7 @@ Function *TracingNoGiri::createCtor(Module &M) {
   // Add a return instruction at the end of the basic block.
   ReturnInst::Create(M.getContext(), BB);
 
-  return RuntimeCtor;
+  appendToGlobalCtors(M, RuntimeCtor, 65535);
 }
 
 void TracingNoGiri::instrumentLock(Instruction *I) {
@@ -226,64 +228,6 @@ void TracingNoGiri::instrumentUnlock(Instruction *I) {
                               I->getParent()->getParent()->getParent());
   Name = ConstantExpr::getZExtOrBitCast(Name, VoidPtrType);
   CallInst::Create(RecordUnlock, Name)->insertAfter(I);
-}
-
-void TracingNoGiri::insertIntoGlobalCtorList(Function *RuntimeCtor) {
-  // Insert the run-time ctor into the ctor list.
-  LLVMContext &Context = RuntimeCtor->getParent()->getContext();
-  Type *Int32Type = IntegerType::getInt32Ty(Context);
-  std::vector<Constant *> CtorInits;
-  CtorInits.push_back(ConstantInt::get(Int32Type, 65535));
-  CtorInits.push_back(RuntimeCtor);
-  Constant *RuntimeCtorInit=ConstantStruct::getAnon(Context, CtorInits, false);
-
-  // Get the current set of static global constructors and add the new ctor
-  // to the list.
-  std::vector<Constant *> CurrentCtors;
-  Module &M = *(RuntimeCtor->getParent());
-  GlobalVariable *GVCtor = M.getNamedGlobal("llvm.global_ctors");
-  if (GVCtor) {
-    if (Constant *C = GVCtor->getInitializer()) {
-      for (unsigned index = 0; index < C->getNumOperands(); ++index) {
-        CurrentCtors.push_back(cast<Constant>(C->getOperand(index)));
-      }
-    }
-
-    // Rename the global variable so that we can name our global
-    // llvm.global_ctors.
-    GVCtor->setName("removed");
-  }
-
-  // The ctor list seems to be initialized in different orders on different
-  // platforms, and the priority settings don't seem to work.  Examine the
-  // module's platform string and take a best guess to the order.
-  if (M.getTargetTriple().find("linux") == std::string::npos)
-    CurrentCtors.insert(CurrentCtors.begin(), RuntimeCtorInit);
-  else
-    CurrentCtors.push_back(RuntimeCtorInit);
-
-  // Create a new initializer.
-  ArrayType *AT = ArrayType::get(RuntimeCtorInit->getType(),
-                                 CurrentCtors.size());
-  // Create the new llvm.global_ctors global variable and replace all uses of
-  // the old global variable with the new one.
-  new GlobalVariable(M,
-                     AT,
-                     false,
-                     GlobalValue::AppendingLinkage,
-                     ConstantArray::get(AT, CurrentCtors),
-                     "llvm.global_ctors");
-}
-
-bool TracingNoGiri::doFinalization(Module &M) {
-  // Create a global constructor function that will initialize the run-time.
-  Function *RuntimeCtor = createCtor(M);
-
-  // Insert the constructor into the list of global constructor functions.
-  insertIntoGlobalCtorList(RuntimeCtor);
-
-  // Indicate that we've changed the module.
-  return true;
 }
 
 void TracingNoGiri::instrumentBasicBlock(BasicBlock &BB) {
