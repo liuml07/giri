@@ -284,22 +284,6 @@ private:
                                      const unsigned id,
                                      const unsigned nestedID);
 
-  /// This method searches forwards in the trace file for an entry of the
-  /// specified type and ID.
-  ///
-  /// This method assumes that a subsequent entry in the trace *will* match the
-  /// type and ID criteria.  Asserts in the code will ensure that this is true
-  /// when this code is compiled with assertions enabled.
-  ///
-  /// \param start_index - The index in the trace file which will be examined
-  ///                      first for a match.
-  /// \param type - The type of entry for which the caller searches.
-  /// \param id - The ID field of the entry for which the caller searches.
-  /// \return The index in the trace of entry with the specified type and ID is returned.
-  unsigned long findNextID(unsigned long start_index,
-                           RecordType type,
-                           const unsigned id);
-
   // CHANGE TO USE WithRecursion functionality here and also in recursion
   // handling of loads/stores, calls/returns mapping, and recursion handling
   // during invariants failure detection

@@ -436,23 +436,6 @@ unsigned long TraceFile::findPreviousNestedID(unsigned long start_index,
   report_fatal_error("No proper basic block at the nesting level");
 }
 
-unsigned long TraceFile::findNextID(unsigned long start_index,
-                                    RecordType type,
-                                    const unsigned id) {
-  // Start searching from the specified index and continue until we find an
-  // entry with the correct ID.
-  unsigned long index = start_index;
-  while (true) {
-    if (index > maxIndex)
-      break;
-    if (trace[index].type == type && trace[index].id == id)
-      return index;
-    ++index;
-  }
-
-  report_fatal_error("Did not find desired subsequent entry in trace!");
-}
-
 unsigned long TraceFile::findNextAddress(unsigned long start_index,
                                          RecordType type,
                                          pthread_t tid,
