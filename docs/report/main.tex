@@ -1,0 +1,154 @@
+\documentclass[DIV=calc, paper=a4, fontsize=11pt, twocolumn]{scrartcl}
+
+\usepackage{lipsum} % Used for inserting dummy 'Lorem ipsum' text into the template
+\usepackage[english]{babel} % English language/hyphenation
+\usepackage[protrusion=true,expansion=true]{microtype} % Better typography
+\usepackage{amsmath,amsfonts,amsthm} % Math packages
+\usepackage[svgnames]{xcolor} % Enabling colors by their 'svgnames'
+\usepackage[hang, small,labelfont=bf,up,textfont=it,up]{caption} % Custom captions under/above floats in tables or figures
+\usepackage{booktabs} % Horizontal rules in tables
+\usepackage{fix-cm}	 % Custom font sizes - used for the initial letter in the document
+
+\usepackage{sectsty} % Enables custom section titles
+\allsectionsfont{\usefont{OT1}{phv}{b}{n}} % Change the font of all section commands
+
+\usepackage{fancyhdr} % Needed to define custom headers/footers
+\pagestyle{fancy} % Enables the custom headers/footers
+\usepackage{lastpage} % Used to determine the number of pages in the document (for "Page X of Total")
+\usepackage[colorlinks=false]{hyperref}
+\usepackage{paralist}
+
+% Headers - all currently empty
+\lhead{}
+\chead{}
+\rhead{}
+
+% Footers
+\lfoot{}
+\cfoot{}
+\rfoot{\footnotesize Page \thepage\ of \pageref{LastPage}} % "Page 1 of 2"
+
+\renewcommand{\headrulewidth}{0.0pt} % No header rule
+\renewcommand{\footrulewidth}{0.4pt} % Thin footer rule
+
+\usepackage{lettrine} % Package to accentuate the first letter of the text
+\newcommand{\initial}[1]{ % Defines the command and style for the first letter
+\lettrine[lines=3,lhang=0.3,nindent=0em]{
+\color{DarkGoldenrod}
+{\textsf{#1}}}{}}
+
+%----------------------------------------------------------------------------------------
+%	TITLE SECTION
+%----------------------------------------------------------------------------------------
+
+\usepackage{titling} % Allows custom title configuration
+
+\newcommand{\HorRule}{\color{DarkGoldenrod} \rule{\linewidth}{1pt}} % Defines the gold horizontal rule around the title
+
+\begin{document}
+
+\pretitle{\vspace{-50pt} \begin{flushleft} \HorRule \fontsize{40}{40} \usefont{OT1}{phv}{b}{n} \color{DarkRed} \selectfont} % Horizontal rule before the title
+
+\title{{\large A GSoC 2013 Final Report}\\Enhancing Giri: \\Dynamic Slicing in LLVM}
+
+\posttitle{\par\end{flushleft}\vskip 0.5em} % Whitespace under the title
+
+\preauthor{\begin{flushleft}\large \lineskip 0.5em \usefont{OT1}{phv}{b}{sl} \color{DarkRed}} % Author font configuration
+
+\author{Mingliang Liu, } % Your name
+
+\postauthor{\footnotesize \usefont{OT1}{phv}{m}{sl} \color{Black} % Configuration for the institution name
+Tsinghua University % Your institution
+
+\par\end{flushleft}\HorRule} % Horizontal rule after the title
+
+\date{} % Add a date here if you would like one to appear underneath the title block
+%----------------------------------------------------------------------------------------
+
+\maketitle % Print the title
+
+\thispagestyle{fancy} % Enabling the custom headers/footers for the first page 
+
+%----------------------------------------------------------------------------------------
+%	ABSTRACT
+%----------------------------------------------------------------------------------------
+
+% The first character should be within \initial{}
+\initial{D}\textbf{ynamic program slicing has been used in many applications.
+Giri was a research project from UIUC, which implemented the dynamic backward slicing in LLVM.
+It was selected as the Google Summer of Code 2013.
+I did several improvements to Giri directed by Dr. Swarup:
+\begin{inparaenum}[\itshape 1\upshape)]
+\item Update the code to LLVM mainline and make it robust,
+\item Reduce the trace size,
+\item Make the Giri thread-aware (pthread only),
+\item Improve the performance of run-time.
+\end{inparaenum}
+}
+
+%------------------------------------------------
+\section*{Introduction}
+Dynamic program slice contains statements that influence the value of a variable occurrence for special program inputs~\cite{agrawal1990dynamic}.
+The tradition program slicing was called static program slicing, which was firstly proposed by Weiser~\cite{weiser}.
+There are many applications that use (or could benefit from) dynamic slicing, both by research and industry organizations (e.g. Microsoft, IBM).
+For example, it's long been used in software debugging model~\cite{1993debugging,1999efficient} and testing~\cite{1993incremental}.
+However, as far as I know, there is no public available dynamic slicing tool in GCC or Open64.
+
+Sahoo et. al. from UIUC use dynamic program slicing to generate likely invariants for automated software fault localization~\cite{sahoo2013asplos}.
+They implemented the dynamic program slicing code, called Giri, in LLVM compiler infrastructure for research purpose based on LLVM 2.6.
+It also maps LLVM IR statements to source-level statements for its output using the debug metadata.  
+
+%------------------------------------------------
+\section*{Progress}
+Our goal of GSoC is to make the Giri code update to the latest LLVM version and improve the performance, and/or reduce the tracing cost.
+There are several things we did in this summer:
+\begin{enumerate}
+	\item \textbf{Update the code to LLVM mainline.}
+		\begin{itemize}
+			\item Release a v3.1 version which works with LLVM 3.1
+			\item Make the code update to the latest LLVM code (3.4)
+		\end{itemize}
+	\item \textbf{Make the giri run-time library thread safe and the slicing thread aware}.
+		The events of all processes and threads get thrown together in one trace file.
+		Trace records indicate which thread is performing a particular operation using the thread id (\texttt{pthread\_t}).
+		The trace files are written with lockes so that the race condition will not break the sequences.
+	\item \textbf{Improving the giri run-time performance.}
+		For example, fix the bug of \texttt{mmap} at the end of the tracing.
+		We compute dynamically the cache size for how many trace records to hold in memory before flushing to disk.
+	\item \textbf{Write dozens of unit tests and test several real programs.}
+		There is also a simple test framework which will try all the unit tests at the top level of \texttt{giri/test/}.
+	\item \textbf{Reduce the trace size.}
+		We truncate the file at the end of tracer according to its real size.
+	\item \textbf{Write documents for the project.}\\
+		There are several sample pages:
+		\begin{itemize}
+			\item \href{https://github.com/liuml07/giri/wiki}{The Wiki Page Home}.
+			\item \href{https://github.com/liuml07/giri/wiki/How-to-Compile-Giri}{How to Compile Giri}.
+			\item \href{https://github.com/liuml07/giri/wiki/Hello-World}{Hello World!}
+			\item \href{https://github.com/liuml07/giri/wiki/Example-Usage}{Example Usage With An Example}.
+		\end{itemize}
+\end{enumerate}
+
+%------------------------------------------------
+\section*{TODO List}
+\begin{enumerate}
+	\item Improve the performance of locking mechanism at the runtime
+	\item Add tool/Tracer.cpp to the make list. It was removed when upgrading to LLVM 3.4
+	\item Pass all the test programs of the test/ directory
+	\item Try large test cases like nginx, squid, etc
+	\item Consider more special function calls in TracingNoGiri::visitSpecialCall() function of the tracing pass
+	\item Parallel the code writing the entry cache to trace file and adding entry to the cache.
+\end{enumerate}
+
+%------------------------------------------------
+\section*{Contacts}
+The Giri code is still under active development.
+Dr. Swarup will direct me in the future to make the Giri code better.
+We publish our code at \href{https://github.com/liuml07/giri}{https://github.com/liuml07/giri}~\cite{giri}.
+For more information, please visit the homepage above.
+
+%------------------------------------------------
+\bibliographystyle{plain}
+\bibliography{references} 
+
+\end{document}
