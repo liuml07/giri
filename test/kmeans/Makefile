@@ -13,4 +13,4 @@ SRC_FILES = $(NAME).c
 CRITERION ?= "-criterion-loc=loc-$(VERSION).txt"
 #CRITERION ?= "-criterion-inst=inst-$(VERSION).txt"
 
-include ../UnitTests/Makefile.common
+include ../Makefile.common

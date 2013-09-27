@@ -14,4 +14,4 @@ CRITERION ?= "-criterion-loc=loc-$(VERSION).txt"
 #CRITERION ?= "-criterion-inst=inst-$(VERSION).txt"
 INPUT ?= 16
 
-include ../UnitTests/Makefile.common
+include ../Makefile.common

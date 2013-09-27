@@ -3,4 +3,4 @@
 NAME = extlibcalls
 INPUT ?= Mingliang LIU
 
-include ../Makefile.common
+include ../../Makefile.common

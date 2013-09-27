@@ -10,6 +10,7 @@ SRC_FILES ?= $(wildcard *.c)
 IR_FILES ?= $(SRC_FILES:%.c=%.bc)
 INPUT ?=
 CRITERION ?=
+TEST_ANS ?= ans-inst.txt
 MAPPING ?=
 
 ################# Dont' edit the following lines accidently ##################
@@ -90,14 +91,15 @@ lsid: $(NAME).all.bc
 %.ll : %.bc
 	llvm-dis $< -o $@
 
-.PHONY: diff ptrace rebuild clean clean-all
+.PHONY: test ptrace rebuild clean clean-all
 
-diff: $(NAME).slice
+test:
+	@ $(MAKE) -s $(NAME).slice 2>&1 > /dev/null
 	@ sed -n '/^Source.*[0-9]$$/p' $(NAME).slice |\
 		awk -F: '{print $$3}' |\
 		sort -g |\
 		uniq > ans.txt
-	diff ans.txt inst-$(VERSION)-ans.txt
+	diff ans.txt $(TEST_ANS)
 
 prtrace: $(NAME).trace
 	$(GIRI_BIN_DIR)/prtrace $< | view -

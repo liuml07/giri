@@ -3,4 +3,4 @@
 NAME = ifelse
 INPUT ?= a b c d
 
-include ../Makefile.common
+include ../../Makefile.common

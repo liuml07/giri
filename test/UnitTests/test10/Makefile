@@ -3,4 +3,4 @@
 NAME = str
 INPUT ?= giri
 
-include ../Makefile.common
+include ../../Makefile.common

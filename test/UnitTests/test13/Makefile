@@ -4,4 +4,4 @@ NAME = struct
 LDFLAGS = -lm
 INPUT ?= 10
 
-include ../Makefile.common
+include ../../Makefile.common

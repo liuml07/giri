@@ -3,4 +3,4 @@
 NAME = ptr
 INPUT ?= 40 54
 
-include ../Makefile.common
+include ../../Makefile.common

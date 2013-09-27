@@ -4,4 +4,4 @@ NAME = psum
 LDFLAGS = -pthread
 INPUT ?= 16 8
 
-include ../Makefile.common
+include ../../Makefile.common

@@ -1,8 +1,9 @@
 ##===- giri/test/matrix_multiply/Makefile -----------------*- Makefile -*-===##
 
 VERSION ?= pthread
-#CRITERION ?= "-criterion-loc=loc-$(VERSION).txt"
-CRITERION ?= "-criterion-inst=inst-$(VERSION).txt"
+#CRITERION ?= "-criterion-loc=criterion-loc-$(VERSION).txt"
+CRITERION ?= "-criterion-inst=criterion-inst-$(VERSION).txt"
+TEST_ANS ?= ans-inst-$(VERSION).txt
 DEBUGFLAGS ?= -debug
 INPUT ?= 4
 
@@ -18,7 +19,7 @@ endif
 GIRI_DIR = ../../build/
 SRC_FILES = $(NAME).c
 
-include ../UnitTests/Makefile.common
+include ../Makefile.common
 
 clean-all:
 	@ rm -f matrix_file_out_*.txt

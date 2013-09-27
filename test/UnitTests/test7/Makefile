@@ -3,4 +3,4 @@
 NAME = sigint
 INPUT ?=
 
-include ../Makefile.common
+include ../../Makefile.common

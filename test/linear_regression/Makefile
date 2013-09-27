@@ -18,7 +18,7 @@ endif
 GIRI_DIR = ../../build/
 SRC_FILES = $(NAME).c
 
-include ../UnitTests/Makefile.common
+include ../Makefile.common
 
 clean-all:
 	@ rm -f matrix_file_out_*.txt
