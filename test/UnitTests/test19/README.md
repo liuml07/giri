@@ -1,1 +1,1 @@
-This test is for external library calls.
+This test is fibonacci test for direct recursive function calls.
