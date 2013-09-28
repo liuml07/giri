@@ -9,7 +9,7 @@
 # The default target in this directory is the test:: target
 test:: lib
 	@ echo "Running the test cases, fases and applications..."
-	@ for t in UnitTests/test1 UnitTests/test2 UnitTests/test3 UnitTests/test4 UnitTests/test5 UnitTests/test8 UnitTests/test9 UnitTests/test10 UnitTests/test11 UnitTests/test12 UnitTests/test13 UnitTests/test14 UnitTests/test15 UnitTests/test16 UnitTests/test17 UnitTests/test18 UnitTests/test19 matrix_multiply pca kmeans;\
+	@ for t in UnitTests/test1 UnitTests/test2 UnitTests/test3 UnitTests/test4 UnitTests/test5 UnitTests/test8 UnitTests/test9 UnitTests/test10 UnitTests/test11 UnitTests/test12 UnitTests/test13 UnitTests/test14 UnitTests/test15 UnitTests/test16 UnitTests/test17 UnitTests/test18 UnitTests/test19 UnitTests/test20 matrix_multiply pca kmeans;\
 		do\
 			printf "\033[37m%-20s" "$$t";\
 			make clean -s -C $$t > /dev/null 2>&1;\
