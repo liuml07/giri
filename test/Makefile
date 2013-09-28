@@ -24,8 +24,9 @@ test:: lib
 		done
 	
 lib:
-	@ echo "Building the IIO libs..."
+	@ echo -n "Building the Giri..."
 	@ $(MAKE) -s -C ../build 2>&1 > /dev/null || (echo "Fail to build the Giri lib!" && exit 1)
+	@ echo
 
 clean:
 	@for u in $(shell ls UnitTests); do \
