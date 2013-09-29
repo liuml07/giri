@@ -1,4 +1,4 @@
-all: main.pdf
+all: main.pdf clean
 
 main.pdf: main.tex references.bib
 	pdflatex main
