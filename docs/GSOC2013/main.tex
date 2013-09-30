@@ -15,8 +15,26 @@
 \usepackage{fancyhdr} % Needed to define custom headers/footers
 \pagestyle{fancy} % Enables the custom headers/footers
 \usepackage{lastpage} % Used to determine the number of pages in the document (for "Page X of Total")
-\usepackage[colorlinks=false]{hyperref}
 \usepackage{paralist}
+\usepackage[colorlinks=false]{hyperref}
+\usepackage{listings}
+\usepackage{color}
+
+\lstdefinestyle{giricode}{
+	belowcaptionskip=1\baselineskip,
+	breaklines=true,
+	numbers=left,                    % where to put the line-numbers; possible values are (none, left, right)
+	numbersep=5pt,                   % how far the line-numbers are from the code
+	numberstyle=\tiny\color{gray}, % the style that is used for the line-numbers
+	xleftmargin=\parindent,
+	language=C,
+	showstringspaces=false,
+	basicstyle=\footnotesize\ttfamily,
+	keywordstyle=\bfseries\color{green!40!black},
+	commentstyle=\itshape\color{purple!40!black},
+	identifierstyle=\color{blue},
+	stringstyle=\color{orange},
+}
 
 % Headers - all currently empty
 \lhead{}
@@ -87,82 +105,56 @@ We achieved several improvements to Giri during GSoC 2013:
 
 %------------------------------------------------
 \section{Introduction}
-Dynamic program slice contains statements that influence the value of a variable/instruction occurrence for given program inputs~\cite{agrawal1990dynamic}.
-The traditional program slicing was called static program slicing, which was firstly proposed by Weiser~\cite{weiser}.
-There are many applications that use (or could benefit from) dynamic slicing, both by research and industry organizations (e.g. Microsoft, IBM).
+Program slice contains all statements in a program that directly or indirectly affect the value of a variable or instruction~\cite{weiser}.
+We can furthure narrow down the notion of the \emph{slice},
+which contains dynamic program statements that influence the instance of a variable or instruction for \textbf{given} program inputs.
+This is called \emph{dynamic program slicing}~\cite{agrawal1990dynamic}.
+There are many applications that use (or could benefit from) dynamic slicing.
 For example, it's long been used in software debugging~\cite{1993debugging,1999efficient} and testing~\cite{1993incremental}.
-However, as far as we're concerned, there is no publicly available dynamic slicing tool in either GCC or Open64.
+However, to the best of our knowledge, there is no publicly available dynamic slicing tool in either GCC or Open64.
 
-Sahoo et. al. from UIUC use dynamic program slicing to generate likely invariants for automated software fault localization~\cite{sahoo2013asplos}.
-They implemented the dynamic program slicing code, called Giri, in LLVM compiler infrastructure (version 2.6) for research purpose.
-It traces the user program execution and reports the dynamic slices in the end.
-It also maps LLVM IR statements to source code for its output using the debug metadata.
-To make the Giri up to date and robust for general usage,
-we enhanced its code in several factors.
+Sahoo et. al. use dynamic program slicing to filter/remove false positive candidate root causes for automated software fault localization~\cite{sahoo2013asplos}.
+They implemented the dynamic program slicing code, named Giri, in LLVM compiler infrastructure (version 2.6) for research purpose.
+It collects the trace of a user program execution and finally reports the dynamic slice of a given statement.
+It also maps LLVM IR statements to source code using the debug metadata to report the dynamic slice in terms of source line numbers.
+To make the Giri up-to-date and robust for general use, we enhanced the code in several ways.
 
 The report is organized as following.
 Section~\ref{sec:overview} shows the internal architecture of Giri, including how it works and how to use it.
 Section~\ref{sec:progress} lists the progress we made during the GSoC 2013.
-Section~\ref{sec:todo} is the TODO list of Giri as future work.
-Section~\ref{sec:contact} concludes our work, and attaches our project URL.
+Section~\ref{sec:todo} lists the future work to improve Giri further, instead of TODO (everywhere) write future work.
+Section~\ref{sec:contact} concludes our work.
 
 %------------------------------------------------
 \section{Overview}
 \subsection{Dynamic Program Slicing}
 \label{sec:overview}
-The following is an example program from the paper of dynamic program slicing~\cite{agrawal1990dynamic}.
-\begin{verbatim}
-1. #include <math.h>
-2. #include <stdio.h>
-3. #include <stdlib.h>
-4.
-5. int main(int argc, char *argv[])
-6. {
-7.    int x, y, z;
-8.
-9.    x = atoi(argv[1]);
-10.
-11.   if (x < 0)
-12.   {
-13.      y = sqrt(x);
-14.      z = pow(2, x);
-15.    } else {
-16.        if (x == 0)
-17.        {
-18.            y = sqrt(x * 2);
-19.            z = pow(3, x);
-20.        } else {
-21.            y = sqrt(x * 3);
-22.            z = pow(4, x);
-23.        }
-24.    }
-25.
-26.    printf("%d\n", y);
-27.    printf("%d\n", z);
-28.
-29.    return z;
-30.}
-\end{verbatim}
-Given the input \texttt{x = 10}, the source line numbers affect the return value are: $<$\emph{9, 22, 29}$>$.
+The following is an example program.
+\lstinputlisting[language=C, style=giricode]{../../test/UnitTests/test14/struct-ptr.c}
+Given the input \texttt{x = 10}, the source line numbers affect the return value are: $<$\emph{27, 40, 42, 44, 47}$>$.
 
-The default slicing criterion is the \texttt{ret} instruction at the \texttt{main} function.
+The default start point of slicing is the \texttt{return} instruction at the \texttt{main} function.
 Note that there is only one \texttt{return} when the main executes.
 Giri also supports two more ways to specify the slicing criterion, which are source code line number and LLVM instruction number respectively.
 See the \texttt{test/UnitTests/test4} for more information.
 
 \subsection{The Design of Giri}
 Giri handles both data-flow and control-flow dependences when computing the dynamic backwards slice. 
-It has two phases, in the first which (\emph{tracing} pass), it instruments the code to record LLVM IR in a trace file at run-time for all threads,
-and in the other of which (\emph{slicing} pass), it uses the execution trace to create a program dependence graph to find dynamic slice.
+It has two phases.
+In the first pass named \emph{tracing} pass, it instruments the code to record LLVM IR in a trace file at run-time for all threads,
+In the second pass named \emph{slicing} pass, it uses the execution trace to create a program dependence graph for computing dynamic slice.
+Giri takes advantage of the LLVM IR representation (static single assignment (SSA) form) to reduce the size of the trace file. 
 
 The tracing pass instruments code to record three different pieces of information:
 (a) basic block exits; (b) memory accesses and their addresses; and (c) function calls and returns.
 When the slicing pass first adds instructions from a dynamic execution of a basic block to the backwards slice,
 it uses static control-dependence analysis to determine which value forced the execution of that basic block.
 Giri will then find the most recent execution of the instruction generating that value and add it to the backwards slice.
+With the help of SSA, we only refer to dynamic trace whenever needed.
 The slicing pass ends when all dynamic values are processed and reports the dynamic slice of the specific program execution.
 
-To make the slicing pass thread aware, the runtime library traces the thread id (\texttt{thread\_t}) to each record indicating the very thread doing an operation.
+To make the slicing pass thread aware,
+the runtime library traces the thread id (\texttt{thread\_t}) to each record indicating current thread performing that operation.
 The slicing pass checks the thread id when scanning the trace file for a given dynamic value or basic block.
 
 %------------------------------------------------
