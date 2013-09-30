@@ -1,0 +1,211 @@
+\documentclass[DIV=calc, paper=a4, fontsize=11pt, twocolumn]{scrartcl}
+
+\usepackage{lipsum} % Used for inserting dummy 'Lorem ipsum' text into the template
+\usepackage[english]{babel} % English language/hyphenation
+\usepackage[protrusion=true,expansion=true]{microtype} % Better typography
+\usepackage{amsmath,amsfonts,amsthm} % Math packages
+\usepackage[svgnames]{xcolor} % Enabling colors by their 'svgnames'
+\usepackage[hang, small,labelfont=bf,up,textfont=it,up]{caption} % Custom captions under/above floats in tables or figures
+\usepackage{booktabs} % Horizontal rules in tables
+\usepackage{fix-cm}	 % Custom font sizes - used for the initial letter in the document
+
+\usepackage{sectsty} % Enables custom section titles
+\allsectionsfont{\usefont{OT1}{phv}{b}{n}} % Change the font of all section commands
+
+\usepackage{fancyhdr} % Needed to define custom headers/footers
+\pagestyle{fancy} % Enables the custom headers/footers
+\usepackage{lastpage} % Used to determine the number of pages in the document (for "Page X of Total")
+\usepackage{hyperref}
+\usepackage{paralist}
+
+% Headers - all currently empty
+\lhead{}
+\chead{}
+\rhead{}
+
+% Footers
+\lfoot{}
+\cfoot{}
+\rfoot{\footnotesize Page \thepage\ of \pageref{LastPage}} % "Page 1 of 2"
+
+\renewcommand{\headrulewidth}{0.0pt} % No header rule
+\renewcommand{\footrulewidth}{0.4pt} % Thin footer rule
+
+\usepackage{lettrine} % Package to accentuate the first letter of the text
+\newcommand{\initial}[1]{ % Defines the command and style for the first letter
+\lettrine[lines=3,lhang=0.3,nindent=0em]{
+\color{DarkGoldenrod}
+{\textsf{#1}}}{}}
+
+%----------------------------------------------------------------------------------------
+%	TITLE SECTION
+%----------------------------------------------------------------------------------------
+
+\usepackage{titling} % Allows custom title configuration
+
+\newcommand{\HorRule}{\color{DarkGoldenrod} \rule{\linewidth}{1pt}} % Defines the gold horizontal rule around the title
+
+\begin{document}
+
+\pretitle{\vspace{-50pt} \begin{flushleft} \HorRule \fontsize{40}{40} \usefont{OT1}{phv}{b}{n} \color{DarkRed} \selectfont} % Horizontal rule before the title
+
+\title{{\large A GSoC 2013 Proposal}\\Enhancing Giri: \\Dynamic Slicing in LLVM}
+
+\posttitle{\par\end{flushleft}\vskip 0.5em} % Whitespace under the title
+
+\preauthor{\begin{flushleft}\large \lineskip 0.5em \usefont{OT1}{phv}{b}{sl} \color{DarkRed}} % Author font configuration
+
+\author{Mingliang Liu, } % Your name
+
+\postauthor{\footnotesize \usefont{OT1}{phv}{m}{sl} \color{Black} % Configuration for the institution name
+Tsinghua University % Your institution
+
+\par\end{flushleft}\HorRule} % Horizontal rule after the title
+
+\date{} % Add a date here if you would like one to appear underneath the title block
+%----------------------------------------------------------------------------------------
+
+\maketitle % Print the title
+
+\thispagestyle{fancy} % Enabling the custom headers/footers for the first page 
+
+%----------------------------------------------------------------------------------------
+%	ABSTRACT
+%----------------------------------------------------------------------------------------
+
+% The first character should be within \initial{}
+\initial{D}\textbf{ynamic program slicing has been used in many applications.
+Giri was a research project from UIUC, which implemented the dynamic backward slicing in LLVM.
+I think it's a good idea to extend this project in several ways:
+\begin{inparaenum}[\itshape 1\upshape)]
+\item Update the code to LLVM mainline and make it robust,
+\item Improve the performance of giri run-time,
+\item Reduce the trace size,
+\end{inparaenum}
+etc.
+}
+
+%----------------------------------------------------------------------------------------
+%	ARTICLE CONTENTS
+%----------------------------------------------------------------------------------------
+
+%------------------------------------------------
+\section*{Background}
+Program slice contains all statements in a program that directly or indirectly act the value of a variable occurrence~\cite{weiser},
+the criteria of which is a pair of statement and variables.
+We can further narrow the notion of \emph{slice},
+which contains statements that influence the value of a variable occurrence for special program inputs.
+This is referred as dynamic program slicing~\cite{agrawal1990dynamic}.
+It works on a single execution and outputs the executed statements (traces) relevant to the slicing criterion.
+
+There are many applications that use (or could benefit from) dynamic slicing, both by research and industry organizations (e.g. Microsoft, IBM).
+For example, it's long been used in software debugging model~\cite{1993debugging,1999efficient} and testing~\cite{1993incremental}.
+Sahoo et. al. from UIUC use dynamic program slicing to generate likely invariants for automated software fault localization~\cite{sahoo2013asplos}.
+Differential slicing~\cite{johnson2011differential} was a joint work by UC Berkeley, IMDEA Software Institute and CMU.
+It uses dynamic slicing to establish the sequence of value differences that affect the target,
+which can help them identifying causal execution differences for security applications.
+Gupta et. al. from the University of Arizona employed dynamic program slicing to narrow down the search for faulty code~\cite{Gupta}.
+Our group from Tsinghua University would benefit from dynamic slicing in automatically finding manual configuration errors~\cite{yin2011empirical} in software deployment (see below).
+Recently, researchers from National University of Singapore and Microsoft used dynamic slicing to debug evolving programs~\cite{Qi}.
+Dennis Jeffrey from Google built a system for debugging via online tracing and dynamic slicing with other guys from university~\cite{google}.
+Researchers from IBM Research\cite{ibm} who work on fault localization for data-centric programs,
+split the trace into multiple slices by applying dynamic slicing.
+
+\section*{Motivation}
+There are two projects public available which implement the program slicing in LLVM.
+LLVMSlicer~\cite{llvmslicer} implementation is a static backwards slicer from Masaryk University.
+It works on the well defined data and control flow equations in a white paper by F. Tip~\cite{tip1995survey}.
+Giri was a research project from UIUC, which implemented the static and dynamic backward slicing.
+It also maps LLVM IR statements to source-level statements for its output using the debug metadata.  
+The developers of Giri are active in LLVM community and willing to release their code.
+I think improving the Giri dynamic slicing code would be a good idea under their kind direction.
+
+Our goal is to release the Giri code as a sub-project of LLVM.
+As far as I know, there is no public available dynamic slicing tool in GCC or Open64.
+We choose LLVM because its scalar variables are kept in well-defined static single assignment (SSA) form,
+making definition-use chains explicit.
+As to the tool chain of Giri code,
+they currently link the Giri passes into libLTO and run on the whole program bitcode before libLTO generates native code.
+This can also ensure that each instrumented instruction gets its own unique ID.
+
+%------------------------------------------------
+\section*{Plan}
+There are several things I can do for Giri in this summer of code.
+
+\begin{enumerate}
+\item Updating the code to LLVM mainline and putting it into the giri SVN repository
+\item Reducing the trace size.
+Giri currently records the execution of each basic block, load and store, call, and return instruction.
+There are things I can do to make the trace smaller (e.g., creating one trace record for control-equivalent basic blocks).
+\item Making the giri run-time library thread safe and the slicing thread/process aware.
+Right now, I think the events of all processes and threads get thrown together in one trace file.
+Each should have a separate trace file, or trace records should indicate which thread is performing a particular operation.
+\item Improving support to correctly handle asynchronous events (e.g., signal handlers).
+\item Improving the giri run-time performance.
+The current run-time library \texttt{mmap}s a portion of the trace file into memory, writes trace records into it,
+and then synchronously \texttt{munmaps} it and then maps in the next portion of the trace file.
+This design ensures that we don't swamp memory (the application can produce trace records faster than the OS can write them to disk),
+but it doesn't overlap computation with I/O very well.
+The run-time also has a static size for how many trace records to hold in memory before flushing to disk;
+this value should be computed dynamically.
+\item Handling external library calls which is not complete for some calls.
+\end{enumerate}
+
+\begin{table}[h]
+\caption{Plan of the project}
+\centering
+\begin{tabular}{l|l}
+\toprule
+\textbf{Work} & \textbf{Weeks} \\
+\midrule
+Make Giri up to date & 1 \\
+\midrule
+Profile the code & 1 \\
+\midrule
+Make run-time library thread safe & 2 \\
+\midrule
+Handle asynchronous events & 2 \\
+\midrule
+Reduce trace size & 2 \\
+\midrule
+Improve the giri rum-time performance & 3 \\
+\midrule
+Improve source code generating & 1 \\
+\midrule
+Scrub code, write tests & 1 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section*{About Me}
+I'd like to introduce myself briefly.
+I'm a three-years PhD candidate student from Tsinghua University, China.
+My research area covers performance analysis, compiler techniques for high performance computing, and parallel computing (MPI/OpenMP). 
+
+One of my on-going work is to generate an I/O benchmark from the original application.
+The base observation is that the computation and communication statements can be deleted if they're irrelevant to the I/O pattern,
+e.g. computing the buffer content to be written into a file.
+We take use of the program slicing technique to find relevant/irrelevant statements.
+The static slicer was borrowed from LLVMSlicer and I wrote code to make it work for our application.
+We generated the line number of sliced code.
+There is a very simple source code generation script using ugly and tricky regular expressions to delete original source code according to the sliced line number.
+We're going to submit the first version of the paper recently.
+
+I also took part in one project in Open64 compiler several year ago,
+the purpose of which is to fast collect the communication trace.
+We used program slicing to delete the computation statements and kept the communication related statements.
+We generated executable binaries instead of source code from IR.
+
+Now we plan to do a project that can automatically find manual configuration errors~\cite{yin2011empirical} in software deployment.
+The dynamic slicing can help a lot since the input is the key factor to locate errors.
+We have not a concrete plan for this project, but the dynamic slicing is heavily needed.
+Our long-term plan is to add more features, e.g. Objective-C/C++ support, thing slicing~\cite{sridharan2007thin}.
+
+My email is \href{liuml07@gmail.com}{liuml07@gmail.com}.
+My homepage is at \href{http://pacman.cs.tsinghua.edu.cn/\~liuml07}{http://pacman.cs.tsinghua.edu.cn/\string~liuml07}
+
+%------------------------------------------------
+\bibliographystyle{plain}
+\bibliography{references} 
+
+\end{document}
