@@ -2,13 +2,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-struct result_t
+typedef struct result
 {
     int result;
     int count;
-};
+} result_t;
 
-void calc(int x, struct result_t *y, struct result_t *z)
+void calc(int x, result_t *y, result_t *z)
 {
     if (x < 0)
     {
@@ -35,7 +35,7 @@ void calc(int x, struct result_t *y, struct result_t *z)
 int main(int argc, char *argv[])
 {
     int x, ret;
-    struct result_t y = {0, 0}, z = {0, 0};
+    result_t y = {0, 0}, z = {0, 0};
 
     x = atoi(argv[1]);
 
