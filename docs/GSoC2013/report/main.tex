@@ -158,17 +158,17 @@ The tracing pass instruments code to record three different pieces of informatio
 \end{inparaenum}
 The slicing pass initializes a work list with the starting instruction (also called \emph{criterion}) of slicing.
 For each dynamic value in the work list,
-the slicing pass handles both data-flow and control-flow dependences for it.
-Static control-dependence analysis is employed to determine which value forced the execution of the basic block where the instruction locates.
-Next, the slicing pass uses the data-dependence analysis to find the most recent execution of the instruction generating that value.
-The dynamic values brought by control or data dependence are added to the work list if not processed before.
+the slicing pass computes both data-flow and control-flow dependences for it using program SSA form and trace. First, we compute all the dynamic instructions which influence the current dynamic value under consideration through direct flow of data values.
+Next, static control-dependence analysis is employed to determine which values or instructions can directly force the execution of the basic block to which this dynamic value belongs.
+Then, the slicing pass uses the trace records to find the most recent dynamic instance of those values or instructions which forces the execution of this dynamic value.
+The dynamic values computed by control or data dependence are added to the work list if not already processed earlier.
 The slicing pass does not stop until all dynamic values in the work list are processed.
-In the end, it reports the dynamic slice of the specific program execution as well as the source code line number information.
+In the end, it reports the dynamic slice of the program execution from the slice starting point in terms of LLVM instructions as well as the source code line numbers.
 
 Since most instructions operate on SSA scalar values, we only refer to dynamic trace whenever needed.
-For example, we can get all operands of an \texttt{add} instruction in the SSA form without accessing the trace file.
+For example, we can get all the operands of an \texttt{add} instruction from the program SSA form without accessing the trace file.
 However, when we try to find all the \texttt{store} instructions which feed value to a \texttt{load} instruction,
-we need to scan the trace file backward since the data read by the \texttt{load} instruction may be written by many possible \texttt{store} instructions,
+we need to scan the trace file since the data read by the \texttt{load} instruction may be written by many possible \texttt{store} instructions,
 which can only be determined accurately at runtime.
 
 To make the slicing pass thread aware,
@@ -184,7 +184,7 @@ There are several things we did in this summer:
 	\item \textbf{Update the code to LLVM mainline.}
 		\begin{itemize}
 			\item Clean up the code for version 3.1
-			\item Make the code update to the latest LLVM 3.4 (\texttt{r191529})
+			\item Make the code up-to-date with the latest LLVM 3.4 revision (\texttt{r191529})
 		\end{itemize}
 	\item \textbf{Make the Giri run-time library thread safe and the slicing pass thread aware}.
 		The trace records of all threads are written to a single file.
@@ -214,7 +214,7 @@ There are several things we did in this summer:
 
 %------------------------------------------------
 \section{Future Work}
-The following are the list of future work we are going to address in the next few months.
+The following is the list of future work we are going to address in the next few months.
 An updated list is maintained online at the \href{https://github.com/liuml07/giri/wiki/TODO}{wiki page of Giri at github.com}.
 \label{sec:todo}
 \begin{enumerate}
