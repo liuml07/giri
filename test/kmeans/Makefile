@@ -1,7 +1,7 @@
 ##===- giri/test/kmeans/Makefile ---------------------------*- Makefile -*-===##
 
 VERSION ?= pthread
-CRITERION_TYPE ?= loc
+CRITERION_TYPE ?= inst
 DEBUGFLAGS ?= -debug
 INPUT ?= 16
 
