@@ -22,7 +22,8 @@
 
 \lstdefinestyle{giricode}{
 	belowcaptionskip=1\baselineskip,
-	breaklines=true,
+	breaklines=false,
+	frame=tb,
 	numbers=left,                    % where to put the line-numbers; possible values are (none, left, right)
 	numbersep=5pt,                   % how far the line-numbers are from the code
 	numberstyle=\tiny\color{gray}, % the style that is used for the line-numbers
@@ -109,8 +110,8 @@ Program slice contains all statements in a program that directly or indirectly a
 We can furthure narrow down the notion of the \emph{slice},
 which contains dynamic program statements that influence the instance of a variable or instruction for \textbf{given} program inputs.
 This is called \emph{dynamic program slicing}~\cite{agrawal1990dynamic}.
-There are many applications that use (or could benefit from) dynamic slicing.
-For example, it's long been used in software debugging~\cite{1993debugging,1999efficient} and testing~\cite{1993incremental}.
+There are many applications from research and industry organizations which use (or could benefit from) dynamic slicing.
+For example, it has long been used in software debugging~\cite{1993debugging,1999efficient} and testing~\cite{1993incremental}.
 However, to the best of our knowledge, there is no publicly available dynamic slicing tool in either GCC or Open64.
 
 Sahoo et. al. use dynamic program slicing to filter/remove false positive candidate root causes for automated software fault localization~\cite{sahoo2013asplos}.
@@ -150,7 +151,8 @@ The tracing pass instruments code to record three different pieces of informatio
 When the slicing pass first adds instructions from a dynamic execution of a basic block to the backwards slice,
 it uses static control-dependence analysis to determine which value forced the execution of that basic block.
 Giri will then find the most recent execution of the instruction generating that value and add it to the backwards slice.
-With the help of SSA, we only refer to dynamic trace whenever needed.
+Since most instructions operate on SSA scalar values, we only refer to dynamic trace whenever needed.
+For example the \texttt{load/store} address can be determined from the explicit SSA graph in the LLVM IR representation of the program.
 The slicing pass ends when all dynamic values are processed and reports the dynamic slice of the specific program execution.
 
 To make the slicing pass thread aware,
@@ -160,7 +162,7 @@ The slicing pass checks the thread id when scanning the trace file for a given d
 %------------------------------------------------
 \section{Progress}
 \label{sec:progress}
-Our goal of GSoC was to make the Giri code update to the latest LLVM version, improve its runtime performance, and/or reduce the tracing cost.
+Our goal of GSoC was to make the Giri code up-to-date with the latest LLVM version, improve its runtime performance, and/or reduce the tracing overhead.
 There are several things we did in this summer:
 \begin{enumerate}
 	\item \textbf{Update the code to LLVM mainline.}
@@ -169,42 +171,45 @@ There are several things we did in this summer:
 			\item Make the code update to the latest LLVM 3.4 (\texttt{r191529})
 		\end{itemize}
 	\item \textbf{Make the Giri run-time library thread safe and the slicing pass thread aware}.
-		The operation traces of all threads are written to a single file.
-		Trace records include thread id (\texttt{pthread\_t}), which indicates the thread performing a particular operation.
-		We use locks when write traces to file in order to avoid the race condition.
+		The traces records of all threads are written to a single file.
+		In addition to other information, trace records also include thread id (\texttt{pthread\_t}),
+		which indicates the thread performing that particular operation.
+		We use locks when when we write trace records to file in order to avoid race conditions.
 	\item \textbf{Improve the Giri run-time performance.}
-		We fixed the bug of \texttt{mmap} function call at the end of the tracing.
+		We checked every call to function \texttt{mmap} as well as the parameters, and eliminated the useless ones.
+		For example, at the end of the tracing, it is not needed to re-\texttt{mmap} once all traces are synchronized to disk file.
 		Giri now dynamically computes the cache size of trace records to hold in memory before flushing to disk.
-	\item \textbf{Write dozens of unit tests and try several real programs.}
-		There is also a simple test framework which runs all the unit tests at the top level of \texttt{giri/test/} and report the result.
-		In the future development, every patch should be checked before committing it to the git repository.
+	\item \textbf{Write dozens of unit tests and try more real programs.}
+		We had few large real program before like squid, apache, MySQL.
+		There is also a simple test framework which runs all the unit tests at the top level of \texttt{giri/test/} and report the results.
+		In the future development, every patch should make all unit tests pass before committing it to the git repository.
 	\item \textbf{Reduce the trace size.}
-		We truncate the file at the end of tracer according to its real size.
+		We truncate the trace file at the end of tracing according to its real size.
 	\item \textbf{Write documents for the project.}\\
 		There are several sample pages:
 		\begin{itemize}
 			\item \href{https://github.com/liuml07/giri/wiki}{The Wiki Page Home}.
 			\item \href{https://github.com/liuml07/giri/wiki/How-to-Compile-Giri}{How to Compile Giri}.
-			\item \href{https://github.com/liuml07/giri/wiki/Hello-World}{Hello World!}
+			\item \href{https://github.com/liuml07/giri/wiki/Hello-World}{Hello World! Example}
 			\item \href{https://github.com/liuml07/giri/wiki/Example-Usage}{Example Usage With An Example}.
 		\end{itemize}
 \end{enumerate}
 
 %------------------------------------------------
-\section{TODO List}
-The following are the TODO list we're going to address in the next few months.
-An update one is maintained online at the \href{https://github.com/liuml07/giri/wiki/TODO}{wiki page of Giri at github.com}.
+\section{Future Work}
+The following are the future work list we are going to address in the next few months.
+An update list is maintained online at the \href{https://github.com/liuml07/giri/wiki/TODO}{wiki page of Giri at github.com}.
 \label{sec:todo}
 \begin{enumerate}
-	\item Improve the performance of locking mechanism at the runtime
+	\item Improve the performance of locking mechanism of the Giri runtime
 	\item Write more unit tests with complicated direct/indirect recursive function calls
 	\item Double check the \texttt{TraceFile.cpp} to make sure the thread id be checked correctly
 	\item Add \texttt{tool/Tracer.cpp} to the make list. It was removed when upgrading to LLVM 3.4
-	\item Pass more real world programs and add them to the \texttt{test/} directory
+	\item Try more real world programs and add them to the \texttt{test/} directory
 	\item Try large test programs, e.g. \emph{nginx}, \emph{squid}, etc
-	\item Make Giri code runnable at other platforms besides Linux, e.g. Mac OS X, Cygwin, and FreeBSD.
-	\item Consider more special function calls in \texttt{TracingNoGiri::visitSpecialCall()} function of the tracing pass
-	\item Parallelize the code writing the entry cache to trace file and adding entry to the cache.
+	\item Make Giri code useful for other platforms besides Linux, e.g. Mac OS X, Cygwin, and FreeBSD.
+	\item Consider more special function calls, which are intrinsic LLVM instructions (like \texttt{strcat} and \texttt{calloc}) in \texttt{TracingNoGiri::visitSpecialCall()}
+	\item Parallelize the code which writes the entry cache containing trace records to trace file and adds trace records to the entry cache.
 \end{enumerate}
 
 %------------------------------------------------
@@ -212,12 +217,12 @@ An update one is maintained online at the \href{https://github.com/liuml07/giri/
 \label{sec:contact}
 As the first publicly available dynamic slicing tool,
 Giri was made better during the GSoC. We updated the code to LLVM mainline, reduced the trace size, made it thread-aware, and improve the performance of its run-time.
-We publish our code at \href{https://github.com/liuml07/giri}{https://github.com/liuml07/giri}~\cite{giri}.
+We have published our code at \href{https://github.com/liuml07/giri}{https://github.com/liuml07/giri}~\cite{giri}.
 
 The code is still under active development.
-Dr. Swarup will direct Mingliang LIU in the future to make the Giri code better.
-There are other guys from Tsinghua University, Xi'an Jiaotong University and University of Miami,
-who wrote to us in email hoping to use and contribute to Giri project.
+Dr. Swarup will direct Mingliang LIU in future to make the Giri code better.
+There are other researchers from Tsinghua University, Xi'an Jiaotong University and University of Miami,
+who contacted us in email hoping to use and contribute to Giri project.
 For more information, please visit the homepage above.
 
 %------------------------------------------------
