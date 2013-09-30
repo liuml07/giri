@@ -107,8 +107,9 @@ We achieved several improvements to Giri during GSoC 2013:
 %------------------------------------------------
 \section{Introduction}
 Program slice contains all statements in a program that directly or indirectly affect the value of a variable or instruction~\cite{weiser}.
-We can furthure narrow down the notion of the \emph{slice},
-which contains dynamic program statements that influence the instance of a variable or instruction for \textbf{given} program inputs.
+We can further narrow down the notion of the \emph{slice}.
+which contains all statements that actually affect the value of a variable at a program point for a particular execution of the program,
+rather than all statements that may have affected the value of a variable at a program point for any arbitrary execution of the program.
 This is called \emph{dynamic program slicing}~\cite{agrawal1990dynamic}.
 There are many applications from research and industry organizations which use (or could benefit from) dynamic slicing.
 For example, it has long been used in software debugging~\cite{1993debugging,1999efficient} and testing~\cite{1993incremental}.
@@ -123,7 +124,7 @@ To make the Giri up-to-date and robust for general use, we enhanced the code in 
 The report is organized as following.
 Section~\ref{sec:overview} shows the internal architecture of Giri, including how it works and how to use it.
 Section~\ref{sec:progress} lists the progress we made during the GSoC 2013.
-Section~\ref{sec:todo} lists the future work to improve Giri further, instead of TODO (everywhere) write future work.
+Section~\ref{sec:todo} lists the future work to improve Giri further.
 Section~\ref{sec:contact} concludes our work.
 
 %------------------------------------------------
@@ -132,7 +133,8 @@ Section~\ref{sec:contact} concludes our work.
 \label{sec:overview}
 The following is an example program.
 \lstinputlisting[language=C, style=giricode]{../../test/UnitTests/test14/struct-ptr.c}
-Given the input \texttt{x = 10}, the source line numbers affect the return value are: $<$\emph{27, 40, 42, 44, 47}$>$.
+Given the input \texttt{10} to this program from command line,
+the source line numbers affect the return value are: $<$\emph{20, 27, 40, 42, 44, 47}$>$.
 
 The default start point of slicing is the \texttt{return} instruction at the \texttt{main} function.
 Note that there is only one \texttt{return} when the main executes.
@@ -167,7 +169,7 @@ There are several things we did in this summer:
 \begin{enumerate}
 	\item \textbf{Update the code to LLVM mainline.}
 		\begin{itemize}
-			\item Release a v3.1 version which works with LLVM 3.1
+			\item Delete useless code for version 3.1 which works with LLVM 3.1
 			\item Make the code update to the latest LLVM 3.4 (\texttt{r191529})
 		\end{itemize}
 	\item \textbf{Make the Giri run-time library thread safe and the slicing pass thread aware}.
@@ -190,8 +192,8 @@ There are several things we did in this summer:
 		\begin{itemize}
 			\item \href{https://github.com/liuml07/giri/wiki}{The Wiki Page Home}.
 			\item \href{https://github.com/liuml07/giri/wiki/How-to-Compile-Giri}{How to Compile Giri}.
-			\item \href{https://github.com/liuml07/giri/wiki/Hello-World}{Hello World! Example}
-			\item \href{https://github.com/liuml07/giri/wiki/Example-Usage}{Example Usage With An Example}.
+			\item \href{https://github.com/liuml07/giri/wiki/Hello-World}{Hello World! Example}.
+			\item \href{https://github.com/liuml07/giri/wiki/Example-Usage}{Command Line Usage With An Example}.
 		\end{itemize}
 \end{enumerate}
 
@@ -201,14 +203,14 @@ The following are the future work list we are going to address in the next few m
 An update list is maintained online at the \href{https://github.com/liuml07/giri/wiki/TODO}{wiki page of Giri at github.com}.
 \label{sec:todo}
 \begin{enumerate}
-	\item Improve the performance of locking mechanism of the Giri runtime
-	\item Write more unit tests with complicated direct/indirect recursive function calls
-	\item Double check the \texttt{TraceFile.cpp} to make sure the thread id be checked correctly
-	\item Add \texttt{tool/Tracer.cpp} to the make list. It was removed when upgrading to LLVM 3.4
-	\item Try more real world programs and add them to the \texttt{test/} directory
-	\item Try large test programs, e.g. \emph{nginx}, \emph{squid}, etc
+	\item Improve the performance of locking mechanism of the Giri runtime.
+	\item Write more unit tests with complicated direct/indirect recursive function calls.
+	\item Double check the \texttt{TraceFile.cpp} to make sure the thread id be checked correctly.
+	\item Add \texttt{tool/Tracer.cpp} to the make list. It was removed when upgrading to LLVM 3.4.
+	\item Try more real world programs and add them to the \texttt{test/} directory.
+	\item Try large test programs, e.g. \emph{nginx}, \emph{squid}, etc.
 	\item Make Giri code useful for other platforms besides Linux, e.g. Mac OS X, Cygwin, and FreeBSD.
-	\item Consider more special function calls, which are intrinsic LLVM instructions (like \texttt{strcat} and \texttt{calloc}) in \texttt{TracingNoGiri::visitSpecialCall()}
+	\item Consider more special function calls, which are intrinsic LLVM instructions (like \texttt{strcat} and \texttt{calloc}) in \texttt{TracingNoGiri::visitSpecialCall()}.
 	\item Parallelize the code which writes the entry cache containing trace records to trace file and adds trace records to the entry cache.
 \end{enumerate}
 
