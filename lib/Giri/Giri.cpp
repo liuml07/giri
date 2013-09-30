@@ -53,7 +53,7 @@ StartOfSliceInst("criterion-inst",
                  cl::init(""));
 
 static cl::opt<bool>
-TraceCD("trace-cd", cl::desc("Trace control dependence"), cl::init(false));
+TraceCD("trace-cd", cl::desc("Trace control dependence"), cl::init(true));
 
 //===----------------------------------------------------------------------===//
 //                        Giri Pass Statistics
