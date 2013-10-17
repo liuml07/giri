@@ -1,4 +1,4 @@
-##===- giri/test/UnitTests/test4/Makefile ------------------*- Makefile -*-===##
+##===- giri/test/UnitTests/test21/Makefile -----------------*- Makefile -*-===##
 
 NAME = hwtype
 INPUT ?= t Giri
