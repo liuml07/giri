@@ -172,11 +172,11 @@ DynBasicBlock TraceFile::getExecForcer(DynBasicBlock DBB,
 
   // Find the execution of the basic block that forced execution of the
   // specified basic block.
-  unsigned long index = findPreviousIDWithRecursion(DBB.BB->getParent(),
-                                                    DBB.index - 1,
-                                                    RecordType::BBType,
-                                                    trace[DBB.index].tid,
-                                                    bbnums);
+  unsigned long index = findPreviousID(DBB.BB->getParent(),
+                                       DBB.index - 1,
+                                       RecordType::BBType,
+                                       trace[DBB.index].tid,
+                                       bbnums);
 
   if (index == maxIndex) // We did not find the record due to some reason
     return DynBasicBlock(nullptr, maxIndex);
@@ -205,11 +205,11 @@ bool TraceFile::normalize(DynBasicBlock &DBB) {
   // Search for the basic block within the dynamic trace. Start with the
   // current entry as it may already be normalized.
   unsigned bbID = bbNumPass->getID(DBB.BB);
-  unsigned long index = findPreviousIDWithRecursion(DBB.BB->getParent(),
-                                                    DBB.index,
-                                                    RecordType::BBType,
-                                                    trace[DBB.index].tid,
-                                                    bbID);
+  unsigned long index = findPreviousID(DBB.BB->getParent(),
+                                       DBB.index,
+                                       RecordType::BBType,
+                                       trace[DBB.index].tid,
+                                       bbID);
   if (index == maxIndex) { // Could not find required trace entry
     DEBUG(errs() << "Buggy values found at normalization. Function name: "
                  << DBB.BB->getParent()->getName().str() << "\n");
@@ -257,11 +257,11 @@ bool TraceFile::normalize(DynValue &DV) {
   // Normalize the value.
   Function *fun = BB->getParent();
   unsigned bbID = bbNumPass->getID(BB);
-  unsigned long normIndex = findPreviousIDWithRecursion(fun,
-                                                        DV.index,
-                                                        RecordType::BBType,
-                                                        trace[DV.index].tid,
-                                                        bbID);
+  unsigned long normIndex = findPreviousID(fun,
+                                           DV.index,
+                                           RecordType::BBType,
+                                           trace[DV.index].tid,
+                                           bbID);
   if (normIndex == maxIndex) { // Error, could not find required trace entry
     DEBUG(errs() << "Buggy values found at normalization. Function name: "
                  << fun->getName().str() << "\n");
@@ -512,102 +512,27 @@ unsigned long TraceFile::findNextNestedID(unsigned long start_index,
 
 /// Start searching from the specified index and continue until we find an entry
 /// with the correct ID.
-unsigned long TraceFile::findPreviousIDWithRecursion(Function *fun,
-                                                     unsigned long start_index,
-                                                     RecordType type,
-                                                     pthread_t tid,
-                                                     const unsigned id) {
-  uintptr_t funAddr;
-  // Get the runtime trace address of this function fun. If this function is
-  // not called or called through indirect call we won't have its runtime
-  // trace address. So, we can't track recursion for them.
-  if (traceFunAddrMap.find(fun) != traceFunAddrMap.end())
-    funAddr = traceFunAddrMap[fun];
-  else
-    funAddr = 0;
-
-  unsigned long index = start_index;
-  signed nesting = 0;
-  do {
-    if (nesting < 0) {
-      errs() << "Call records are not matching.\n";
-      return maxIndex;
-    }
-
-    // Determine the address of the called/Return function;
-    /* Function *calledFun = nullptr;
-    CallInst *CI;
-    if ((CI = dyn_cast<CallInst>(lsNumPass->getInstByID(trace[index].id)))) {
-      // For recursion through indirect function calls it'll be 0 and it will
-      // not work
-      calledFun = CI->getCalledFunction();
-      }*/
-
-    // We have found an entry matching our criteria.  If the nesting level is
-    // zero, then this is our entry.  Otherwise, we know that we've found a
-    // matching entry within a nested basic block entry.
-    if (trace[index].type == type &&
-        trace[index].tid == tid &&
-        trace[index].id == id) {
-      if (nesting == 0)
-        return index;
-      // If we are seraching for call record, then there may be problem due to
-      // self recursion. In this case, we return the index at nesting level 1 as
-      // we have already seen its return record and this call record should have
-      // decreased the nesting level to 0.
-      else if (nesting == 1 &&
-               type == RecordType::CLType &&
-               trace[index].type == RecordType::CLType &&
-               trace[index].address == funAddr)
-        return index;
-    }
-
-    // If this is a return entry with an address value equal to the function
-    // address of the current value, we know that we've hit a recursive (i.e.,
-    // nested) execution of the basic block. Increase the nesting level.
-    if (trace[index].type == RecordType::RTType &&
-        trace[index].tid == tid &&
-        trace[index].address /*calledFun*/ == funAddr)
-      ++nesting;
-
-    // We have found an call entry with an address value equal to the function
-    // address of the current value, we know that we've found a matching entry
-    // within a nested basic block entry and should therefore decrease the
-    // nesting level.
-    if (trace[index].type == RecordType::CLType &&
-        trace[index].tid == tid &&
-        trace[index].address /*calledFun*/ == funAddr)
-      --nesting;
-
-    --index; // Check the next index.
-  } while (index != 0);
-
-  // @TODO: delete this
-  return maxIndex;
-
-  // We didn't find the record.  If this is a basic block record, then grab the
-  // END record.
-  // ************* WHY?????? Before we may end before flushing all BB ends *****
-  if (type == RecordType::BBType) {
-    for (index = maxIndex; trace[index].type != RecordType::ENType; --index)
-      ;
-    return index;
-  }
-
-  report_fatal_error("Did not find desired trace of basic block!\n");
+unsigned long TraceFile::findPreviousID(Function *fun,
+                                        unsigned long start_index,
+                                        RecordType type,
+                                        pthread_t tid,
+                                        const unsigned id) {
+  set<unsigned> ids;
+  ids.insert(id);
+  return findPreviousID(fun, start_index, type, tid, ids);
 }
 
 /// Start searching from the specified index and continue until we find an
 /// entry with the correct ID.
-unsigned long TraceFile::findPreviousIDWithRecursion(Function *fun,
-                                                     unsigned long start_index,
-                                                     RecordType type,
-                                                     pthread_t tid,
-                                                     const set<unsigned> &ids) {
-  uintptr_t funAddr;
+unsigned long TraceFile::findPreviousID(Function *fun,
+                                        unsigned long start_index,
+                                        RecordType type,
+                                        pthread_t tid,
+                                        const set<unsigned> &ids) {
   // Get the runtime trace address of this function fun
   // If this function is not called or called through indirect call we won't
   // have its runtime trace address. So, we can't track recursion for them.
+  uintptr_t funAddr;
   if (traceFunAddrMap.find(fun) != traceFunAddrMap.end())
      funAddr = traceFunAddrMap[fun];
   else
@@ -627,12 +552,13 @@ unsigned long TraceFile::findPreviousIDWithRecursion(Function *fun,
       if (nesting == 0)
         return index;
       // If we are seraching for call record, then there may be problem due to
-      // self recursion In this case, we return the index at nesting level 1
+      // self recursion. In this case, we return the index at nesting level 1
       // as we have already seen its return record and this call record should
       // have decreased the nesting level to 0.
       else if (nesting == 1 &&
                type == RecordType::CLType &&
                trace[index].type == RecordType::CLType &&
+               trace[index].tid == tid &&
                trace[index].address == funAddr)
         return index;
     }
@@ -669,7 +595,6 @@ unsigned long TraceFile::findPreviousIDWithRecursion(Function *fun,
   report_fatal_error("Did not find desired trace of basic block!");
 }
 
-
 void TraceFile::getSourcesForPHI(DynValue &DV, Worklist_t &Sources) {
   // Get the PHI instruction.
   PHINode *PHI = dyn_cast<PHINode>(DV.V);
@@ -680,11 +605,11 @@ void TraceFile::getSourcesForPHI(DynValue &DV, Worklist_t &Sources) {
   // @FIXME: IS IT NEEDED AFTER NORMALIZE()??
   Function *Func = PHI->getParent()->getParent();
   unsigned phiID = bbNumPass->getID(PHI->getParent());
-  unsigned long block_index = findPreviousIDWithRecursion(Func,
-                                                          DV.index,
-                                                          RecordType::BBType,
-                                                          trace[DV.index].tid,
-                                                          phiID);
+  unsigned long block_index = findPreviousID(Func,
+                                             DV.index,
+                                             RecordType::BBType,
+                                             trace[DV.index].tid,
+                                             phiID);
   if (block_index == maxIndex) { // Could not find required trace entry
     errs() << __func__ << " failed DV.\n";
     return;
@@ -696,11 +621,11 @@ void TraceFile::getSourcesForPHI(DynValue &DV, Worklist_t &Sources) {
   set<unsigned> predIDs;
   for (unsigned index = 0; index < PHI->getNumIncomingValues(); ++index)
     predIDs.insert(bbNumPass->getID(PHI->getIncomingBlock(index)));
-  unsigned long pred_index = findPreviousIDWithRecursion(Func,
-                                                         block_index - 1,
-                                                         RecordType::BBType,
-                                                         trace[DV.index].tid,
-                                                         predIDs);
+  unsigned long pred_index = findPreviousID(Func,
+                                            block_index - 1,
+                                            RecordType::BBType,
+                                            trace[DV.index].tid,
+                                            predIDs);
   if (pred_index == maxIndex) { // Could not find required trace entry
     errs() << __func__ << " failed BLOCK.\n";
     return;
@@ -717,7 +642,7 @@ void TraceFile::getSourcesForPHI(DynValue &DV, Worklist_t &Sources) {
       return;
     }
 
-  report_fatal_error("Didn't find predecessor basic block in trace!");
+  report_fatal_error("No predecessor BB found for PHI!");
 }
 
 void TraceFile::getSourcesForArg(DynValue &DV, Worklist_t &Sources) {
@@ -974,9 +899,7 @@ void TraceFile::getSourcesForLoad(DynValue &DV,
   // that these should be immediently before the load record; therefore, we
   // should not need to worry about nesting.
   for (unsigned index = 1; index < count; ++index) {
-    start_index = findPreviousID(start_index - 1,
-                                 RecordType::LDType,
-                                 loadID);
+    start_index = findPreviousID(start_index - 1, RecordType::LDType, loadID);
     load_indices[index]= start_index;
   }
 
@@ -1254,13 +1177,13 @@ void TraceFile::getSourcesForCall(DynValue &DV, Worklist_t &Sources) {
     // trace and see what function it called at run-time.
     unsigned callID = lsNumPass->getID(CI);
     // FIXME: Will indirect call create a problem in
-    // findPreviousIDWithRecursion as indirect calls are not handled??
+    // findPreviousID as indirect calls are not handled??
     Function *Func = CI->getParent()->getParent();
-    unsigned long callIndex = findPreviousIDWithRecursion(Func,
-                                                          DV.index,
-                                                          RecordType::CLType,
-                                                          trace[DV.index].tid,
-                                                          callID);
+    unsigned long callIndex = findPreviousID(Func,
+                                             DV.index,
+                                             RecordType::CLType,
+                                             trace[DV.index].tid,
+                                             callID);
     if (callIndex == maxIndex) { // Could not find required trace entry
       errs() << __func__ << " failed to find\n";
       return;
@@ -1415,11 +1338,11 @@ void TraceFile::getSourceForSelect(DynValue &DV, Worklist_t &Sources) {
   // Now find the index of the most previous select instruction.
   unsigned selectID = lsNumPass->getID(SI);
   Function *Func = SI->getParent()->getParent();
-  unsigned long selectIndex = findPreviousIDWithRecursion(Func,
-                                                          DV.index,
-                                                          RecordType::PDType,
-                                                          trace[DV.index].tid,
-                                                          selectID);
+  unsigned long selectIndex = findPreviousID(Func,
+                                             DV.index,
+                                             RecordType::PDType,
+                                             trace[DV.index].tid,
+                                             selectID);
   if (selectIndex == maxIndex) { // Could not find required trace entry
     errs() << __func__ << " failed to find.\n";
     return;

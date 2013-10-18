@@ -267,9 +267,30 @@ private:
                                RecordType type,
                                const unsigned id);
 
-  // CHANGE TO USE WithRecursion functionality here and also in recursion
-  // handling of loads/stores, calls/returns mapping, and recursion handling
-  // during invariants failure detection
+  /// This method searches backwards in the trace file for an entry of the
+  /// specified type and ID taking recursion into account.
+  /// FIXME: Doesn't work for recursion through indirect function calls
+  ///
+  /// \param fun - Function to which this search entry belongs.
+  ///              Needed to check recursion.
+  /// \param start_index - The index in the trace file which will be examined
+  ///                      first for a match.
+  /// \param type - The type of entry for which the caller searches.
+  /// \param tid - The thread ID
+  /// \param ids - A set of ids of the entry for which the caller searches.
+  /// \return The index in the trace of entry with the specified type and ID is
+  /// returned; If it can't find a matching entry it'll return maxIndex as error
+  /// code.
+  unsigned long findPreviousID(Function *fun,
+                               unsigned long start_index,
+                               RecordType type,
+                               pthread_t tid,
+                               const std::set<unsigned> &ids);
+  unsigned long findPreviousID(Function *fun,
+                               unsigned long start_index,
+                               RecordType type,
+                               pthread_t tid,
+                               const unsigned id);
 
   /// This method is like findPreviousID() but takes recursion into account.
   /// \param start_index - The index before which we should start the search
@@ -283,10 +304,6 @@ private:
                                      pthread_t tid,
                                      const unsigned id,
                                      const unsigned nestedID);
-
-  // CHANGE TO USE WithRecursion functionality here and also in recursion
-  // handling of loads/stores, calls/returns mapping, and recursion handling
-  // during invariants failure detection
 
   /// This method finds the next entry in the trace file that has the specified
   /// type and ID.  However, it also handles nesting.
@@ -332,47 +349,6 @@ private:
                                     const unsigned bbID,
                                     const unsigned callID,
                                     pthread_t tid);
-
-  /// This method searches backwards in the trace file for an entry of the
-  /// specified type and ID taking recursion into account.
-  ///
-  /// FIXME: Doesn't work for recursion through indirect function calls
-  ///
-  /// \param fun - Function to which this search entry belongs.
-  ///              Needed to check recursion.
-  /// \param start_index - The index in the trace file which will be examined
-  ///                      first for a match.
-  /// \param type - The type of entry for which the caller searches.
-  /// \param tid - The thread ID
-  /// \param id - The ID field of the entry for which the caller searches.
-  /// \return The index in the trace of entry with the specified type and ID is
-  /// returned; If it can't find a matching entry it'll return maxIndex as
-  /// error code
-  unsigned long findPreviousIDWithRecursion(Function *fun,
-                                            unsigned long start_index,
-                                            RecordType type,
-                                            pthread_t tid,
-                                            const unsigned id);
-
-  /// This method searches backwards in the trace file for an entry of the
-  /// specified type and ID taking recursion into account.
-  /// FIXME: Doesn't work for recursion through indirect function calls
-  ///
-  /// \param fun - Function to which this search entry belongs.
-  ///              Needed to check recursion.
-  /// \param start_index - The index in the trace file which will be examined
-  ///                      first for a match.
-  /// \param type - The type of entry for which the caller searches.
-  /// \param tid - The thread ID
-  /// \param ids - A set of ids of the entry for which the caller searches.
-  /// \return The index in the trace of entry with the specified type and ID is
-  /// returned; If it can't find a matching entry it'll return maxIndex as error
-  /// code.
-  unsigned long findPreviousIDWithRecursion(Function *fun,
-                                            unsigned long start_index,
-                                            RecordType type,
-                                            pthread_t tid,
-                                            const std::set<unsigned> &ids);
 
   /// This method, given a dynamic value that reads from memory, will find the
   /// dynamic value(s) that stores into the same memory.
