@@ -8,13 +8,12 @@
 ##===----------------------------------------------------------------------===##
 
 LEVEL = ../..
-TOOLNAME=tracer
+TOOLNAME = tracer
+CXXFLAGS += -fno-rtti
 REQUIRES_EH := 1
 
-LINK_COMPONENTS :=  bitreader bitwriter instrumentation scalaropts ipo \
-										nativecodegen
+LINK_COMPONENTS := bitreader bitwriter instrumentation scalaropts ipo nativecodegen
 
 USEDLIBS := giri.a dgutility.a
 
 include $(LEVEL)/Makefile.common
-

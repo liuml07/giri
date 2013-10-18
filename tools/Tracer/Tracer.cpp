@@ -141,7 +141,7 @@ int main(int argc, char **argv) {
 
         // Make sure that the Out file gets unlinked from the disk if we get a
         // SIGINT
-        sys::RemoveFileOnSignal(sys::Path(OutputFilename));
+        sys::RemoveFileOnSignal(OutputFilename);
       } else {
         Out = &std::cout;
       }
@@ -172,7 +172,7 @@ int main(int argc, char **argv) {
 
       // Make sure that the Out file gets unlinked from the disk if we get a
       // SIGINT
-      sys::RemoveFileOnSignal(sys::Path(OutputFilename));
+      sys::RemoveFileOnSignal(OutputFilename);
     }
 
     raw_os_ostream RawOut(*Out);
