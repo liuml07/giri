@@ -151,7 +151,7 @@ void DynamicGiri::findSlice(DynValue &Initial,
   ++NumDynSources;
 
   // Find the backwards slice.
-  while (Worklist.size()) {
+  while (!Worklist.empty()) {
     DynValue *DV = Worklist.front();
     Worklist.pop_front();
 
