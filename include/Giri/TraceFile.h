@@ -237,6 +237,7 @@ private:
 
   unsigned long findPreviousID(unsigned long start_index,
                                RecordType type,
+                               pthread_t tid,
                                const unsigned id);
   unsigned long findPreviousID(Function *fun,
                                unsigned long start_index,

@@ -178,7 +178,7 @@ DynBasicBlock TraceFile::getExecForcer(DynBasicBlock DBB,
                                        trace[DBB.index].tid,
                                        bbnums);
 
-  if (index == maxIndex) // We did not find the record due to some reason
+  if (index == maxIndex) // We did not find the record
     return DynBasicBlock(nullptr, maxIndex);
 
   // Assert that we have found the entry.
@@ -243,7 +243,7 @@ bool TraceFile::normalize(DynValue &DV) {
   }
 
   // Get the basic block to which this value belongs.
-  BasicBlock *BB = 0;
+  BasicBlock *BB = nullptr;
   if (Instruction *I = dyn_cast<Instruction>(DV.V))
     BB = I->getParent();
   else if (Argument *Arg = dyn_cast<Argument>(DV.V))
@@ -340,6 +340,7 @@ void TraceFile::fixupLostLoads() {
         // If there is no overlapping entry for the load, then it is a lost
         // load.  Change its address to zero.
         if (Stores.find(trace[index]) == Stores.end()) {
+          DEBUG(dbgs() << "Fixing load for index " << index << "\n");
           trace[index].address = 0;
         }
         break;
@@ -390,12 +391,15 @@ void TraceFile::buildTraceFunAddrMap(void) {
 /// returned.
 unsigned long TraceFile::findPreviousID(unsigned long start_index,
                                         RecordType type,
+                                        pthread_t tid,
                                         const unsigned id) {
   // Start searching from the specified index and continue until we find an
   // entry with the correct ID.
   unsigned long index = start_index;
   while (true) {
-    if (trace[index].type == type && trace[index].id == id)
+    if (trace[index].type == type &&
+        trace[index].tid == tid &&
+        trace[index].id == id)
       return index;
     if (index == 0)
       break;
@@ -976,7 +980,10 @@ void TraceFile::getSourcesForLoad(DynValue &DV,
   // that these should be immediently before the load record; therefore, we
   // should not need to worry about nesting.
   for (unsigned index = 1; index < count; ++index) {
-    start_index = findPreviousID(start_index - 1, RecordType::LDType, loadID);
+    start_index = findPreviousID(start_index - 1,
+                                 RecordType::LDType,
+                                 trace[DV.index].tid,
+                                 loadID);
     load_indices[index]= start_index;
   }
 
