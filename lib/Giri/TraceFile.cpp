@@ -329,7 +329,6 @@ void TraceFile::fixupLostLoads() {
           uintptr_t length  = maxend - address + 1;
           newEntry.address = address;
           newEntry.length = length;
-          newEntry.tid = st->tid;
           Stores.erase(st);
         }
 
@@ -1243,7 +1242,9 @@ unsigned long TraceFile::matchReturnWithCall(unsigned long start_index,
     // is zero, then we didn't find a matching return. Otherwise, we
     // know that we've found a matching entry within a nested basic
     // block entry and should therefore decrease the nesting level.
-    if (trace[index].type == RecordType::CLType && trace[index].id == callID) {
+    if (trace[index].type == RecordType::CLType &&
+        trace[index].tid == tid &&
+        trace[index].id == callID) {
       if (nesting == 0)
         report_fatal_error("Could NOT find a matching return entry for call!");
       else {
@@ -1255,7 +1256,9 @@ unsigned long TraceFile::matchReturnWithCall(unsigned long start_index,
     // If this is a basic block entry with an idential ID to the first basic
     // block on which we started, we know that we've hit a recursive (i.e.,
     // nested) execution of the basic block.  Increase the nesting level.
-    if (trace[index].type == RecordType::BBType && trace[index].id == bbID)
+    if (trace[index].type == RecordType::BBType &&
+        trace[index].tid == tid &&
+        trace[index].id == bbID)
       ++nesting;
   } while (index != 0);
 
@@ -1293,10 +1296,10 @@ void TraceFile::getSourcesForCall(DynValue &DV, Worklist_t &Sources) {
     }
 
     uintptr_t fp = trace[callIndex].address;
-    if (trace[callIndex+1].type == RecordType::RTType &&
-        trace[callIndex+1].tid == trace[callIndex].tid &&
-        trace[callIndex+1].id == trace[callIndex].id &&
-        trace[callIndex+1].address == trace[callIndex].address) {
+    if (trace[callIndex + 1].type == RecordType::RTType &&
+        trace[callIndex + 1].tid == trace[callIndex].tid &&
+        trace[callIndex + 1].id == trace[callIndex].id &&
+        trace[callIndex + 1].address == trace[callIndex].address) {
       errs() << "Most likely an (indirect) external call. Check to make sure\n";
       // Possible call to external function, just add its operands to slice
       // conservatively.
@@ -1310,7 +1313,7 @@ void TraceFile::getSourcesForCall(DynValue &DV, Worklist_t &Sources) {
 
     // Look for the exectuion of the basic block for the target function.
     // FIXME!!!! Do we need to take into account recursion here?? Probably NO
-    unsigned long targetEntryBB = findNextAddress(callIndex+1,
+    unsigned long targetEntryBB = findNextAddress(callIndex + 1,
                                                   RecordType::BBType,
                                                   trace[callIndex].tid,
                                                   fp);
