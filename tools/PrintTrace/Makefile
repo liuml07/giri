@@ -8,9 +8,8 @@
 ##===----------------------------------------------------------------------===##
 
 LEVEL = ../..
-TOOLNAME=prtrace
+TOOLNAME = prtrace
 
 LINK_COMPONENTS := support
 
 include $(LEVEL)/Makefile.common
-
