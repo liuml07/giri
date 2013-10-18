@@ -443,26 +443,19 @@ unsigned long TraceFile::findNextAddress(unsigned long start_index,
   // Start searching from the specified index and continue until we find an
   // entry with the correct type.
   unsigned long index = start_index;
-  bool found = false;
-  while (!found) {
-    if (index > maxIndex)
-      break;
+  while (index <= maxIndex) {
     if (trace[index].type == type &&
         trace[index].tid == tid &&
-        trace[index].address == address) {
-      found = true;
-      break;
-    }
+        trace[index].address == address)
+      return index;
     ++index;
   }
 
-  // sometimes assertion violated due to unknown reason in clang
-  if (!found) {
-    errs() << "Removed assertion failure in findNextAddress\n";
-    return maxIndex;
-  }
-
-  return index;
+  errs() << "start_index: " << start_index
+         << " type: " << static_cast<char>(type)
+         << " tid: " << tid
+         << " address: " << address << "\n";
+  report_fatal_error("Did not find desired subsequent entry in trace!");
 }
 
 /// Start searching from the specified index and continue until we find an
