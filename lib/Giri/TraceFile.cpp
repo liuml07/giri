@@ -292,6 +292,15 @@ struct EntryCompare {
   }
 };
 
+/// \brief Scan forward through the entire trace and record store instructions,
+/// creating a set of memory intervals that have been written.
+///
+/// Along the way, determine if there are load records for which no previous
+/// store record can match.  Mark these load records so that we don't try to
+/// find their matching stores when peforming the dynamic backwards slice.
+/// This function will be called in the constructor.
+/// This algorithm should be O(n*logn) where n is the number of elements in the
+/// trace.
 void TraceFile::fixupLostLoads() {
   // Set of written memory locations
   set<Entry, EntryCompare> Stores;
@@ -340,6 +349,16 @@ void TraceFile::fixupLostLoads() {
     }
 }
 
+/// Build a map from functions to their runtime trace address
+///
+/// FIXME: Can we record this during trace generation or similar to lsNumPass
+/// This also doesn't work with indirect calls.
+///
+/// Description: Scan forward through the entire trace and record the
+/// runtime function addresses from the trace.  and map the functions
+/// in this run to their corresponding trace function addresses which
+/// can possibly be different This algorithm should be n*c where n
+/// is the number of elements in the trace.
 void TraceFile::buildTraceFunAddrMap(void) {
   // Loop through the entire trace to look for Call records.
   for (unsigned long index = 0;
@@ -360,6 +379,15 @@ void TraceFile::buildTraceFunAddrMap(void) {
   DEBUG(dbgs() << "traceFunAddrMap.size(): " << traceFunAddrMap.size() << "\n");
 }
 
+/// This method searches backwards in the trace file for an entry of the
+/// specified type and ID.
+///
+/// \param start_index - The index in the trace file which will be examined
+///                      first for a match.
+/// \param type - The type of entry for which the caller searches.
+/// \param id - The ID field of the entry for which the caller searches.
+/// \return The index in the trace of entry with the specified type and ID is
+/// returned.
 unsigned long TraceFile::findPreviousID(unsigned long start_index,
                                         RecordType type,
                                         const unsigned id) {
@@ -387,136 +415,20 @@ unsigned long TraceFile::findPreviousID(unsigned long start_index,
   report_fatal_error("Did not find desired trace entry!");
 }
 
-unsigned long TraceFile::findPreviousNestedID(unsigned long start_index,
-                                              RecordType type,
-                                              pthread_t tid,
-                                              const unsigned id,
-                                              const unsigned nestedID) {
-  // Assert that we're starting our backwards scan on a basic block entry.
-  assert(trace[start_index].type == RecordType::BBType);
-  // Assert that we're not looking for a basic block index, since we can only
-  // use this function when entry belongs to basic block nestedID.
-  assert(type != RecordType::BBType);
-  assert(start_index > 0);
-
-  // Start searching from the specified index and continue until we find an
-  // entry with the correct ID.
-  // This works because entry id belongs to basicblock nestedID. So
-  // any more occurance of nestedID before id means a recursion.
-  unsigned long index = start_index;
-  unsigned nesting = 0;
-  do {
-    // Check the next index.
-    --index;
-    // We have found an entry matching our criteria.  If the nesting level is
-    // zero, then this is our entry.  Otherwise, we know that we've found a
-    // matching entry within a nested basic block entry and should therefore
-    // decrease the nesting level.
-    if (trace[index].type == type &&
-        trace[index].tid == tid &&
-        trace[index].id == id) {
-      if (nesting == 0) {
-        return index;
-      } else {
-        --nesting;
-        continue;
-      }
-    }
-
-    // If this is a basic block entry with an idential ID to the first basic
-    // block on which we started, we know that we've hit a recursive
-    // (i.e., nested) execution of the basic block.
-    if (trace[index].type == RecordType::BBType &&
-        trace[index].tid == tid &&
-        trace[index].id == nestedID)
-      ++nesting;
-  } while (index != 0);
-
-  // We've searched and didn't find our ID at the proper nesting level.
-  report_fatal_error("No proper basic block at the nesting level");
-}
-
-unsigned long TraceFile::findNextAddress(unsigned long start_index,
-                                         RecordType type,
-                                         pthread_t tid,
-                                         const uintptr_t address) {
-  // Start searching from the specified index and continue until we find an
-  // entry with the correct type.
-  unsigned long index = start_index;
-  while (index <= maxIndex) {
-    if (trace[index].type == type &&
-        trace[index].tid == tid &&
-        trace[index].address == address)
-      return index;
-    ++index;
-  }
-
-  errs() << "start_index: " << start_index
-         << " type: " << static_cast<char>(type)
-         << " tid: " << tid
-         << " address: " << address << "\n";
-  report_fatal_error("Did not find desired subsequent entry in trace!");
-}
-
-/// Start searching from the specified index and continue until we find an
-/// entry with the correct ID.
-unsigned long TraceFile::findNextNestedID(unsigned long start_index,
-                                          RecordType type,
-                                          const unsigned id,
-                                          const unsigned nestID,
-                                          pthread_t tid) {
-  // This works because entry id belongs to basicblock nestedID. So any more
-  // occurance of nestedID before id means a recursion.
-  unsigned nesting = 0;
-  unsigned long index = start_index;
-  while (true) {
-    // If we've searched past the end of the trace file, stop searching.
-    if (index > maxIndex)
-      break;
-
-    // If we've found the entry for which we're searching, check the nesting
-    // level.  If it's zero, we've found our entry.  If it's non-zero, decrease
-    // the nesting level and keep looking.
-    if (trace[index].type == type &&
-        trace[index].id == id &&
-        trace[index].tid == tid) {
-      if (nesting == 0)
-        return index;
-      else
-        --nesting;
-    }
-
-    // If we find a store/any instruction matching the nesting ID, then we've
-    // left one level of recursion.
-    if (trace[index].type == RecordType::BBType &&
-        trace[index].id == nestID &&
-        trace[index].tid == tid)
-      ++nesting;
-
-    ++index;
-  }
-
-  errs() << "start_index: " << start_index
-         << " type: " << static_cast<char>(type)
-         << " id: " << id
-         << " nestID: " << nestID << "\n";
-  report_fatal_error("Did not find desired subsequent entry in trace!");
-}
-
-/// Start searching from the specified index and continue until we find an entry
-/// with the correct ID.
-unsigned long TraceFile::findPreviousID(Function *fun,
-                                        unsigned long start_index,
-                                        RecordType type,
-                                        pthread_t tid,
-                                        const unsigned id) {
-  set<unsigned> ids;
-  ids.insert(id);
-  return findPreviousID(fun, start_index, type, tid, ids);
-}
-
-/// Start searching from the specified index and continue until we find an
-/// entry with the correct ID.
+/// This method searches backwards in the trace file for an entry of the
+/// specified type and ID taking recursion into account.
+/// FIXME: Doesn't work for recursion through indirect function calls
+///
+/// \param fun - Function to which this search entry belongs.
+///              Needed to check recursion.
+/// \param start_index - The index in the trace file which will be examined
+///                      first for a match.
+/// \param type - The type of entry for which the caller searches.
+/// \param tid - The thread ID
+/// \param ids - A set of ids of the entry for which the caller searches.
+/// \return The index in the trace of entry with the specified type and ID is
+/// returned; If it can't find a matching entry it'll return maxIndex as error
+/// code.
 unsigned long TraceFile::findPreviousID(Function *fun,
                                         unsigned long start_index,
                                         RecordType type,
@@ -588,6 +500,159 @@ unsigned long TraceFile::findPreviousID(Function *fun,
   report_fatal_error("Did not find desired trace of basic block!");
 }
 
+unsigned long TraceFile::findPreviousID(Function *fun,
+                                        unsigned long start_index,
+                                        RecordType type,
+                                        pthread_t tid,
+                                        const unsigned id) {
+  set<unsigned> ids;
+  ids.insert(id);
+  return findPreviousID(fun, start_index, type, tid, ids);
+}
+
+/// This method is like findPreviousID() but takes recursion into account.
+/// \param start_index - The index before which we should start the search
+///                      (i.e., we first examine the entry in the log file
+///                      at start_index - 1).
+/// \param type - The type of entry for which we are looking.
+/// \param id - The ID of the entry for which we are looking.
+/// \param nestedID - The ID of the basic block to use to find nesting levels.
+unsigned long TraceFile::findPreviousNestedID(unsigned long start_index,
+                                              RecordType type,
+                                              pthread_t tid,
+                                              const unsigned id,
+                                              const unsigned nestedID) {
+  // Assert that we're starting our backwards scan on a basic block entry.
+  assert(trace[start_index].type == RecordType::BBType);
+  // Assert that we're not looking for a basic block index, since we can only
+  // use this function when entry belongs to basic block nestedID.
+  assert(type != RecordType::BBType);
+  assert(start_index > 0);
+
+  // Start searching from the specified index and continue until we find an
+  // entry with the correct ID.
+  // This works because entry id belongs to basicblock nestedID. So
+  // any more occurance of nestedID before id means a recursion.
+  unsigned long index = start_index;
+  unsigned nesting = 0;
+  do {
+    // Check the next index.
+    --index;
+    // We have found an entry matching our criteria.  If the nesting level is
+    // zero, then this is our entry.  Otherwise, we know that we've found a
+    // matching entry within a nested basic block entry and should therefore
+    // decrease the nesting level.
+    if (trace[index].type == type &&
+        trace[index].tid == tid &&
+        trace[index].id == id) {
+      if (nesting == 0) {
+        return index;
+      } else {
+        --nesting;
+        continue;
+      }
+    }
+
+    // If this is a basic block entry with an idential ID to the first basic
+    // block on which we started, we know that we've hit a recursive
+    // (i.e., nested) execution of the basic block.
+    if (trace[index].type == RecordType::BBType &&
+        trace[index].tid == tid &&
+        trace[index].id == nestedID)
+      ++nesting;
+  } while (index != 0);
+
+  // We've searched and didn't find our ID at the proper nesting level.
+  report_fatal_error("No proper basic block at the nesting level");
+}
+
+/// This method finds the next entry in the trace file that has the specified
+/// type and ID.  However, it also handles nesting.
+unsigned long TraceFile::findNextNestedID(unsigned long start_index,
+                                          RecordType type,
+                                          const unsigned id,
+                                          const unsigned nestID,
+                                          pthread_t tid) {
+  // This works because entry id belongs to basicblock nestedID. So any more
+  // occurance of nestedID before id means a recursion.
+  unsigned nesting = 0;
+  unsigned long index = start_index;
+  while (true) {
+    // If we've searched past the end of the trace file, stop searching.
+    if (index > maxIndex)
+      break;
+
+    // If we've found the entry for which we're searching, check the nesting
+    // level.  If it's zero, we've found our entry.  If it's non-zero, decrease
+    // the nesting level and keep looking.
+    if (trace[index].type == type &&
+        trace[index].id == id &&
+        trace[index].tid == tid) {
+      if (nesting == 0)
+        return index;
+      else
+        --nesting;
+    }
+
+    // If we find a store/any instruction matching the nesting ID, then we've
+    // left one level of recursion.
+    if (trace[index].type == RecordType::BBType &&
+        trace[index].id == nestID &&
+        trace[index].tid == tid)
+      ++nesting;
+
+    ++index;
+  }
+
+  errs() << "start_index: " << start_index
+         << " type: " << static_cast<char>(type)
+         << " id: " << id
+         << " nestID: " << nestID << "\n";
+  report_fatal_error("Did not find desired subsequent entry in trace!");
+}
+
+/// This method searches forwards in the trace file for an entry of the
+/// specified type and ID.
+///
+/// This method assumes that a subsequent entry in the trace *will* match the
+/// type and address criteria.  Asserts in the code will ensure that this is
+/// true when this code is compiled with assertions enabled.
+///
+/// \param start_index - The index in the trace file which will be examined first
+///                      for a match.
+/// \param type      - The type of entry for which the caller searches.
+/// \param tid - The thread id
+/// \param address   - The address of the entry for which the caller searches.
+/// \return The index in the trace of entry with the specified type and
+/// address is returned.
+unsigned long TraceFile::findNextAddress(unsigned long start_index,
+                                         RecordType type,
+                                         pthread_t tid,
+                                         const uintptr_t address) {
+  // Start searching from the specified index and continue until we find an
+  // entry with the correct type.
+  unsigned long index = start_index;
+  while (index <= maxIndex) {
+    if (trace[index].type == type &&
+        trace[index].tid == tid &&
+        trace[index].address == address)
+      return index;
+    ++index;
+  }
+
+  errs() << "start_index: " << start_index
+         << " type: " << static_cast<char>(type)
+         << " tid: " << tid
+         << " address: " << address << "\n";
+  report_fatal_error("Did not find desired subsequent entry in trace!");
+}
+
+/// Given a dynamic value representing a phi-node, determine which basic block
+/// was executed before the phi-node's basic block and add the correct dynamic
+/// input to the phi-node to the backwards slice.
+///
+/// \param[in] DV - The dynamic phi-node value.
+/// \param[out] Sources - The argument is added to this container
 void TraceFile::getSourcesForPHI(DynValue &DV, Worklist_t &Sources) {
   // Get the PHI instruction.
   PHINode *PHI = dyn_cast<PHINode>(DV.V);
@@ -638,6 +703,12 @@ void TraceFile::getSourcesForPHI(DynValue &DV, Worklist_t &Sources) {
   report_fatal_error("No predecessor BB found for PHI!");
 }
 
+/// Given a dynamic use of a function's formal argument, find the dynamic
+/// value that is the corresponding actual argument.
+///
+/// \param[in] DV - The dynamic argument value. The LLVM value must be an
+///             Argument. DV is not required to be normalized.
+/// \param[out] Sources - The argument is added to this container
 void TraceFile::getSourcesForArg(DynValue &DV, Worklist_t &Sources) {
   // Get the argument from the dynamic instruction instance.
   Argument *Arg = dyn_cast<Argument>(DV.V);
@@ -791,6 +862,13 @@ static inline bool overlaps(const Entry &first, const Entry &second) {
   return true;
 }
 
+/// This method, given a dynamic value that reads from memory, will find the
+/// dynamic value(s) that stores into the same memory.
+///
+/// \param DV[in] - the dynamic value of the load instruction
+/// \param Sources[out] - the work list to add the related values
+/// \param store_index - the index in the trace file to start with
+/// \param load_entry - the load entry
 void TraceFile::findAllStoresForLoad(DynValue &DV,
                                      Worklist_t &Sources,
                                      long store_index,
@@ -856,6 +934,12 @@ void TraceFile::findAllStoresForLoad(DynValue &DV,
   }
 }
 
+/// This method, given a dynamic value that reads from memory, will find the
+/// dynamic value(s) that stores into the same memory.
+///
+/// \param[in] DV - The dynamic value which reads the memory.
+/// \param[in] count - The number of loads performed by this instruction.
+/// \param[out] Sources - The argument is added to this container
 void TraceFile::getSourcesForLoad(DynValue &DV,
                                   Worklist_t &Sources,
                                   unsigned count) {
@@ -993,6 +1077,12 @@ void TraceFile::getSourcesForLoad(DynValue &DV,
   return;
 }
 
+/// Determine if the dynamic value is a call to a specially handled function
+/// and, if so, find the sources feeding information into that dynamic
+/// function.
+///
+/// \return true  - This is a call to a special function.
+/// \return false - This is not a call to a special function.
 bool TraceFile::getSourcesForSpecialCall(DynValue &DV,
                                          Worklist_t &Sources) {
   // Get the call instruction of the dynamic value.  If it's not a call
@@ -1102,6 +1192,19 @@ bool TraceFile::getSourcesForSpecialCall(DynValue &DV,
   return false;
 }
 
+/// Given a call instruction, this method searches backwards in the trace file
+/// to match the return inst with its coressponding call instruction
+///
+/// \param start_index - The index in the trace file which will be examined
+///                      first for a match. This is points to the basic block
+///                      entry containing the function call in trace. Start
+///                      search from the previous of start_index.
+/// \param bbID - The basic block ID of the basic block containing the call
+///               instruction
+/// \param callID - ID of the function call instruction we are trying to match
+/// \param tid - the thread id
+/// \return The index in the trace of entry with the specified type and ID is
+/// returned; If no such entry is found, then the end entry is returned.
 unsigned long TraceFile::matchReturnWithCall(unsigned long start_index,
                                              const unsigned bbID,
                                              const unsigned callID,
@@ -1318,6 +1421,8 @@ void TraceFile::getSourcesForCall(DynValue &DV, Worklist_t &Sources) {
   */
 }
 
+/// Examine the trace file to determine which input of a select instruction
+/// was used during dynamic execution.
 void TraceFile::getSourceForSelect(DynValue &DV, Worklist_t &Sources) {
   // Get the select instruction.
   SelectInst *SI = dyn_cast<SelectInst>(DV.V);
