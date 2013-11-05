@@ -1,12 +1,12 @@
 <div id="content">
   <h2>Giri: Dynamic Program Slicing in LLVM</h2>
 
-  <p><a href="http://en.wikipedia.org/wiki/Program_slicing">Program slicing</a> computes all statements in a program that directly or indirectly affect the value of a variable or instruction. Static program slicing computes all statements that may have affected the value of a variable at a program point for any arbitrary execution of the program. Instead, dynamic program slicing computes all statements that actually affect the value of a variable/instruction at a program point for a particular execution of the program with given input. There are many applications which use (or could benefit from) dynamic slicing. For example, it has long been used in software debugging and testing. However, to the best of our knowledge, there is no publicly available dynamic slicing tool in either GCC, LLVM or Open64.</p>
+  <p><a href="http://en.wikipedia.org/wiki/Program_slicing">Program slicing</a> computes all statements in a program that directly or indirectly affect the value of a variable or instruction. Static program slicing computes all statements that may have affected the value of a variable at a program point for any arbitrary execution of the program. Instead, dynamic program slicing computes all statements that actually affect the value of a variable/instruction at a program point for a particular execution of the program with given input. There are many applications which use (or could benefit from) dynamic slicing. For example, it has long been used in software debugging and testing. However, to the best of our knowledge, there is no publicly available dynamic slicing tool in either LLVM, GCC or Open64.</p>
 
   <p>Giri is a dynmic slicing tool implemented in LLVM compiler infrastructure by <a href="http://web.engr.illinois.edu/~ssahoo2/" target="_blank">Swarup Kumar Sahoo</a>, <a href="http://www.bigw.org/~jcriswel" target="_blank">John Criswell</a>, and <a href="http://llvm.cs.uiuc.edu/~vadve/" target="_blank">Vikram Adve</a>. They use backward dynamic slicing to filter/remove false positives from the candidate root causes for automated software fault localization (<a href="http://dl.acm.org/citation.cfm?id=2451131">ASPLOS'13</a>). It collects the trace of a user program execution and finally reports the dynamic slice of a given statement. It also maps LLVM intermediate representation (IR) statements to source code using the debug meta-data to report the dynamic slice in terms of source line numbers. To make the Giri up-to-date and robust for general use, <a href="http://pacman.cs.tsinghua.edu.cn/~liuml07" target="_blank">Mingliang Liu</a> and Swarup Kumar Sahoo further enhanced it in several ways. *****Such as....******
   
   <h3>Dynamic Program Slicing</h3>
-  <p>The following is an example C program. Given the input <tt>10</tt> to this program, the source line numbers affect the return value are: <tt>13, 20, 27, 40, 42, 44, 47</tt>. The line numbers <tt>13, 20</tt> are included due to control dependence, while line numbers <tt>27, 40, 42, 44, 47</tt> are included due to data dependence. Note that the line numbers <tt>15, 22</tt> should be included in static slices, but neither of them is included in dynamic slices since they do not actually have influence on the return value given the input <tt>10</tt>.</p>
+  <p>The following is an example C program. Given the input <tt>10</tt> to this program, the source line numbers affect the return value are: <tt>13, 20, 27, 40, 42, 44, 47</tt>. The line numbers <tt>13, 20</tt> are included due to control dependence, while line numbers <tt>27, 40, 42, 44, 47</tt> are included due to data dependence. Note that the line numbers <tt>15, 22</tt> should be included in static slices, but neither of them is included in dynamic slices since neither of them actually has influence on the return value given the input <tt>10</tt>.</p>
   <pre><code>
 	01:  #include &lt;math.h&gt;  
 	02:  #include &lt;stdio.h&gt;  
@@ -75,7 +75,7 @@
   <ul>
 	<li> Improve the performance of locking mechanism of the Giri runtime.
 	<li> Try more real world programs and add them to the <tt>test/</tt> directory.</li>
-	<li> *****Support multiple bitcode files seperately*****</li>
+	<li> Support slicing multiple bitcode files individually for one program.</li>
 	<li> Make Giri code useful for other platforms besides Linux, e.g. Mac OS X, Cygwin, and FreeBSD.</li>
 	<li> Parallelize the code which writes the entry cache containing trace records to trace file and adds trace records to the entry cache.</li>
   </ul>
