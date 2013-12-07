@@ -2,25 +2,25 @@
   <h2>Giri: Dynamic Program Slicing in LLVM</h2>
 
   <p><a href="http://en.wikipedia.org/wiki/Program_slicing">Program slicing</a> computes all statements in a program that directly or indirectly affect the value of a variable or instruction.
-  Static program slicing computes all statements that <i>may</i> have affected the value of a variable at a program point for <i>any</i> arbitrary execution of the program.
+  Static program slicing computes all statements that <i>may</i> affect the value of a variable at a program point for <i>any</i> arbitrary execution of the program.
   Instead, dynamic program slicing computes all statements that actually affect the value of a variable/instruction at a program point for a <i>particular</i> execution of the program with <i>given</i> input.
   There are many applications which use (or could benefit from) dynamic slicing.
   For example, it has long been used in software debugging and testing.
   However, to the best of our knowledge, there is no publicly available dynamic slicing tool in either LLVM, GCC or Open64.</p>
 
   <p>Giri is a dynmic slicing tool implemented in LLVM compiler infrastructure by <a href="http://web.engr.illinois.edu/~ssahoo2/" target="_blank">Swarup Kumar Sahoo</a>, <a href="http://www.bigw.org/~jcriswel" target="_blank">John Criswell</a>, and <a href="http://llvm.cs.uiuc.edu/~vadve/" target="_blank">Vikram Adve</a>.
-  They use backward dynamic slicing to filter/remove false positives from the candidate root causes for automated software fault localization (<a href="http://dl.acm.org/citation.cfm?id=2451131">ASPLOS'13</a>).
-  It collects the trace of a user program execution and finally reports the dynamic slice of a given statement.
+  They used backward dynamic slicing to filter/remove false positives from the candidate root causes for automated software fault localization (<a href="http://dl.acm.org/citation.cfm?id=2451131">ASPLOS'13</a>).
+  The tool collects the trace of a particular program execution and finally reports the dynamic slice of a given statement using the trace.
   It also maps LLVM intermediate representation (IR) statements to source code using the debug meta-data to report the dynamic slice in terms of source line numbers.
-  To make the Giri up-to-date and robust for general use, <a href="http://pacman.cs.tsinghua.edu.cn/~liuml07" target="_blank">Mingliang Liu</a> and Swarup Kumar Sahoo further enhanced it in several ways.
+  To make the Giri up-to-date and robust for general use, <a href="http://pacman.cs.tsinghua.edu.cn/~liuml07" target="_blank">Mingliang Liu</a> and  <a href="http://web.engr.illinois.edu/~ssahoo2/" target="_blank">Swarup Kumar Sahoo</a> further enhanced it in several ways.
   For example, they reduced the trace size, made the Giri thread-aware and improved the performance of run-time.
   
   <h3>Dynamic Program Slicing</h3>
-  <p>The following is an example C program, which is based on the program 1 of the <a href="http://dl.acm.org/citation.cfm?id=93576" target="_blank">paper</a> where dynamic program slicing was firstly proposed.
-  Given the input <tt>10</tt> to this program, the source line numbers affect the return value are: <tt>13, 20, 27, 40, 42, 44, 47</tt>.
+  <p>The following is an example C program, which is based on the program 1 of the <a href="http://dl.acm.org/citation.cfm?id=93576" target="_blank">paper</a> where dynamic program slicing was first proposed.
+  Given the input <tt>10</tt> to this program, the source line numbers that affect the return value are: <tt>13, 20, 27, 40, 42, 44, 47</tt>.
   The line numbers <tt>13, 20</tt> are included due to control dependence, while line numbers <tt>27, 40, 42, 44, 47</tt> are included due to data dependence.
   Note that the line numbers <tt>15, 22</tt> should be included in static slices,
-  but neither of them is included in dynamic slices since neither of them actually has influence on the return value given the input <tt>10</tt>.</p>
+  but neither of them is included in dynamic slices since neither of them actually has influence on the return value for the input <tt>10</tt>.</p>
   <pre><code>
 	01:  #include &lt;math.h&gt;  
 	02:  #include &lt;stdio.h&gt;  
@@ -72,27 +72,27 @@
 	48:  }  
   </code></pre>
 
-  <p>The default starting point of slicing (criterion) is the <tt>return</tt> instruction at the <tt>main</tt> function.
+  <p>The default starting point of slicing (criterion) is the <tt>return</tt> instruction of the <tt>main</tt> function.
   Note that there is only one <tt>return</tt> when the main executes.
   Giri also supports two more ways to specify the starting criterion of the slice.
   The first is to define the slicing criterion by line number of a source file.
   The second is to start slice from a given LLVM instruction number.
-  In the latter way, one should provide the function name and the instruction number.
-  Every LLVM instruction is assigned a unique number by the <tt>SourceLineMapping</tt> pass.
+  In the second case, one should provide the function name and the instruction number
+  (Every LLVM instruction is assigned a unique number by the <tt>SourceLineMapping</tt> pass).
   See the <a href="https://github.com/liuml07/giri/wiki/Example-Usage" target="_blank">example usage</a> for more information.</p>
 
   <h3>The Design of Giri</h3>
   <img src="giri-flow.jpg" alt="Giri Architecture"/>
   <p>As shown in the above figure, Giri has two phases.
-  In the first pass named <i>tracing</i> pass, it instruments the code to record various runtime information in a trace file at run-time for all threads.
+  In the first pass named <i>tracing</i> pass, it instruments the code to record various runtime information in a trace file for all threads for a particular execution.
   In the second pass named <i>slicing</i> pass, it uses the execution trace to create a program dependence graph for computing dynamic slice.</p>
 
   <p>The tracing pass instruments code to record three different pieces of information:
   1) basic block exits, 2) memory accesses and their addresses, and 3) function calls and returns.
   First, the basic block (BB) exit is recorded in the trace to provide branch taken information (execution path) for the second pass.
   Second, Giri instruments the program to record the memory locations accessed by all <tt>loads</tt>, <tt>stores</tt>, and <tt>select</tt> C library functions.
-  This information is used in the second phase to find the <tt>store</tt> instructions that created the value read by a <tt>load</tt> instruction.
-  Giri can then continue backtracking from the store to find more instructions affecting the loaded value.
+  This information is used in the second phase to find all the <tt>store</tt> instructions that created the value read by a <tt>load</tt> instruction.
+  <!Giri can then continue backtracking from the store to find more instructions affecting the loaded value.>
   Since most instructions operate on SSA scalar values, we only refer to trace file whenever needed.
   For example, we can get all the operands of an <tt>add</tt> instruction from the program SSA form without accessing the trace file.
   However, when we try to find all the <tt>store</tt> instructions which feed value to a <tt>load</tt> instruction, we need to scan the trace file since the data read by the <tt>load</tt> instruction may be written by many possible <tt>store</tt> instructions, which can only be determined accurately at runtime.
