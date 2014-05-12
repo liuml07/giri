@@ -20,8 +20,8 @@
 #include "Utility/Utils.h"
 
 #include "llvm/ADT/Statistic.h"
-#include "llvm/Analysis/DebugInfo.h"
-#include "llvm/IntrinsicInst.h"
+#include "llvm/DebugInfo.h"
+#include "llvm/IR/IntrinsicInst.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/InstIterator.h"
@@ -53,7 +53,7 @@ StartOfSliceInst("criterion-inst",
                  cl::init(""));
 
 static cl::opt<bool>
-TraceCD("trace-cd", cl::desc("Trace control dependence"), cl::init(false));
+TraceCD("trace-cd", cl::desc("Trace control dependence"), cl::init(true));
 
 //===----------------------------------------------------------------------===//
 //                        Giri Pass Statistics
@@ -74,24 +74,6 @@ char DynamicGiri::ID = 0;
 
 // Pass registration
 static RegisterPass<DynamicGiri> X("dgiri", "Dynamic Backwards Slice Analysis");
-
-/// This function determines whether the specified value is a source of
-/// information (something that has a label independent of its input SSA values.
-///
-/// \param V - The value to analyze.
-/// \return true if this value is a source; otherwise false, its label is the
-/// join of the labels of its input operands.
-static inline bool isASource(const Value *V) {
-  // Call instructions are sources *unless* they are inline assembly.
-  if (const CallInst *CI = dyn_cast<CallInst>(V))
-    return !isa<InlineAsm>(CI->getCalledValue());
-
-  return isa<LoadInst>(V) ||
-         isa<Argument>(V) ||
-         isa<AllocaInst>(V) ||
-         isa<Constant>(V) ||
-         isa<GlobalValue>(V);
-}
 
 bool DynamicGiri::findExecForcers(BasicBlock *BB,
                                   std::set<unsigned> &bbNums) {
@@ -169,7 +151,7 @@ void DynamicGiri::findSlice(DynValue &Initial,
   ++NumDynSources;
 
   // Find the backwards slice.
-  while (Worklist.size()) {
+  while (!Worklist.empty()) {
     DynValue *DV = Worklist.front();
     Worklist.pop_front();
 
@@ -271,7 +253,7 @@ void DynamicGiri::printBackwardsSlice(const Instruction *Criterion,
   std::string errinfo;
   raw_fd_ostream SliceFile(SliceFilename.c_str(),
                            errinfo,
-                           llvm::raw_fd_ostream::F_Append);
+                           sys::fs::F_Append);
   if (!errinfo.empty()) {
     errs() << "Error opening the slice output file: " << SliceFilename
            << " : " << errinfo << "\n";

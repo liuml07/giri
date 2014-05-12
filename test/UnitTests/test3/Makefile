@@ -3,4 +3,4 @@
 NAME = fibonacci
 INPUT ?= 15
 
-include ../Makefile.common
+include ../../Makefile.common

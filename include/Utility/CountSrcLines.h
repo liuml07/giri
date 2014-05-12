@@ -19,8 +19,7 @@
 #include "Utility/LoadStoreNumbering.h"
 
 #include "llvm/Pass.h"
-#include "llvm/Support/InstVisitor.h"
-#include "llvm/Target/TargetData.h"
+#include "llvm/InstVisitor.h"
 
 #include <deque>
 #include <set>

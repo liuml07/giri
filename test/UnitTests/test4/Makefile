@@ -3,8 +3,8 @@
 NAME = example
 LDFLAGS = -lm
 INPUT ?= 10
-#CRITERION ?= -criterion-loc=loc.txt
-CRITERION ?= -criterion-inst=inst.txt
+CRITERION ?= -criterion-loc=criterion-loc.txt
+#CRITERION ?= -criterion-inst=criterion-inst.txt
 MAPPING ?= -mapping-function=main
 
-include ../Makefile.common
+include ../../Makefile.common

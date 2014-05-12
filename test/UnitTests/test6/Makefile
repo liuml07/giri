@@ -3,4 +3,4 @@
 NAME = sigusr1
 INPUT ?=
 
-include ../Makefile.common
+include ../../Makefile.common

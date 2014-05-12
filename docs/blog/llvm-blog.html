@@ -1,0 +1,130 @@
+<div id="content">
+  <h2>[GSoC 2013] Giri: Dynamic Program Slicing in LLVM</h2>
+
+  <p><a href="http://en.wikipedia.org/wiki/Program_slicing">Program slicing</a> computes all statements in a program that directly or indirectly affect the value of a variable or instruction.
+  Static program slicing computes all statements that <i>may</i> affect the value of a variable at a program point for <i>any</i> arbitrary execution of the program.
+  Instead, dynamic program slicing computes all statements that actually affect the value of a variable/instruction at a program point for a <i>particular</i> execution of the program with <i>given</i> input.
+  There are many applications which use (or could benefit from) dynamic slicing.
+  For example, it has long been used in software debugging and testing.
+  However, to the best of our knowledge, there is no publicly available dynamic slicing tool in either LLVM, GCC or Open64.</p>
+
+  <p>Giri is a dynmic slicing tool implemented in LLVM compiler infrastructure by <a href="http://web.engr.illinois.edu/~ssahoo2/" target="_blank">Swarup Kumar Sahoo</a>, <a href="http://www.bigw.org/~jcriswel" target="_blank">John Criswell</a>, and <a href="http://llvm.cs.uiuc.edu/~vadve/" target="_blank">Vikram Adve</a>.
+  They used backward dynamic slicing to filter/remove false positives from the candidate root causes for automated software fault localization (<a href="http://dl.acm.org/citation.cfm?id=2451131">ASPLOS'13</a>).
+  The tool collects the trace of a particular program execution and finally reports the dynamic slice of a given statement using the trace.
+  It also maps LLVM intermediate representation (IR) statements to source code using the debug meta-data to report the dynamic slice in terms of source line numbers.
+  To make the Giri up-to-date and robust for general use, <a href="http://pacman.cs.tsinghua.edu.cn/~liuml07" target="_blank">Mingliang Liu</a> and  <a href="http://web.engr.illinois.edu/~ssahoo2/" target="_blank">Swarup Kumar Sahoo</a> further enhanced it in several ways.
+  For example, they reduced the trace size, made the Giri thread-aware and improved the performance of run-time.
+  
+  <h3>Dynamic Program Slicing</h3>
+  <p>The following is an example C program, which is based on the program 1 of the <a href="http://dl.acm.org/citation.cfm?id=93576" target="_blank">paper</a> where dynamic program slicing was first proposed.
+  Given the input <tt>10</tt> to this program, the source line numbers that affect the return value are: <tt>13, 20, 27, 40, 42, 44, 47</tt>.
+  The line numbers <tt>13, 20</tt> are included due to control dependence, while line numbers <tt>27, 40, 42, 44, 47</tt> are included due to data dependence.
+  Note that the line numbers <tt>15, 22</tt> should be included in static slices,
+  but neither of them is included in dynamic slices since neither of them actually has influence on the return value for the input <tt>10</tt>.</p>
+  <pre><code>
+	01:  #include &lt;math.h&gt;  
+	02:  #include &lt;stdio.h&gt;  
+	03:  #include &lt;stdlib.h&gt;  
+	04:    
+	05:  typedef struct result  
+	06:  {  
+	07:    int result;  
+	08:    int count;  
+	09:  } result_t;  
+	10:    
+	11:  void calc(int x, result_t *y, result_t *z)  
+	12:  {  
+	13:    if (x &lt; 0)  
+	14:    {  
+	15:      y-&gt;result = sqrt(x);  
+	16:      y-&gt;count++;  
+	17:      z-&gt;result = pow(2, x);  
+	18:      z-&gt;count++;  
+	19:    } else {  
+	20:      if (x == 0)  
+	21:      {  
+	22:        y-&gt;result = sqrt(x * 2);  
+	23:        y-&gt;count++;  
+	24:        z-&gt;result = pow(3, x);  
+	25:        z-&gt;count++;  
+	26:      } else {  
+	27:        y-&gt;result = sqrt(x * 3);  
+	28:        y-&gt;count++;  
+	29:        z-&gt;result = pow(4, x);  
+	30:        z-&gt;count++;  
+	31:      }  
+	32:    }  
+	33:  }  
+	34:    
+	35:  int main(int argc, char *argv[])  
+	36:  {  
+	37:    int x, ret;  
+	38:    result_t y = {0, 0}, z = {0, 0};  
+	39:    
+	40:    x = atoi(argv[1]);  
+	41:    
+	42:    calc(x, &amp;y, &amp;z);  
+	43:      
+	44:    ret = printf("%d\n", y.result);  
+	45:    printf("%d\n", z.result);  
+	46:    
+	47:    return ret;  
+	48:  }  
+  </code></pre>
+
+  <p>The default starting point of slicing (criterion) is the <tt>return</tt> instruction of the <tt>main</tt> function.
+  Note that there is only one <tt>return</tt> when the main executes.
+  Giri also supports two more ways to specify the starting criterion of the slice.
+  The first is to define the slicing criterion by line number of a source file.
+  The second is to start slice from a given LLVM instruction number.
+  In the second case, one should provide the function name and the instruction number
+  (Every LLVM instruction is assigned a unique number by the <tt>SourceLineMapping</tt> pass).
+  See the <a href="https://github.com/liuml07/giri/wiki/Example-Usage" target="_blank">example usage</a> for more information.</p>
+
+  <h3>The Design of Giri</h3>
+  <img src="giri-flow.jpg" alt="Giri Architecture" width="80%"/>
+  <p>As shown in the above figure, Giri has two phases.
+  In the first pass named <i>tracing</i> pass, it instruments the code to record various runtime information in a trace file for all threads for a particular execution.
+  In the second pass named <i>slicing</i> pass, it uses the execution trace to create a program dependence graph for computing dynamic slice.</p>
+
+  <p>The tracing pass instruments code to record three different pieces of information:
+  1) basic block exits, 2) memory accesses and their addresses, and 3) function calls and returns.
+  First, the basic block (BB) exit is recorded in the trace to provide branch taken information (execution path) for the second pass.
+  Second, Giri instruments the program to record the memory locations accessed by all <tt>loads</tt>, <tt>stores</tt>, and <tt>select</tt> C library functions.
+  This information is used in the second phase to find all the <tt>store</tt> instructions that created the value read by a <tt>load</tt> instruction.
+  Since most instructions operate on SSA scalar values, we only refer to trace file whenever needed.
+  For example, we can get all the operands of an <tt>add</tt> instruction from the program SSA form without accessing the trace file.
+  However, when we try to find all the <tt>store</tt> instructions which feed value to a <tt>load</tt> instruction, we need to scan the trace file since the data read by the <tt>load</tt> instruction may be written by many possible <tt>store</tt> instructions, which can only be determined accurately at runtime.
+  Third, Giri instruments a program to record the execution of function calls and function returns, which is useful to match up formal and and actual arguments and callers/callee return values during the second phase for both direct and indirect function calls.
+  Finally, to make the slicing pass thread aware, the runtime library writes the thread id (<tt>pthread_t</tt>) to each record indicating current thread performing that operation.
+  We use locks when we write trace records to the trace file in order to avoid race conditions.</p>
+  
+  <p>The slicing pass initializes a work list with the starting instruction of slicing.
+  For each dynamic value in the work list, the slicing pass computes both data-flow and control-flow dependences for it using program SSA form and trace.
+  First, we compute all the dynamic instructions which influence the current dynamic value under consideration through direct flow of data values.
+  Next, static control-dependence analysis is employed to determine which values or instructions can directly force the execution of the basic block to which this dynamic value belongs.
+  Then, the slicing pass uses the trace records to find the most recent dynamic instance of those values or instructions which forces the execution of this dynamic value.
+  The dynamic values computed by control or data dependence are added to the work list if not already processed earlier.
+  The slicing pass does not stop until all dynamic values in the work list are processed.
+  The slicing pass checks the thread id when scanning the trace file for a given dynamic value or basic block.
+  In the end, it reports the dynamic slice of the program execution from the slice starting point in terms of LLVM instructions as well as the source code line numbers.</p>
+
+  <h3>Project Status</h3>
+  <p>Giri code is up-to-date with the latest LLVM version and was published at <a href="https://github.com/liuml07/giri" target=_blank>https://github.com/liuml07/giri</a>.
+  We tested the code with many unit tests.
+  There is a simple test framework which runs all the test cases and report the results.
+  We shall make sure all unit tests pass locally before submitting a new patch to the code repository.
+  Giri was able to handle few large real programs like Squid, Apache, MySQL.
+  To slice multi-threading programs, we made the Giri run-time library thread safe and the slicing pass thread aware.</p>
+
+  <p>Giri is still under development and pull requests are heavily welcome.
+  The following is the list of future work we are going to address in the next months.</p>
+  <ul>
+	<li> Improve the performance of locking mechanism of the Giri runtime.
+	<li> Try more real world programs and add them to the <tt>test/</tt> directory.</li>
+	<li> Support slicing multiple bitcode files individually for one program.</li>
+	<li> Make Giri code useful for other platforms besides Linux, e.g. Mac OS X, Cygwin, and FreeBSD.</li>
+	<li> Parallelize the code which writes the entry cache containing trace records to trace file and adds trace records to the entry cache.</li>
+  </ul>
+
+</div>

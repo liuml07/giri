@@ -1,0 +1,250 @@
+\documentclass[DIV=calc, paper=a4, fontsize=11pt, twocolumn]{scrartcl}
+
+\usepackage{lipsum} % Used for inserting dummy 'Lorem ipsum' text into the template
+\usepackage[english]{babel} % English language/hyphenation
+\usepackage[protrusion=true,expansion=true]{microtype} % Better typography
+\usepackage{amsmath,amsfonts,amsthm} % Math packages
+\usepackage[svgnames]{xcolor} % Enabling colors by their 'svgnames'
+\usepackage[hang, small,labelfont=bf,up,textfont=it,up]{caption} % Custom captions under/above floats in tables or figures
+\usepackage{booktabs} % Horizontal rules in tables
+\usepackage{fix-cm}	 % Custom font sizes - used for the initial letter in the document
+
+\usepackage{sectsty} % Enables custom section titles
+\allsectionsfont{\usefont{OT1}{phv}{b}{n}} % Change the font of all section commands
+
+\usepackage{fancyhdr} % Needed to define custom headers/footers
+\pagestyle{fancy} % Enables the custom headers/footers
+\usepackage{lastpage} % Used to determine the number of pages in the document (for "Page X of Total")
+\usepackage{paralist}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{color}
+
+\lstdefinestyle{giricode}{
+	belowcaptionskip=1\baselineskip,
+	breaklines=false,
+	frame=tb,
+	numbers=left,                    % where to put the line-numbers; possible values are (none, left, right)
+	numbersep=5pt,                   % how far the line-numbers are from the code
+	numberstyle=\tiny\color{gray}, % the style that is used for the line-numbers
+	xleftmargin=\parindent,
+	language=C,
+	showstringspaces=false,
+	basicstyle=\footnotesize\ttfamily,
+	keywordstyle=\bfseries\color{green!40!black},
+	commentstyle=\itshape\color{purple!40!black},
+	identifierstyle=\color{blue},
+	stringstyle=\color{orange},
+}
+
+% Headers - all currently empty
+\lhead{}
+\chead{}
+\rhead{}
+
+% Footers
+\lfoot{}
+\cfoot{}
+\rfoot{\footnotesize Page \thepage\ of \pageref{LastPage}} % "Page 1 of 2"
+
+\renewcommand{\headrulewidth}{0.0pt} % No header rule
+\renewcommand{\footrulewidth}{0.4pt} % Thin footer rule
+
+\usepackage{lettrine} % Package to accentuate the first letter of the text
+\newcommand{\initial}[1]{ % Defines the command and style for the first letter
+\lettrine[lines=3,lhang=0.3,nindent=0em]{
+\color{DarkGoldenrod}
+{\textsf{#1}}}{}}
+
+%----------------------------------------------------------------------------------------
+%	TITLE SECTION
+%----------------------------------------------------------------------------------------
+
+\usepackage{titling} % Allows custom title configuration
+
+\newcommand{\HorRule}{\color{DarkGoldenrod} \rule{\linewidth}{1pt}} % Defines the gold horizontal rule around the title
+
+\begin{document}
+
+\pretitle{\vspace{-50pt} \begin{flushleft} \HorRule \fontsize{40}{40} \usefont{OT1}{phv}{b}{n} \color{DarkRed} \selectfont} % Horizontal rule before the title
+
+\title{{\large A GSoC 2013 Final Report}\\Enhancing Giri: \\Dynamic Slicing in LLVM}
+
+\posttitle{\par\end{flushleft}\vskip 0.5em} % Whitespace under the title
+\preauthor{\begin{flushleft}\large \lineskip 0.5em \usefont{OT1}{phv}{b}{sl} \color{DarkRed}} % Author font configuration
+
+\author{Mingliang Liu, Swarup Kumar Sahoo} % Your name
+
+\postauthor{\footnotesize \usefont{OT1}{phv}{m}{sl} \color{Black} % Configuration for the institution name
+\\http://github.com/liuml07/giri% Your institution
+
+\par\end{flushleft}\HorRule} % Horizontal rule after the title
+
+\date{} % Add a date here if you would like one to appear underneath the title block
+%----------------------------------------------------------------------------------------
+
+\maketitle % Print the title
+
+\thispagestyle{fancy} % Enabling the custom headers/footers for the first page 
+
+%----------------------------------------------------------------------------------------
+%	ABSTRACT
+%----------------------------------------------------------------------------------------
+
+% The first character should be within \initial{}
+\initial{D}\textbf{ynamic program slicing has been used in many applications.
+Giri was a research project from UIUC, which implemented the dynamic backward slicing in LLVM.
+It was selected as the Google Summer of Code 2013.
+We achieved several improvements to Giri during GSoC 2013:
+\begin{inparaenum}[\itshape 1\upshape)]
+\item Update the code to LLVM mainline and make it robust,
+\item Reduce the trace size,
+\item Make the Giri thread-aware (pthread only),
+\item Improve the performance of run-time.
+\end{inparaenum}
+}
+
+%------------------------------------------------
+\section{Introduction}
+Program slice contains all statements in a program that directly or indirectly affect the value of a variable or instruction~\cite{weiser}.
+We can further narrow down the notion of the \emph{slice} to \emph{dynamic program slice}~\cite{agrawal1990dynamic}.
+Unlike traditional slicing named static slicing which computes all statements that may have affected the value of a variable at a program point for any arbitrary execution of the program,
+the dynamic program slicing computes all statements that actually affect the value of a variable/instruction at a program point for a particular execution of the program with given input.
+There are many applications from research and industry organizations which use (or could benefit from) dynamic slicing.
+For example, it has long been used in software debugging~\cite{1993debugging,1999efficient} and testing~\cite{1993incremental}.
+However, to the best of our knowledge, there is no publicly available dynamic slicing tool in either GCC or Open64.
+
+Sahoo et. al. use dynamic program slicing to filter/remove false positives from the candidate root causes for automated software fault localization~\cite{sahoo2013asplos}.
+They implemented the dynamic program slicing code, named Giri, in LLVM compiler infrastructure (version 3.1) for research purpose.
+It collects the trace of a user program execution and finally reports the dynamic slice of a given statement.
+It also maps LLVM intermediate representation (IR) statements to source code using the debug meta-data to report the dynamic slice in terms of source line numbers.
+To make the Giri up-to-date and robust for general use, we enhanced the code in several ways.
+
+The report is organized as following.
+Section~\ref{sec:overview} illustrates the dynamic slicing and shows the internal architecture of Giri.
+Section~\ref{sec:progress} lists the progress we made during the GSoC 2013.
+Section~\ref{sec:todo} lists the future work to improve Giri further.
+Section~\ref{sec:contact} concludes our work.
+
+%------------------------------------------------
+\section{Overview}
+\label{sec:overview}
+\subsection{Dynamic Program Slicing}
+The following is an example program.
+\lstinputlisting[language=C, style=giricode]{struct-ptr.c}
+Given the input \texttt{10} to this program from command line,
+the source line numbers affect the return value are: $<$\emph{13, 20, 27, 40, 42, 44, 47}$>$.
+The line numbers $<$\emph{13, 20}$>$ are included due to control dependence,
+while line numbers $<$\emph{27, 40, 42, 44, 47}$>$ are included due to data dependence.
+
+The default starting point of slicing is the \texttt{return} instruction at the \texttt{main} function.
+Note that there is only one \texttt{return} when the main executes.
+Giri also supports two more ways to specify the starting criterion of the slice,
+which are source code line number and LLVM instruction number respectively.
+See the \texttt{test/UnitTests/test4} for more information.
+
+\subsection{The Design of Giri}
+Giri handles both data-flow and control-flow dependences (optional) when computing the dynamic backwards slice~\cite{sahoo2013asplos}.
+It has two phases.
+In the first pass named \emph{tracing} pass, it instruments the code to record various runtime information in a trace file at run-time for all threads.
+In the second pass named \emph{slicing} pass, it uses the execution trace to create a program dependence graph for computing dynamic slice.
+Giri takes advantage of the LLVM intermediate representation (IR), which is static single assignment (SSA) form, to reduce the size of the trace file. 
+
+The tracing pass instruments code to record three different pieces of information:
+\begin{inparaenum}[\itshape 1\upshape)]
+	\item basic block exits;
+	\item memory accesses and their addresses; and
+	\item function calls and returns.
+\end{inparaenum}
+The slicing pass initializes a work list with the starting instruction (also called \emph{criterion}) of slicing.
+For each dynamic value in the work list,
+the slicing pass computes both data-flow and control-flow dependences for it using program SSA form and trace. First, we compute all the dynamic instructions which influence the current dynamic value under consideration through direct flow of data values.
+Next, static control-dependence analysis is employed to determine which values or instructions can directly force the execution of the basic block to which this dynamic value belongs.
+Then, the slicing pass uses the trace records to find the most recent dynamic instance of those values or instructions which forces the execution of this dynamic value.
+The dynamic values computed by control or data dependence are added to the work list if not already processed earlier.
+The slicing pass does not stop until all dynamic values in the work list are processed.
+In the end, it reports the dynamic slice of the program execution from the slice starting point in terms of LLVM instructions as well as the source code line numbers.
+
+Since most instructions operate on SSA scalar values, we only refer to dynamic trace whenever needed.
+For example, we can get all the operands of an \texttt{add} instruction from the program SSA form without accessing the trace file.
+However, when we try to find all the \texttt{store} instructions which feed value to a \texttt{load} instruction,
+we need to scan the trace file since the data read by the \texttt{load} instruction may be written by many possible \texttt{store} instructions,
+which can only be determined accurately at runtime.
+
+To make the slicing pass thread aware,
+the runtime library writes the thread id (\texttt{thread\_t}) to each record indicating current thread performing that operation.
+The slicing pass checks the thread id when scanning the trace file for a given dynamic value or basic block.
+
+%------------------------------------------------
+\section{Progress}
+\label{sec:progress}
+Our goal of GSoC was to make the Giri code up-to-date with the latest LLVM version, improve its runtime performance, and/or reduce the tracing overhead.
+There are several things we did in this summer:
+\begin{enumerate}
+	\item \textbf{Update the code to LLVM mainline.}
+		\begin{itemize}
+			\item Clean up the code for version 3.1
+			\item Make the code up-to-date with the latest LLVM 3.4 revision (\texttt{r191529})
+		\end{itemize}
+	\item \textbf{Make the Giri run-time library thread safe and the slicing pass thread aware}.
+		The trace records of all threads are written to a single file.
+		In addition to other information, trace records also include the thread id (\texttt{pthread\_t}),
+		which indicates the thread performing that particular operation.
+		We use locks when we write trace records to the trace file in order to avoid race conditions.
+	\item \textbf{Improve the Giri run-time performance.}
+		We checked every call to function \texttt{mmap} as well as the parameters, and eliminated the useless ones to improve performance.
+		For example, at the end of the tracing, it is not needed to re-\texttt{mmap} once all the trace records are synchronized to disk file.
+		Giri now dynamically computes the cache size of trace records to hold in memory before flushing to disk.
+	\item \textbf{Write dozens of unit tests and try more real programs.}
+		Giri was able to handle few large real programs like Squid, Apache, MySQL before GSoC.
+		We added few more real programs to this set.
+		There is also a simple test framework which runs all the unit tests at the top level of \texttt{giri/test/} and report the results.
+		In the future development, we shall make sure all unit tests pass locally before submitting a patch to the code repository.
+	\item \textbf{Reduce the trace size.}
+		We truncate the trace file at the end of tracing according to its real size.
+	\item \textbf{Write documents for the project.}\\
+		There are several sample pages:
+		\begin{itemize}
+			\item \href{https://github.com/liuml07/giri/wiki}{The Wiki Page Home}.
+			\item \href{https://github.com/liuml07/giri/wiki/How-to-Compile-Giri}{How to Compile Giri}.
+			\item \href{https://github.com/liuml07/giri/wiki/Hello-World}{Hello World! Example}.
+			\item \href{https://github.com/liuml07/giri/wiki/Example-Usage}{Command Line Usage With An Example}.
+		\end{itemize}
+\end{enumerate}
+
+%------------------------------------------------
+\section{Future Work}
+The following is the list of future work we are going to address in the next few months.
+An updated list is maintained online at the \href{https://github.com/liuml07/giri/wiki/TODO}{wiki page of Giri at github.com}.
+\label{sec:todo}
+\begin{enumerate}
+	\item Improve the performance of locking mechanism of the Giri runtime.
+	\item Write more unit tests with complicated direct/indirect recursive function calls.
+	\item Double check the \texttt{TraceFile.cpp} to make sure the thread id be checked correctly.
+	\item Add \texttt{tool/Tracer.cpp} to the make list. It was removed when upgrading to LLVM 3.4.
+	\item Try more real world programs and add them to the \texttt{test/} directory.
+	\item Try large test programs, e.g. \emph{nginx}, \emph{squid}, etc.
+	\item Make Giri code useful for other platforms besides Linux, e.g. Mac OS X, Cygwin, and FreeBSD.
+	\item Handle more special function calls, which are intrinsic LLVM instructions (like \emph{libc} functions \texttt{printf, scanf, sprintf} etc.) in \texttt{TracingNoGiri::visitSpecialCall()}.
+	\item Parallelize the code which writes the entry cache containing trace records to trace file and adds trace records to the entry cache.
+\end{enumerate}
+
+%------------------------------------------------
+\section{Conclusion}
+\label{sec:contact}
+As the first publicly available dynamic slicing tool,
+Giri was improved significantly during the GSoC.
+We updated the code to LLVM mainline, reduced the trace size, made it thread-aware, and improved the performance of its run-time.
+We have published our code at \href{https://github.com/liuml07/giri}{https://github.com/liuml07/giri}~\cite{giri}.
+
+The code is still under active development.
+Dr. Swarup will direct Mingliang LIU in future to make the Giri code better.
+There are other researchers from Tsinghua University, Xi'an Jiaotong University and University of Miami,
+who contacted us for permission to use and contribute to Giri project.
+For more information, please visit the homepage above.
+
+%------------------------------------------------
+\bibliographystyle{plain}
+\bibliography{references} 
+
+\end{document}

@@ -20,7 +20,7 @@
 
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/raw_ostream.h"
-#include "llvm/Value.h"
+#include "llvm/IR/Value.h"
 
 #include <deque>
 #include <iterator>
@@ -226,221 +226,66 @@ public:
   /// is returned.
   void addToWorklist(DynValue &DV, Worklist_t &Sources, DynValue &Parent);
 
-  /// Given a dynamic use of a function's formal argument, find the call
-  /// Instruction which provides the actual value for this arg.
-  /// Only used for building expression tree
-  ///
-  /// \param DV - The dynamic argument value; The LLVM value must be an
-  ///             Argument.  DV is not required to be normalized.
-  /// \return Corresponding call instruction.
-  Instruction *getCallInstForFormalArg(DynValue &DV);
-
 private:
-  /// \brief Scan forward through the entire trace and record store instructions,
-  /// creating a set of memory intervals that have been written.
-  ///
-  /// Along the way, determine if there are load records for which no previous
-  /// store record can match.  Mark these load records so that we don't try to
-  /// find their matching stores when peforming the dynamic backwards slice.
-  /// This function will be called in the constructor.
-  /// This algorithm should be O(n*logn) where n is the number of elements in the
-  /// trace.
   void fixupLostLoads();
 
-  /// Build a map from functions to their runtime trace address
-  ///
-  /// FIXME: Can we record this during trace generation or similar to lsNumPass
-  /// This also doesn't work with indirect calls.
-  ///
-  /// Description: Scan forward through the entire trace and record the
-  /// runtime function addresses from the trace.  and map the functions
-  /// in this run to their corresponding trace function addresses which
-  /// can possibly be different This algorithm should be n*c where n
-  /// is the number of elements in the trace.
   void buildTraceFunAddrMap();
 
   //===--------------------------------------------------------------------===//
   //          Utility methods for scanning through the trace file
   //===--------------------------------------------------------------------===//
 
-  /// This method searches backwards in the trace file for an entry of the
-  /// specified type and ID.
-  ///
-  /// \param start_index - The index in the trace file which will be examined
-  ///                      first for a match.
-  /// \param type - The type of entry for which the caller searches.
-  /// \param id - The ID field of the entry for which the caller searches.
-  /// \return The index in the trace of entry with the specified type and ID is
-  /// returned.
   unsigned long findPreviousID(unsigned long start_index,
                                RecordType type,
+                               pthread_t tid,
+                               const unsigned id);
+  unsigned long findPreviousID(Function *fun,
+                               unsigned long start_index,
+                               RecordType type,
+                               pthread_t tid,
+                               const std::set<unsigned> &ids);
+  unsigned long findPreviousID(Function *fun,
+                               unsigned long start_index,
+                               RecordType type,
+                               pthread_t tid,
                                const unsigned id);
 
-  // CHANGE TO USE WithRecursion functionality here and also in recursion
-  // handling of loads/stores, calls/returns mapping, and recursion handling
-  // during invariants failure detection
-
-  /// This method is like findPreviousID() but takes recursion into account.
-  /// \param start_index - The index before which we should start the search
-  ///                      (i.e., we first examine the entry in the log file
-  ///                      at start_index - 1).
-  /// \param type - The type of entry for which we are looking.
-  /// \param id - The ID of the entry for which we are looking.
-  /// \param nestedID - The ID of the basic block to use to find nesting levels.
   unsigned long findPreviousNestedID(unsigned long start_index,
                                      RecordType type,
+                                     pthread_t tid,
                                      const unsigned id,
                                      const unsigned nestedID);
 
-  /// This method searches forwards in the trace file for an entry of the
-  /// specified type and ID.
-  ///
-  /// This method assumes that a subsequent entry in the trace *will* match the
-  /// type and ID criteria.  Asserts in the code will ensure that this is true
-  /// when this code is compiled with assertions enabled.
-  ///
-  /// \param start_index - The index in the trace file which will be examined
-  ///                      first for a match.
-  /// \param type - The type of entry for which the caller searches.
-  /// \param id - The ID field of the entry for which the caller searches.
-  /// \return The index in the trace of entry with the specified type and ID is returned.
-  unsigned long findNextID(unsigned long start_index,
-                           RecordType type,
-                           const unsigned id);
-
-  // CHANGE TO USE WithRecursion functionality here and also in recursion
-  // handling of loads/stores, calls/returns mapping, and recursion handling
-  // during invariants failure detection
-
-  /// This method finds the next entry in the trace file that has the specified
-  /// type and ID.  However, it also handles nesting.
   unsigned long findNextNestedID(unsigned long start_index,
                                  RecordType type,
                                  const unsigned id,
                                  const unsigned nestID,
                                  pthread_t tid);
 
-  /// This method searches forwards in the trace file for an entry of the
-  /// specified type and ID.
-  ///
-  /// This method assumes that a subsequent entry in the trace *will* match the
-  /// type and address criteria.  Asserts in the code will ensure that this is
-  /// true when this code is compiled with assertions enabled.
-  ///
-  /// \param start_index - The index in the trace file which will be examined first
-  ///                      for a match.
-  /// \param type      - The type of entry for which the caller searches.
-  /// \param address   - The address of the entry for which the caller searches.
-  ///
-  /// \return The index in the trace of entry with the specified type and
-  /// address is returned.
   unsigned long findNextAddress(unsigned long start_index,
                                 RecordType type,
+                                pthread_t tid,
                                 const uintptr_t address);
 
-  /// Given a call instruction, this method searches backwards in the trace file
-  /// to match the return inst with its coressponding call instruction
-  ///
-  /// \param start_index - The index in the trace file which will be examined
-  ///                      first for a match. This is points to the basic block
-  ///                      entry containing the function call in trace. Start
-  ///                      search from the previous of start_index.
-  /// \param bbID - The basic block ID of the basic block containing the call
-  ///               instruction
-  /// \param callID - ID of the function call instruction we are trying to match
-  /// \param tid - the thread id
-  /// \return The index in the trace of entry with the specified type and ID is
-  /// returned; If no such entry is found, then the end entry is returned.
-  unsigned long matchReturnWithCall(unsigned long start_index,
-                                    const unsigned bbID,
-                                    const unsigned callID,
-                                    pthread_t tid);
-
-  /// This method searches backwards in the trace file for an entry of the
-  /// specified type and ID taking recursion into account.
-  ///
-  /// FIXME: Doesn't work for recursion through indirect function calls
-  ///
-  /// \param fun - Function to which this search entry belongs.
-  ///              Needed to check recursion.
-  /// \param start_index - The index in the trace file which will be examined
-  ///                      first for a match.
-  /// \param type - The type of entry for which the caller searches.
-  /// \param id - The ID field of the entry for which the caller searches.
-  /// \return The index in the trace of entry with the specified type and ID is
-  /// returned; If it can't find a matching entry it'll return maxIndex as
-  /// error code
-  unsigned long findPreviousIDWithRecursion(Function *fun,
-                                            unsigned long start_index,
-                                            RecordType type,
-                                            const unsigned id);
-
-  /// This method searches backwards in the trace file for an entry of the
-  /// specified type and ID taking recursion into account.
-  /// FIXME: Doesn't work for recursion through indirect function calls
-  ///
-  /// \param fun - Function to which this search entry belongs.
-  ///              Needed to check recursion.
-  /// \param start_index - The index in the trace file which will be examined
-  ///                      first for a match.
-  /// \param type - The type of entry for which the caller searches.
-  /// \param ids - A set of ids of the entry for which the caller searches.
-  /// \return The index in the trace of entry with the specified type and ID is
-  /// returned; If it can't find a matching entry it'll return maxIndex as error
-  /// code.
-  unsigned long findPreviousIDWithRecursion(Function *fun,
-                                            unsigned long start_index,
-                                            RecordType type,
-                                            const std::set<unsigned> &ids);
-
-  /// This method, given a dynamic value that reads from memory, will find the
-  /// dynamic value(s) that stores into the same memory.
-  ///
-  /// \param DV[in] - the dynamic value of the load instruction
-  /// \param Sources[out] - the work list to add the related values
-  /// \param store_index - the index in the trace file to start with
-  /// \param load_entry - the load entry
   void findAllStoresForLoad(DynValue &DV,
                             Worklist_t &Sources,
                             long store_index,
                             const Entry load_entry);
 
-  /// Given a dynamic value representing a phi-node, determine which basic block
-  /// was executed before the phi-node's basic block and add the correct dynamic
-  /// input to the phi-node to the backwards slice.
-  ///
-  /// \param[in] DV - The dynamic phi-node value.
-  /// \param[out] Sources - The argument is added to this container
   void getSourcesForPHI(DynValue &DV, Worklist_t &Sources);
 
-  /// Given a dynamic use of a function's formal argument, find the dynamic
-  /// value that is the corresponding actual argument.
-  ///
-  /// \param[in] DV - The dynamic argument value. The LLVM value must be an
-  ///             Argument. DV is not required to be normalized.
-  /// \param[out] Sources - The argument is added to this container
   void getSourcesForArg(DynValue &DV, Worklist_t &Sources);
 
-  /// This method, given a dynamic value that reads from memory, will find the
-  /// dynamic value(s) that stores into the same memory.
-  ///
-  /// \param[in] DV - The dynamic value which reads the memory.
-  /// \param[in] count - The number of loads performed by this instruction.
-  /// \param[out] Sources - The argument is added to this container
   void getSourcesForLoad(DynValue &DV, Worklist_t &Sources, unsigned count = 1);
 
   void getSourcesForCall(DynValue &DV, Worklist_t &Sources);
+  unsigned long matchReturnWithCall(unsigned long start_index,
+                                    const unsigned bbID,
+                                    const unsigned callID,
+                                    pthread_t tid);
 
-  /// Determine if the dynamic value is a call to a specially handled function
-  /// and, if so, find the sources feeding information into that dynamic
-  /// function.
-  ///
-  /// \return true  - This is a call to a special function.
-  /// \return false - This is not a call to a special function.
   bool getSourcesForSpecialCall(DynValue &DV, Worklist_t &Sources);
 
-  /// Examine the trace file to determine which input of a select instruction
-  /// was used during dynamic execution.
   void getSourceForSelect(DynValue &DV, Worklist_t &Sources);
 
 private:

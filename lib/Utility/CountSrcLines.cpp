@@ -19,7 +19,7 @@
 #include "Utility/SourceLineMapping.h"
 
 #include "llvm/ADT/Statistic.h"
-#include "llvm/IntrinsicInst.h"
+#include "llvm/IR/IntrinsicInst.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/raw_ostream.h"

@@ -474,5 +474,5 @@ void recordSelect(unsigned id, unsigned char flag) {
   entryCache.addToEntryCache(Entry(RecordType::PDType,
                                    id,
                                    pthread_self(),
-                                   (unsigned char *)flag));
+                                   reinterpret_cast<unsigned char *>(flag)));
 }

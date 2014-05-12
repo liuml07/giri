@@ -4,4 +4,4 @@ NAME = hello2p
 LDFLAGS = -pthread
 INPUT ?= 4
 
-include ../Makefile.common
+include ../../Makefile.common

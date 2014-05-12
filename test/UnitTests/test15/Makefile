@@ -3,4 +3,4 @@
 NAME = hanoi
 INPUT ?= 7
 
-include ../Makefile.common
+include ../../Makefile.common

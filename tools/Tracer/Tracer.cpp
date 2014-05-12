@@ -20,8 +20,8 @@
 
 #include "llvm/Analysis/Verifier.h"
 #include "llvm/Bitcode/ReaderWriter.h"
-#include "llvm/Module.h"
-#include "llvm/LLVMContext.h"
+#include "llvm/IR/Module.h"
+#include "llvm/IR/LLVMContext.h"
 #include "llvm/PassManager.h"
 #include "llvm/Pass.h"
 #include "llvm/Support/CommandLine.h"
@@ -31,7 +31,7 @@
 #include "llvm/Support/ManagedStatic.h"
 #include "llvm/Support/Signals.h"
 #include "llvm/Support/raw_os_ostream.h"
-#include "llvm/Target/TargetData.h"
+#include "llvm/IR/DataLayout.h"
 #include "llvm/Target/TargetMachine.h"
 #include "llvm/Transforms/IPO.h"
 #include "llvm/Transforms/Scalar.h"
@@ -105,7 +105,7 @@ int main(int argc, char **argv) {
 
     // Build up all of the passes that we want to do to the module...
     PassManager Passes;
-    Passes.add(new TargetData(M.get()));
+    Passes.add(new DataLayout(M.get()));
 
     // Number all basic blocks and instructions.
     Passes.add(new BasicBlockNumberPass());
@@ -141,7 +141,7 @@ int main(int argc, char **argv) {
 
         // Make sure that the Out file gets unlinked from the disk if we get a
         // SIGINT
-        sys::RemoveFileOnSignal(sys::Path(OutputFilename));
+        sys::RemoveFileOnSignal(OutputFilename);
       } else {
         Out = &std::cout;
       }
@@ -172,7 +172,7 @@ int main(int argc, char **argv) {
 
       // Make sure that the Out file gets unlinked from the disk if we get a
       // SIGINT
-      sys::RemoveFileOnSignal(sys::Path(OutputFilename));
+      sys::RemoveFileOnSignal(OutputFilename);
     }
 
     raw_os_ostream RawOut(*Out);
