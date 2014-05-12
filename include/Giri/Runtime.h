@@ -65,6 +65,11 @@ struct Entry {
   /// the id of the function call instruction which invokes it.
   uintptr_t length;
 
+  /// Padding to make the Entry size be devided by Page size 
+#ifndef __LP64__
+  char padding[12]; 
+#endif
+
   /// A nice one-line method for initializing the structure
   explicit Entry(RecordType type, unsigned id) :
     type(type), id(id), tid(0), address(0), length(0) {
