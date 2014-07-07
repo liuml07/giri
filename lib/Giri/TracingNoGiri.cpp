@@ -231,6 +231,10 @@ void TracingNoGiri::instrumentUnlock(Instruction *I) {
 }
 
 void TracingNoGiri::instrumentBasicBlock(BasicBlock &BB) {
+  // Ignore the Giri Constructor function where the it is not set up yet
+  if (BB.getParent()->getName() == "giriCtor")
+    return;
+
   // Lookup the ID of this basic block and create an LLVM value for it.
   unsigned id = bbNumPass->getID(&BB);
   assert(id && "Basic block does not have an ID!\n");
