@@ -1,0 +1,17 @@
+language: cpp
+compiler:
+  - clang
+  - gcc
+os:
+  - linux
+install: true
+branches:
+  only:
+    - master
+    - 3.4
+notifications:
+  recipients:
+    - liuml07+update@gmail.com
+  email:
+    on_success: change
+    on_failure: always
