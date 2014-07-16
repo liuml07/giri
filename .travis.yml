@@ -4,11 +4,14 @@ compiler:
   - gcc
 os:
   - linux
-install: true
 branches:
   only:
     - master
     - 3.4
+
+before_script: utils/install_llvm.sh 3.4
+script: utils/build.sh
+
 notifications:
   recipients:
     - liuml07+update@gmail.com

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 if [ $# -lt 1 ]; then
-        echo "Pleas set the version of LLVM!"
+        echo "Pleas set the version of LLVM to build!"
         exit 1
 else
         VERSION=$1
@@ -24,5 +24,6 @@ case $VERSION in
                 cd llvm/build
                 ../configure --enable-optimized
                 make
+                sudo make install
                 ;;
 esac
