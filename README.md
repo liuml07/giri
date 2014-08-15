@@ -2,7 +2,7 @@
 
 | Giri        | Dynamic Program Slicing in LLVM                  |
 |:------------|:-------------------------------------------------|
-| Author      | Swarup Kumar Sahoo, Mingliang Liu, John Criswell |
+| Author      | Swarup Kumar Sahoo, Mingliang Liu, John Criswell, Vikram Adve |
 | License     | University of Illinois Open Source License       |
 | Version     | 3.4                                              |
 
@@ -25,7 +25,7 @@ It's an ongoing project and pull requests are heavily appreciated.
 
 ### Credit
 
-This project was firstly developed by [Swarup Kumar Sahoo](http://web.engr.illinois.edu/~ssahoo2/) and [John Criswell](http://www.bigw.org/~jcriswel) under [Vikram S. Adve](http://llvm.cs.uiuc.edu/~vadve/) from UIUC. It was selected by the Google Summer of Code **(GSoC)** 2013, under its umbrella project LLVM. [Mingliang Liu](http://pacman.cs.tsinghua.edu.cn/~liuml07) from Tsinghua University joined at June directed by Swarup.
+This project was first developed by [Swarup Kumar Sahoo](http://web.engr.illinois.edu/~ssahoo2/) and [John Criswell](http://www.bigw.org/~jcriswel) under [Dr. Vikram S. Adve](http://llvm.cs.uiuc.edu/~vadve/) from UIUC. It was selected by the Google Summer of Code **(GSoC)** 2013, under its umbrella project LLVM. [Mingliang Liu](http://pacman.cs.tsinghua.edu.cn/~liuml07) from Tsinghua University joined to improve Giri in June, 2013.
 
 If you use Giri in your research project, please cite our work.
 
