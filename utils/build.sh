@@ -1,7 +1,7 @@
 #!/bin/bash
 
-LLVMSRC_DIR=llvm
-LLVMOBJ_DIR=llvm/build
+LLVMSRC_DIR=$(cd .. && pwd)/llvm
+LLVMOBJ_DIR=$LLVMSRC_DIR/build
 
 mkdir build
 cd build
