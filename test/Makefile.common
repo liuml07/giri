@@ -5,7 +5,7 @@
 NAME ?= main
 DEBUGFLAGS ?= -debug
 GIRI_DIR ?= ../../../build/
-GIRI_VERSION ?= Release+Debug+Asserts
+BuildMode ?= Release+Debug+Asserts
 SRC_FILES ?= $(wildcard *.c)
 IR_FILES ?= $(SRC_FILES:%.c=%.bc)
 INPUT ?=
@@ -17,8 +17,8 @@ MAPPING ?=
 CC = clang
 CXX = clang++
 CFLAGS += -g -O0 -c -emit-llvm
-GIRI_LIB_DIR = $(GIRI_DIR)/$(GIRI_VERSION)/lib
-GIRI_BIN_DIR = $(GIRI_DIR)/$(GIRI_VERSION)/bin
+GIRI_LIB_DIR = $(GIRI_DIR)/$(BuildMode)/lib
+GIRI_BIN_DIR = $(GIRI_DIR)/$(BuildMode)/bin
 
 .PHONY: all lib
 

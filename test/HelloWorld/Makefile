@@ -4,14 +4,14 @@
 DEBUGFLAGS ?= -debug
 CFLAGS ?= -g -O0 -c -emit-llvm
 LDFLAGS ?=
-VERSION ?= Release+Debug+Asserts
+BuildMode ?= Release+Debug+Asserts
 GIRI_DIR ?= ../../build/
 NAME ?= hello-world
 
 CC = clang
 CXX = clang++
-GIRI_LIB_DIR = $(GIRI_DIR)/$(VERSION)/lib
-GIRI_BIN_DIR = $(GIRI_DIR)/$(VERSION)/bin
+GIRI_LIB_DIR = $(GIRI_DIR)/$(BuildMode)/lib
+GIRI_BIN_DIR = $(GIRI_DIR)/$(BuildMode)/bin
 
 .PHONY: all lib
 
