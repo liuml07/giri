@@ -1,16 +1,16 @@
 ## Giri: Dynamic Program Slicing in LLVM
 
-| Giri        | Dynamic Program Slicing in LLVM                  |
-|:------------|:-------------------------------------------------|
+| Giri        | Dynamic Program Slicing in LLVM                               |
+|:------------|:--------------------------------------------------------------|
 | Author      | Swarup Kumar Sahoo, Mingliang Liu, John Criswell, Vikram Adve |
-| License     | University of Illinois Open Source License       |
-| Version     | 3.4                                              |
+| License     | University of Illinois Open Source License                    |
+| Version     | 3.4                                                           |
 
 _Dynamic program slicing_ is a technique that can precisely determine which instructions affected a particular value in a single execution of a program.
 
 ### Usage
 
-1. You can [compile Giri by yourself](https://github.com/liuml07/giri/wiki/How-to-Compile-Giri), you can simply use a pre-built [Docker image](https://registry.hub.docker.com/u/liuml07/giri/): `docker pull liuml07/giri`.
+1. You can [compile Giri by yourself](https://github.com/liuml07/giri/wiki/How-to-Compile-Giri), or simply use a [Docker image](https://registry.hub.docker.com/u/liuml07/giri/): `docker pull liuml07/giri`.
 2. [Hello World!](https://github.com/liuml07/giri/wiki/Hello-World)
 3. [Example Usage](https://github.com/liuml07/giri/wiki/Example-Usage)
 
