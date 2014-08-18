@@ -10,7 +10,7 @@ _Dynamic program slicing_ is a technique that can precisely determine which inst
 
 ### Usage
 
-1. You can [compile Giri by yourself](https://github.com/liuml07/giri/wiki/How-to-Compile-Giri), or simply use a [Docker image](https://registry.hub.docker.com/u/liuml07/giri/): `docker pull liuml07/giri`.
+1. You can [compile Giri by yourself](https://github.com/liuml07/giri/wiki/How-to-Compile-Giri), or simply use the [Docker image](https://registry.hub.docker.com/u/liuml07/giri/)
 2. [Hello World!](https://github.com/liuml07/giri/wiki/Hello-World)
 3. [Example Usage](https://github.com/liuml07/giri/wiki/Example-Usage)
 
