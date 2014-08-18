@@ -1,11 +1,14 @@
 #!/bin/bash
 
-LLVMSRC_DIR=$(cd .. && pwd)/llvm
-LLVMOBJ_DIR=$LLVMSRC_DIR/build
-
 mkdir build
 cd build
-../configure --with-llvmsrc=$LLVMSRC_DIR --with-llvmobj=$LLVMOBJ_DIR --enable-optimized
+../configure --with-llvmsrc=$LLVM_HOME \
+			 --with-llvmobj=$LLVM_HOME/build \
+			 --enable-optimized \
+			 --disable-debug-symbols \
+			 --disable-docs \
+			 --disable-terminfo \
+			 --enable-targets=host-only
 make
 cd ..
-make test
+make -C test

@@ -2,9 +2,12 @@ FROM ubuntu
 
 MAINTAINER Mingliang Liu <liuml07@gmail.com>
 
+ENV LLVM_HOME /usr/local/llvm
+ENV BuildMode Release+Asserts
+
 RUN apt-get update
 RUN apt-get upgrade -y
-RUN apt-get install -qq -y wget git g++ make python 
+RUN apt-get install -qq -y wget make g++ python zip unzip autoconf libtool automake
 
 ADD . giri
 
