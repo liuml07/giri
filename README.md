@@ -6,6 +6,8 @@
 | License     | University of Illinois Open Source License                    |
 | Version     | 3.4                                                           |
 
+[![Build Status](https://travis-ci.org/liuml07/giri.svg?branch=master)](https://travis-ci.org/liuml07/giri)
+
 _Dynamic program slicing_ is a technique that can precisely determine which instructions affected a particular value in a single execution of a program.
 
 ### Usage
