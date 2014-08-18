@@ -8,12 +8,7 @@ os: linux
 
 env: LLVM_HOME=$HOME/llvm BuildMode=Release+Asserts
 
-branches:
-  only:
-    - master
-    - 3.4
-
-before_script: utils/install_llvm.sh 3.4
+before_script: sudo utils/install_llvm.sh
 script: utils/build.sh
 
 cache:
