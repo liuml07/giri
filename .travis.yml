@@ -4,8 +4,9 @@ compiler:
   - clang
   - gcc
 
-os:
-  - linux
+os: linux
+
+env: LLVM_HOME=$HOME/llvm BuildMode=Release+Asserts
 
 branches:
   only:
@@ -17,7 +18,7 @@ script: utils/build.sh
 
 cache:
   directories:
-    - llvm
+    - $HOME/llvm
 
 notifications:
   recipients:
