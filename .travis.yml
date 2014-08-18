@@ -8,8 +8,9 @@ os: linux
 
 env: LLVM_HOME=$HOME/llvm BuildMode=Release+Asserts
 
-before_script: sudo utils/install_llvm.sh
-script: utils/build.sh
+script:
+  - sudo -E utils/install_llvm.sh
+  - utils/build.sh
 
 cache:
   directories:
