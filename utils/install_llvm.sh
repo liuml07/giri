@@ -34,5 +34,5 @@ cd $LLVM_HOME/build
 			 --disable-bindings \
 			 --enable-targets=host-only \
 			 --enable-shared
-make -j3
+make
 make install

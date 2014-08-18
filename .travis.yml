@@ -1,8 +1,6 @@
 language: cpp
 
-compiler:
-  - clang
-  - gcc
+compiler: gcc
 
 os: linux
 
