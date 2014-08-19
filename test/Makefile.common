@@ -102,5 +102,5 @@ prtrace: $(NAME).trace
 rebuild: clean all
 
 clean: clean-all
-	@ rm -f *.ll *.bc *.o *.s *.slice *.exe *.trace ans.txt
+	@ rm -f *.ll *.bc *.o *.s *.slice *.slice.loc *.exe *.trace ans.txt
 clean-all:
