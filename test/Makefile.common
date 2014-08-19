@@ -22,16 +22,16 @@ GIRI_BIN_DIR = $(GIRI_DIR)/$(BuildMode)/bin
 
 .PHONY: all lib
 
-all: lib $(NAME).slice
-	@ echo -n "The line numbers of source code slice are: "
-	@ sed -n '/^Source.*[0-9]$$/p' $(NAME).slice |\
-		awk -F: '{print $$3}' |\
-		sort -g |\
-		uniq | xargs\
-		echo
+all: lib $(NAME).slice.loc
 
 lib:
 	$(MAKE) -s -C $(GIRI_DIR)
+
+%.slice.loc: %.slice
+	@ sed -n '/^Source.*[0-9]\+$$/p' $< |\
+		awk -F: '{print $$3}' |\
+		sort -g |\
+		uniq > $@
 
 $(NAME).slice : $(NAME).all.bc $(NAME).trace
 	opt -load $(GIRI_LIB_DIR)/libdgutility.so \
@@ -93,13 +93,8 @@ lsid: $(NAME).all.bc
 
 .PHONY: test ptrace rebuild clean clean-all
 
-test:
-	@ $(MAKE) -s $(NAME).slice 2>&1 > /dev/null
-	@ sed -n '/^Source.*[0-9]$$/p' $(NAME).slice |\
-		awk -F: '{print $$3}' |\
-		sort -g |\
-		uniq > ans.txt
-	diff ans.txt $(TEST_ANS)
+test: $(NAME).slice.loc
+	diff $< $(TEST_ANS)
 
 prtrace: $(NAME).trace
 	$(GIRI_BIN_DIR)/prtrace $< | view -
