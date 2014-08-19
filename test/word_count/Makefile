@@ -1,20 +1,20 @@
 ##===- giri/test/word_count/Makefile -----------------------*- Makefile -*-===##
 
-VERSION ?= pthread
-#CRITERION ?= "-criterion-loc=loc-$(VERSION).txt"
-CRITERION ?= "-criterion-inst=inst-$(VERSION).txt"
+TEST_PARALLELISM ?= pthread
+#CRITERION ?= "-criterion-loc=loc-$(TEST_PARALLELISM).txt"
+CRITERION ?= "-criterion-inst=inst-$(TEST_PARALLELISM).txt"
 DEBUGFLAGS ?= -debug
 INPUT ?= Makefile
 
 ##### Don't modify the following unless you know exactly what you're doing #####
-ifeq (pthread,$(VERSION))
+ifeq (pthread,$(TEST_PARALLELISM))
 NAME = word_count-pthread
 SRC_FILES = word_count-pthread.c sort-pthread.c
 LDFLAGS = -lpthread
 else
 NAME = word_count-seq
 SRC_FILES = word_count-seq.c
-VERSION = seq
+TEST_PARALLELISM = seq
 endif
 
 GIRI_DIR = ../../build/

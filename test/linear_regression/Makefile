@@ -1,18 +1,18 @@
 ##===- giri/test/linear_regression/Makefile -----------------*- Makefile -*-===##
 
-VERSION ?= pthread
-CRITERION ?= "-criterion-loc=loc-$(VERSION).txt"
-#CRITERION ?= "-criterion-inst=inst-$(VERSION).txt"
+TEST_PARALLELISM ?= pthread
+CRITERION ?= "-criterion-loc=loc-$(TEST_PARALLELISM).txt"
+#CRITERION ?= "-criterion-inst=inst-$(TEST_PARALLELISM).txt"
 DEBUGFLAGS ?= -debug
 INPUT ?= 4
 
 ###### Don't modify the following unless you know exactly what you'r doing #####
-ifeq (pthread,$(VERSION))
+ifeq (pthread,$(TEST_PARALLELISM))
 NAME = linear_regression-pthread
 LDFLAGS = -lpthread
 else
 NAME = linear_regression-seq
-VERSION = seq
+TEST_PARALLELISM = seq
 endif
 
 GIRI_DIR = ../../build/
