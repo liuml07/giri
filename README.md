@@ -4,12 +4,14 @@ _Dynamic program slicing_ is a technique that can precisely determine which inst
 
 [![Build Status](https://travis-ci.org/liuml07/giri.svg?branch=master)](https://travis-ci.org/liuml07/giri)
 
-### Usage
+### Install
 
-1. Try [Docker image](https://registry.hub.docker.com/u/liuml07/giri/): `docker pull liuml07/giri`
-2. Or, you can [compile Giri](https://github.com/liuml07/giri/wiki/How-to-Compile-Giri) by yourself
-3. [Hello World!](https://github.com/liuml07/giri/wiki/Hello-World)
-4. [Example Usage](https://github.com/liuml07/giri/wiki/Example-Usage)
+* Simply use the prebuilt [Docker image](https://registry.hub.docker.com/u/liuml07/giri/): `docker pull liuml07/giri`
+* Or, you can [compile Giri](https://github.com/liuml07/giri/wiki/How-to-Compile-Giri) by yourself
+
+### Usage
+1. [Hello World!](https://github.com/liuml07/giri/wiki/Hello-World)
+2. [Example Usage](https://github.com/liuml07/giri/wiki/Example-Usage)
 
 Please see our [wiki page](https://github.com/liuml07/giri/wiki/) for more information.
 
