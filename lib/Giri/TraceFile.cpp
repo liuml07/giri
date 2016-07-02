@@ -967,7 +967,7 @@ void TraceFile::getSourcesForLoad(DynValue &DV,
   // Search back in the log to find the first load entry that both belongs to
   // the basic block of the load.  Remember that we must handle nested basic
   // block execution when doing this.
-  unsigned long *load_indices = new unsigned long[count];
+  std::vector<unsigned long> load_indices(count);
   unsigned long start_index = findPreviousNestedID(DV.index,
                                                    RecordType::LDType,
                                                    trace[DV.index].tid,
@@ -1079,7 +1079,6 @@ void TraceFile::getSourcesForLoad(DynValue &DV,
     */
   }
 
-  delete load_indices;
   return;
 }
 
