@@ -11,7 +11,7 @@ _Dynamic program slicing_ is a technique that can precisely determine which inst
 * Or, you can [compile Giri](https://github.com/liuml07/giri/wiki/How-to-Compile-Giri) by yourself
 
 ### Usage
-1. [Hello World!](https://github.com/liuml07/giri/wiki/Hello-World)
+1. [Hello World!](https://github.com/liuml07/giri/wiki/Hello-World!)
 2. [Example Usage](https://github.com/liuml07/giri/wiki/Example-Usage)
 
 Please see our [wiki page](https://github.com/liuml07/giri/wiki/) for more information.
