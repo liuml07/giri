@@ -3,7 +3,8 @@
 _Dynamic program slicing_ is a technique that can precisely determine which instructions affected a **particular value** in a single **execution** of a program. Giri implements dynamic backwards slicing in LLVM compiler.
 
 [![Build Status](https://travis-ci.org/liuml07/giri.svg?branch=master)](https://travis-ci.org/liuml07/giri)
-[![Current Release](https://img.shields.io/badge/release-3.4-blue.svg)](https://github.com/liuml07/giri/releases/tag/v3.4)
+[![Current Release](https://img.shields.io/badge/release-3.4-blue.svg)](releases/tag/v3.4)
+[![License](https://img.shields.io/badge/license-LLVM-brightgreen.svg)](LICENSE.TXT)
 
 ### Install
 
