@@ -899,6 +899,8 @@ void TraceFile::findAllStoresForLoad(DynValue &DV,
       addToWorklist(NDV, Sources, DV);
 
       Entry &store_entry = trace[store_index];
+      // Find stores corresponding to any non-overlapping part of load
+      // before the start of matched store
       if (load_entry.address < store_entry.address) {
         Entry new_entry;
         new_entry.address = load_entry.address;
@@ -906,11 +908,13 @@ void TraceFile::findAllStoresForLoad(DynValue &DV,
         findAllStoresForLoad(DV, Sources, store_index - 1, new_entry);
       }
 
+      // Find stores corresponding to any non-overlapping part of load
+      // before the start of matched store
       unsigned long store_end = store_entry.address + store_entry.length;
       unsigned long load_end = load_entry.address + load_entry.length;
       if (store_end < load_end) {
         Entry new_entry;
-        new_entry.address = load_entry.address;
+        new_entry.address = store_end;
         new_entry.length = load_end - store_end;
         findAllStoresForLoad(DV, Sources, store_index - 1, new_entry);
       }
